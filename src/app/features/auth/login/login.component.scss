@@ -1,0 +1,247 @@
+﻿.login-page {
+  min-height: 100vh;
+  background: #f0f4f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #dde3ea;
+  padding: 40px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+
+  @media (max-width: 480px) {
+    padding: 32px 24px;
+    border-radius: 12px;
+  }
+}
+
+.logo-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo-img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.logo-placeholder {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  background: #e8f4f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0e7490;
+
+  svg {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+.clinic-name {
+  font-size: 18px;
+  font-weight: 500;
+  color: #1a2e3b;
+  letter-spacing: -0.2px;
+  text-align: center;
+}
+
+.skeleton-name {
+  height: 20px;
+  width: 160px;
+  background: #eef2f5;
+  border-radius: 6px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #2d4a5a;
+  }
+
+  input {
+    height: 42px;
+    border-radius: 8px;
+    border: 1px solid #d1dbe3;
+    padding: 0 12px;
+    font-size: 14px;
+    color: #1a2e3b;
+    background: #fff;
+    outline: none;
+    transition:
+      border-color 0.15s,
+      box-shadow 0.15s;
+    width: 100%;
+
+    &:focus {
+      border-color: #0e7490;
+      box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.1);
+    }
+
+    &.input-error {
+      border-color: #e53e3e;
+    }
+
+    &::placeholder {
+      color: #a0b4bf;
+    }
+  }
+}
+
+.input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  input {
+    padding-right: 42px;
+  }
+}
+
+.eye-btn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #8fa8b5;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  transition: color 0.15s;
+
+  &:hover {
+    color: #2d4a5a;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.error-msg {
+  font-size: 12px;
+  color: #e53e3e;
+}
+
+.forgot-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -4px;
+}
+
+.forgot {
+  font-size: 12px;
+  color: #6b8fa0;
+  text-decoration: none;
+  transition: color 0.15s;
+
+  &:hover {
+    color: #0e7490;
+  }
+}
+
+.alert-error {
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+  color: #c53030;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+}
+
+.btn-submit {
+  height: 42px;
+  background: #0e7490;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.15s;
+  margin-top: 4px;
+
+  &:hover:not(:disabled) {
+    background: #0a5f73;
+  }
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.register-link {
+  text-align: center;
+  font-size: 13px;
+  color: #7a9aaa;
+
+  a {
+    color: #0e7490;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+
+    &:hover {
+      color: #0a5f73;
+    }
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
