@@ -1,0 +1,367 @@
+<div class="page">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Catálogos</h1>
+      <p class="page-subtitle">Valores de referencia del sistema</p>
+    </div>
+  </div>
+
+  <mat-tab-group animationDuration="200ms" class="catalog-tabs">
+
+    <!-- ESPECIALIDADES -->
+    <mat-tab label="Especialidades">
+      <div class="tab-content">
+        <div class="inline-form-card">
+          <h3 class="form-title">Agregar especialidad</h3>
+          <form [formGroup]="specialtyForm" class="inline-form">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre</mat-label>
+              <input matInput formControlName="name" placeholder="Ej: Cardiología" />
+              @if (specialtyForm.controls.name.hasError('required')) { <mat-error>Requerido</mat-error> }
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="code-field">
+              <mat-label>Código</mat-label>
+              <input matInput formControlName="code" placeholder="CARD" />
+              @if (specialtyForm.controls.code.hasError('required')) { <mat-error>Requerido</mat-error> }
+            </mat-form-field>
+            <button mat-flat-button color="primary" (click)="submitSpecialty()" [disabled]="store.saving()">
+              @if (store.saving()) {
+                <mat-spinner diameter="18" />
+              } @else {
+                <mat-icon>add</mat-icon>
+              }
+              Agregar
+            </button>
+          </form>
+        </div>
+        @if (store.loadingSpecialties()) { <mat-progress-bar mode="indeterminate" class="progress" /> }
+        <div class="table-card">
+          <table mat-table [dataSource]="store.specialties()">
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Nombre</th>
+              <td mat-cell *matCellDef="let row">{{ row.name }}</td>
+            </ng-container>
+            <ng-container matColumnDef="code">
+              <th mat-header-cell *matHeaderCellDef>Código</th>
+              <td mat-cell *matCellDef="let row"><span class="code-badge">{{ row.code }}</span></td>
+            </ng-container>
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let row" class="actions-cell">
+                <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="deleteSpecialty(row)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="specialtyColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: specialtyColumns;" class="data-row"></tr>
+          </table>
+          @if (!store.loadingSpecialties() && store.specialties().length === 0) {
+            <div class="empty-state"><mat-icon>category</mat-icon><span>Sin especialidades</span></div>
+          }
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- PLANES -->
+    <mat-tab label="Planes">
+      <div class="tab-content">
+        <div class="inline-form-card">
+          <h3 class="form-title">Agregar plan</h3>
+          <form [formGroup]="planForm" class="inline-form plan-form">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre</mat-label>
+              <input matInput formControlName="name" placeholder="Plan Básico" />
+              @if (planForm.controls.name.hasError('required')) { <mat-error>Requerido</mat-error> }
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="code-field">
+              <mat-label>Código</mat-label>
+              <input matInput formControlName="code" placeholder="BASIC" />
+              @if (planForm.controls.code.hasError('required')) { <mat-error>Requerido</mat-error> }
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="num-field">
+              <mat-label>Precio (S/.)</mat-label>
+              <input matInput type="number" formControlName="price" min="0" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="num-field">
+              <mat-label>Máx. usuarios</mat-label>
+              <input matInput type="number" formControlName="maxUsers" min="1" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="num-field">
+              <mat-label>Máx. sedes</mat-label>
+              <input matInput type="number" formControlName="maxBranches" min="1" />
+            </mat-form-field>
+            <button mat-flat-button color="primary" (click)="submitPlan()" [disabled]="store.saving()">
+              @if (store.saving()) {
+                <mat-spinner diameter="18" />
+              } @else {
+                <mat-icon>add</mat-icon>
+              }
+              Agregar
+            </button>
+          </form>
+        </div>
+        @if (store.loadingPlans()) { <mat-progress-bar mode="indeterminate" class="progress" /> }
+        <div class="table-card">
+          <table mat-table [dataSource]="store.plans()">
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Nombre</th>
+              <td mat-cell *matCellDef="let row">{{ row.name }}</td>
+            </ng-container>
+            <ng-container matColumnDef="code">
+              <th mat-header-cell *matHeaderCellDef>Código</th>
+              <td mat-cell *matCellDef="let row"><span class="code-badge">{{ row.code }}</span></td>
+            </ng-container>
+            <ng-container matColumnDef="price">
+              <th mat-header-cell *matHeaderCellDef>Precio</th>
+              <td mat-cell *matCellDef="let row"><span class="price-value">{{ formatPrice(row.price) }}</span></td>
+            </ng-container>
+            <ng-container matColumnDef="limits">
+              <th mat-header-cell *matHeaderCellDef>Límites</th>
+              <td mat-cell *matCellDef="let row">
+                <span class="limit-badge">{{ row.maxUsers }} usu.</span>
+                <span class="limit-badge">{{ row.maxBranches }} sedes</span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let row" class="actions-cell">
+                <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="deletePlan(row)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="planColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: planColumns;" class="data-row"></tr>
+          </table>
+          @if (!store.loadingPlans() && store.plans().length === 0) {
+            <div class="empty-state"><mat-icon>local_offer</mat-icon><span>Sin planes</span></div>
+          }
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- TIPOS DE DOCUMENTO -->
+    <mat-tab label="Tipos de Documento">
+      <div class="tab-content">
+        <div class="inline-form-card">
+          <h3 class="form-title">Agregar tipo de documento</h3>
+          <form [formGroup]="documentTypeForm" class="inline-form">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre</mat-label>
+              <input matInput formControlName="name" placeholder="Documento Nacional de Identidad" />
+              @if (documentTypeForm.controls.name.hasError('required')) { <mat-error>Requerido</mat-error> }
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="code-field">
+              <mat-label>Código</mat-label>
+              <input matInput formControlName="code" placeholder="DNI" />
+              @if (documentTypeForm.controls.code.hasError('required')) { <mat-error>Requerido</mat-error> }
+            </mat-form-field>
+            <button mat-flat-button color="primary" (click)="submitDocumentType()" [disabled]="store.saving()">
+              @if (store.saving()) {
+                <mat-spinner diameter="18" />
+              } @else {
+                <mat-icon>add</mat-icon>
+              }
+              Agregar
+            </button>
+          </form>
+        </div>
+        @if (store.loadingDocumentTypes()) { <mat-progress-bar mode="indeterminate" class="progress" /> }
+        <div class="table-card">
+          <table mat-table [dataSource]="store.documentTypes()">
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Nombre</th>
+              <td mat-cell *matCellDef="let row">{{ row.name }}</td>
+            </ng-container>
+            <ng-container matColumnDef="code">
+              <th mat-header-cell *matHeaderCellDef>Código</th>
+              <td mat-cell *matCellDef="let row"><span class="code-badge">{{ row.code }}</span></td>
+            </ng-container>
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let row" class="actions-cell">
+                <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="deleteDocumentType(row)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="simpleColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: simpleColumns;" class="data-row"></tr>
+          </table>
+          @if (!store.loadingDocumentTypes() && store.documentTypes().length === 0) {
+            <div class="empty-state"><mat-icon>badge</mat-icon><span>Sin tipos de documento</span></div>
+          }
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- ESTADOS DE SUSCRIPCIÓN -->
+    <mat-tab label="Est. Suscripción">
+      <div class="tab-content">
+        <div class="inline-form-card">
+          <h3 class="form-title">Agregar estado de suscripción</h3>
+          <form [formGroup]="subscriptionStatusForm" class="inline-form">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre</mat-label>
+              <input matInput formControlName="name" placeholder="Activo" />
+              @if (subscriptionStatusForm.controls.name.hasError('required')) { <mat-error>Requerido</mat-error> }
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="code-field">
+              <mat-label>Código</mat-label>
+              <input matInput formControlName="code" placeholder="ACTIVE" />
+              @if (subscriptionStatusForm.controls.code.hasError('required')) { <mat-error>Requerido</mat-error> }
+            </mat-form-field>
+            <button mat-flat-button color="primary" (click)="submitSubscriptionStatus()" [disabled]="store.saving()">
+              @if (store.saving()) {
+                <mat-spinner diameter="18" />
+              } @else {
+                <mat-icon>add</mat-icon>
+              }
+              Agregar
+            </button>
+          </form>
+        </div>
+        @if (store.loadingSubscriptionStatuses()) { <mat-progress-bar mode="indeterminate" class="progress" /> }
+        <div class="table-card">
+          <table mat-table [dataSource]="store.subscriptionStatuses()">
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Nombre</th>
+              <td mat-cell *matCellDef="let row">{{ row.name }}</td>
+            </ng-container>
+            <ng-container matColumnDef="code">
+              <th mat-header-cell *matHeaderCellDef>Código</th>
+              <td mat-cell *matCellDef="let row"><span class="code-badge">{{ row.code }}</span></td>
+            </ng-container>
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let row" class="actions-cell">
+                <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="deleteSubscriptionStatus(row)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="simpleColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: simpleColumns;" class="data-row"></tr>
+          </table>
+          @if (!store.loadingSubscriptionStatuses() && store.subscriptionStatuses().length === 0) {
+            <div class="empty-state"><mat-icon>subscriptions</mat-icon><span>Sin estados</span></div>
+          }
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- ESTADOS DE CITA -->
+    <mat-tab label="Est. de Cita">
+      <div class="tab-content">
+        <div class="inline-form-card">
+          <h3 class="form-title">Agregar estado de cita</h3>
+          <form [formGroup]="appointmentStatusForm" class="inline-form">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre</mat-label>
+              <input matInput formControlName="name" placeholder="Programada" />
+              @if (appointmentStatusForm.controls.name.hasError('required')) { <mat-error>Requerido</mat-error> }
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="code-field">
+              <mat-label>Código</mat-label>
+              <input matInput formControlName="code" placeholder="SCHEDULED" />
+              @if (appointmentStatusForm.controls.code.hasError('required')) { <mat-error>Requerido</mat-error> }
+            </mat-form-field>
+            <button mat-flat-button color="primary" (click)="submitAppointmentStatus()" [disabled]="store.saving()">
+              @if (store.saving()) {
+                <mat-spinner diameter="18" />
+              } @else {
+                <mat-icon>add</mat-icon>
+              }
+              Agregar
+            </button>
+          </form>
+        </div>
+        @if (store.loadingAppointmentStatuses()) { <mat-progress-bar mode="indeterminate" class="progress" /> }
+        <div class="table-card">
+          <table mat-table [dataSource]="store.appointmentStatuses()">
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Nombre</th>
+              <td mat-cell *matCellDef="let row">{{ row.name }}</td>
+            </ng-container>
+            <ng-container matColumnDef="code">
+              <th mat-header-cell *matHeaderCellDef>Código</th>
+              <td mat-cell *matCellDef="let row"><span class="code-badge">{{ row.code }}</span></td>
+            </ng-container>
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let row" class="actions-cell">
+                <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="deleteAppointmentStatus(row)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="simpleColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: simpleColumns;" class="data-row"></tr>
+          </table>
+          @if (!store.loadingAppointmentStatuses() && store.appointmentStatuses().length === 0) {
+            <div class="empty-state"><mat-icon>event_available</mat-icon><span>Sin estados</span></div>
+          }
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- TIPOS DE CITA -->
+    <mat-tab label="Tipos de Cita">
+      <div class="tab-content">
+        <div class="inline-form-card">
+          <h3 class="form-title">Agregar tipo de cita</h3>
+          <form [formGroup]="appointmentTypeForm" class="inline-form">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre</mat-label>
+              <input matInput formControlName="name" placeholder="Consulta General" />
+              @if (appointmentTypeForm.controls.name.hasError('required')) { <mat-error>Requerido</mat-error> }
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="code-field">
+              <mat-label>Código</mat-label>
+              <input matInput formControlName="code" placeholder="CONSULTATION" />
+              @if (appointmentTypeForm.controls.code.hasError('required')) { <mat-error>Requerido</mat-error> }
+            </mat-form-field>
+            <button mat-flat-button color="primary" (click)="submitAppointmentType()" [disabled]="store.saving()">
+              @if (store.saving()) {
+                <mat-spinner diameter="18" />
+              } @else {
+                <mat-icon>add</mat-icon>
+              }
+              Agregar
+            </button>
+          </form>
+        </div>
+        @if (store.loadingAppointmentTypes()) { <mat-progress-bar mode="indeterminate" class="progress" /> }
+        <div class="table-card">
+          <table mat-table [dataSource]="store.appointmentTypes()">
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Nombre</th>
+              <td mat-cell *matCellDef="let row">{{ row.name }}</td>
+            </ng-container>
+            <ng-container matColumnDef="code">
+              <th mat-header-cell *matHeaderCellDef>Código</th>
+              <td mat-cell *matCellDef="let row"><span class="code-badge">{{ row.code }}</span></td>
+            </ng-container>
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let row" class="actions-cell">
+                <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="deleteAppointmentType(row)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="simpleColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: simpleColumns;" class="data-row"></tr>
+          </table>
+          @if (!store.loadingAppointmentTypes() && store.appointmentTypes().length === 0) {
+            <div class="empty-state"><mat-icon>medical_services</mat-icon><span>Sin tipos de cita</span></div>
+          }
+        </div>
+      </div>
+    </mat-tab>
+
+  </mat-tab-group>
+
+</div>

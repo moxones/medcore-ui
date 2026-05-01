@@ -1,0 +1,81 @@
+<div class="dialog-header">
+  <h2 mat-dialog-title>{{ isEdit ? 'Editar suscripción' : 'Nueva suscripción' }}</h2>
+  <button mat-icon-button (click)="cancel()">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="form-grid">
+
+    @if (isEdit) {
+      <div class="readonly-field">
+        <span class="readonly-label">Organización</span>
+        <span class="readonly-value">{{ tenantName() }}</span>
+      </div>
+    } @else {
+      <mat-form-field appearance="outline">
+        <mat-label>Organización</mat-label>
+        <mat-select formControlName="tenantId">
+          @for (org of orgStore.items(); track org.id) {
+            <mat-option [value]="org.id">{{ org.name }}</mat-option>
+          }
+        </mat-select>
+        @if (form.controls.tenantId.hasError('required')) {
+          <mat-error>Selecciona una organización</mat-error>
+        }
+      </mat-form-field>
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>Plan</mat-label>
+      <mat-select formControlName="planId">
+        @for (plan of catalogStore.plans(); track plan.id) {
+          <mat-option [value]="plan.id">{{ plan.name }}</mat-option>
+        }
+      </mat-select>
+      @if (form.controls.planId.hasError('required')) {
+        <mat-error>Selecciona un plan</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Estado</mat-label>
+      <mat-select formControlName="status">
+        @for (opt of statusOptions; track opt.value) {
+          <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <div class="two-col">
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha de inicio</mat-label>
+        <input matInput type="date" formControlName="startDate" />
+        @if (form.controls.startDate.hasError('required')) {
+          <mat-error>Requerida</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha de vencimiento</mat-label>
+        <input matInput type="date" formControlName="endDate" />
+        @if (form.controls.endDate.hasError('required')) {
+          <mat-error>Requerida</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="submit()" [disabled]="store.saving()">
+    @if (store.saving()) {
+      <mat-spinner diameter="18" />
+    } @else {
+      {{ isEdit ? 'Guardar cambios' : 'Crear suscripción' }}
+    }
+  </button>
+</mat-dialog-actions>

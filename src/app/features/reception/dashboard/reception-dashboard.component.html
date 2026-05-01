@@ -1,0 +1,77 @@
+<div class="dash">
+
+  <div class="dash-header">
+    <div>
+      <h1 class="greeting">Recepción — {{ tenantStore.tenant().name }}</h1>
+      <p class="sub">{{ todayLabel }}</p>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <app-kpi-card
+      icon="calendar_today"
+      label="Citas hoy"
+      [value]="dashboardStore.totalToday().toString()"
+      [loading]="dashboardStore.loading()"
+      variant="blue" />
+
+    <app-kpi-card
+      icon="hourglass_top"
+      label="En espera"
+      [value]="dashboardStore.waiting().toString()"
+      [loading]="dashboardStore.loading()"
+      variant="orange" />
+
+    <app-kpi-card
+      icon="medical_services"
+      label="En consulta"
+      [value]="dashboardStore.inConsultation().toString()"
+      [loading]="dashboardStore.loading()"
+      variant="purple" />
+
+    <app-kpi-card
+      icon="check_circle"
+      label="Completadas"
+      [value]="dashboardStore.completed().toString()"
+      [loading]="dashboardStore.loading()"
+      variant="green" />
+  </div>
+
+  <div class="section-row">
+    <div class="queue-card">
+      <div class="card-header">
+        <span class="card-title">Cola de atención</span>
+        <mat-icon class="card-icon">queue</mat-icon>
+      </div>
+
+      @if (dashboardStore.loading()) {
+        <mat-progress-bar mode="indeterminate" />
+      }
+
+      @if (!dashboardStore.loading() && dashboardStore.activeQueue().length === 0) {
+        <div class="empty-state">
+          <mat-icon>event_available</mat-icon>
+          <span>No hay pacientes en cola por atender</span>
+        </div>
+      }
+
+      @if (dashboardStore.activeQueue().length > 0) {
+        <div class="queue-list">
+          @for (appt of dashboardStore.activeQueue(); track appt.id) {
+            <div class="queue-row">
+              <div [class]="'queue-dot queue-dot--' + statusClass(appt.flowStatus)"></div>
+              <div class="queue-info">
+                <span class="queue-patient">{{ appt.patientName }}</span>
+                <span class="queue-detail">{{ appt.doctorName }} · {{ formatTime(appt.scheduledAt) }}</span>
+              </div>
+              <span [class]="'queue-badge queue-badge--' + statusClass(appt.flowStatus)">
+                {{ statusLabel(appt.flowStatus) }}
+              </span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+</div>

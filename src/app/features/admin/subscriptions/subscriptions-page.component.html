@@ -1,0 +1,87 @@
+<div class="page">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Suscripciones</h1>
+      <p class="page-subtitle">Gestión de planes activos por organización</p>
+    </div>
+    <button mat-flat-button color="primary" (click)="openCreate()">
+      <mat-icon>add</mat-icon>
+      Nueva suscripción
+    </button>
+  </div>
+
+  @if (store.loading()) {
+    <mat-progress-bar mode="indeterminate" class="progress" />
+  }
+
+  <div class="table-card">
+    <table mat-table [dataSource]="rows()">
+
+      <ng-container matColumnDef="tenant">
+        <th mat-header-cell *matHeaderCellDef>Organización</th>
+        <td mat-cell *matCellDef="let row">
+          <span class="tenant-name">{{ row.tenantName }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="plan">
+        <th mat-header-cell *matHeaderCellDef>Plan</th>
+        <td mat-cell *matCellDef="let row">
+          <div class="plan-cell">
+            <span class="plan-name">{{ row.plan.name }}</span>
+            <span class="plan-meta">
+              {{ formatPrice(row.plan.price) }} · {{ row.plan.maxUsers }} usuarios · {{ row.plan.maxBranches }} sedes
+            </span>
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="dates">
+        <th mat-header-cell *matHeaderCellDef>Vigencia</th>
+        <td mat-cell *matCellDef="let row">
+          <div class="dates-cell">
+            <span>{{ formatDate(row.startDate) }}</span>
+            <mat-icon class="dates-arrow">arrow_forward</mat-icon>
+            <span>{{ formatDate(row.endDate) }}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Estado</th>
+        <td mat-cell *matCellDef="let row">
+          <span class="status-badge"
+            [class.active]="row.status === 'ACTIVE'"
+            [class.expired]="row.status === 'EXPIRED'">
+            {{ row.status === 'ACTIVE' ? 'Activo' : row.status === 'EXPIRED' ? 'Expirado' : 'Inactivo' }}
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let row" class="actions-cell">
+          <button mat-icon-button matTooltip="Editar" (click)="openEdit(row)">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button matTooltip="Eliminar" class="delete-btn" (click)="confirmDelete(row)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="data-row"></tr>
+
+    </table>
+
+    @if (!store.loading() && rows().length === 0) {
+      <div class="empty-state">
+        <mat-icon>subscriptions</mat-icon>
+        <span>No hay suscripciones registradas</span>
+      </div>
+    }
+  </div>
+
+</div>

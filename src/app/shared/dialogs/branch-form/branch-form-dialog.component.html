@@ -1,0 +1,46 @@
+<div class="dialog-header">
+  <h2 mat-dialog-title>Nueva sucursal</h2>
+  <button mat-icon-button (click)="cancel()">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="form-grid">
+
+    <mat-form-field appearance="outline">
+      <mat-label>Nombre de la sucursal</mat-label>
+      <input matInput formControlName="name" placeholder="Ej: Sede Central" />
+      @if (form.controls.name.hasError('required')) {
+        <mat-error>El nombre es requerido</mat-error>
+      }
+      @if (form.controls.name.hasError('minlength')) {
+        <mat-error>Mínimo 2 caracteres</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Duración de cita (minutos)</mat-label>
+      <input matInput type="number" formControlName="appointmentDurationMinutes" />
+      <mat-hint>Entre 5 y 120 minutos</mat-hint>
+      @if (form.controls.appointmentDurationMinutes.hasError('required')) {
+        <mat-error>La duración es requerida</mat-error>
+      }
+      @if (form.controls.appointmentDurationMinutes.hasError('min') || form.controls.appointmentDurationMinutes.hasError('max')) {
+        <mat-error>Debe ser entre 5 y 120 minutos</mat-error>
+      }
+    </mat-form-field>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="submit()" [disabled]="store.saving()">
+    @if (store.saving()) {
+      <mat-spinner diameter="18" />
+    } @else {
+      Crear sucursal
+    }
+  </button>
+</mat-dialog-actions>

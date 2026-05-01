@@ -1,0 +1,139 @@
+.dash {
+  max-width: 1200px;
+}
+
+.dash-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+
+  .greeting {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin: 0 0 6px;
+    letter-spacing: -0.3px;
+  }
+
+  .sub {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    margin: 0;
+  }
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.section-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.productivity-card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--color-border);
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+
+    .card-icon {
+      color: var(--color-text-muted);
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 48px 24px;
+  color: var(--color-text-muted);
+
+  mat-icon {
+    font-size: 40px;
+    width: 40px;
+    height: 40px;
+    opacity: 0.4;
+  }
+
+  span {
+    font-size: 14px;
+  }
+}
+
+.prod-list {
+  padding: 8px 0;
+}
+
+.prod-row {
+  display: grid;
+  grid-template-columns: 28px 1fr 52px 120px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  transition: background 120ms ease;
+
+  &:hover {
+    background: var(--color-background);
+  }
+
+  .prod-rank {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    text-align: center;
+  }
+
+  .prod-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .prod-count {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--mat-sys-primary);
+    text-align: right;
+  }
+
+  .prod-bar-wrap {
+    height: 6px;
+    background: var(--color-border);
+    border-radius: 3px;
+    overflow: hidden;
+
+    .prod-bar {
+      height: 100%;
+      background: var(--mat-sys-primary);
+      border-radius: 3px;
+      transition: width 600ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  }
+}

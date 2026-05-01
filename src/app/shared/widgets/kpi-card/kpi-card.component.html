@@ -1,0 +1,7 @@
+<div [class]="'kpi-icon kpi-icon--' + variant()">
+  <mat-icon>{{ icon() }}</mat-icon>
+</div>
+<div class="kpi-body">
+  <span class="kpi-value">{{ loading() ? '—' : value() }}</span>
+  <span class="kpi-label">{{ label() }}</span>
+</div>

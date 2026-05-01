@@ -1,0 +1,59 @@
+<div class="dash">
+
+  <div class="dash-header">
+    <div>
+      <h1 class="greeting">Hola, {{ authStore.fullName() }}</h1>
+      <p class="sub">Bienvenido a {{ tenantStore.tenant().name }}</p>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <app-kpi-card
+      icon="event"
+      label="Próximas citas"
+      [value]="dashboardStore.upcomingCount().toString()"
+      [loading]="dashboardStore.loading()"
+      variant="blue" />
+  </div>
+
+  <div class="section-row">
+    <div class="appt-card">
+      <div class="card-header">
+        <span class="card-title">Mis próximas citas</span>
+        <mat-icon class="card-icon">calendar_month</mat-icon>
+      </div>
+
+      @if (dashboardStore.loading()) {
+        <mat-progress-bar mode="indeterminate" />
+      }
+
+      @if (!dashboardStore.loading() && dashboardStore.upcoming().length === 0) {
+        <div class="empty-state">
+          <mat-icon>event_busy</mat-icon>
+          <span>No tienes citas programadas</span>
+        </div>
+      }
+
+      @if (dashboardStore.upcoming().length > 0) {
+        <div class="appt-list">
+          @for (appt of dashboardStore.upcoming(); track appt.id) {
+            <div class="appt-row">
+              <div class="appt-icon-wrap">
+                <mat-icon>event</mat-icon>
+              </div>
+              <div class="appt-info">
+                <span class="appt-doctor">{{ appt.doctorName }}</span>
+                <span class="appt-date">{{ formatDate(appt.scheduledAt) }}</span>
+                <span class="appt-branch">{{ appt.branchName }}</span>
+              </div>
+              <span [class]="'appt-badge appt-badge--' + statusClass(appt.flowStatus)">
+                {{ statusLabel(appt.flowStatus) }}
+              </span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+</div>

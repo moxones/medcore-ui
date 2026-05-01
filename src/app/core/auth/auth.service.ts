@@ -1,9 +1,10 @@
-﻿import { Injectable, inject } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { API_ROUTES } from '@core/api/api.config';
 import { UserMeResponse } from '@core/models/auth.model';
+import { ApiResponse } from '@core/models/api-response.model';
 
 export interface LoginRequest {
   email: string;
@@ -20,6 +21,11 @@ export interface LoginResponse {
   };
 }
 
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
@@ -34,5 +40,9 @@ export class AuthService {
 
   logout(refreshToken: string): Observable<void> {
     return this.http.post<void>(API_ROUTES.auth.logout, { refreshToken });
+  }
+
+  changePassword(body: ChangePasswordRequest): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(API_ROUTES.auth.changePassword, body);
   }
 }

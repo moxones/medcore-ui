@@ -3,7 +3,7 @@ import { computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService, LoginRequest } from './auth.service';
 import { firstValueFrom } from 'rxjs';
-import { Role, ROLE_REDIRECTS } from '@core/models/role.model';
+import { Role, ROLE_REDIRECTS, normalizeRole } from '@core/models/role.model';
 import { UserMeResponse } from '@core/models/auth.model';
 
 interface AuthState {
@@ -50,7 +50,7 @@ export const AuthStore = signalStore(
 
         const me = await firstValueFrom(auth.me());
 
-        const roles = me.roles as Role[];
+        const roles = me.roles.map(normalizeRole).filter((r): r is Role => r !== null);
         localStorage.setItem('roles', JSON.stringify(roles));
         localStorage.setItem('user', JSON.stringify(me));
 

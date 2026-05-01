@@ -1,0 +1,85 @@
+<div class="page">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Usuarios</h1>
+      <p class="page-subtitle">Gestión de cuentas y control de accesos</p>
+    </div>
+    <button mat-flat-button color="primary" (click)="openCreate()">
+      <mat-icon>person_add</mat-icon>
+      Nuevo usuario
+    </button>
+  </div>
+
+  @if (store.loading()) {
+    <mat-progress-bar mode="indeterminate" class="progress" />
+  }
+
+  <div class="table-card">
+    <table mat-table [dataSource]="rows()">
+
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Nombre</th>
+        <td mat-cell *matCellDef="let row">
+          <div class="user-name-cell">
+            <div class="user-avatar" [class.inactive]="!row.isActive">
+              {{ row.person.firstName[0] }}
+            </div>
+            <div class="user-info">
+              <span class="user-name">{{ fullName(row) }}</span>
+              <span class="user-doc">{{ row.person.phone || '—' }}</span>
+            </div>
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="email">
+        <th mat-header-cell *matHeaderCellDef>Email</th>
+        <td mat-cell *matCellDef="let row">
+          <span class="email">{{ row.email }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="roles">
+        <th mat-header-cell *matHeaderCellDef>Rol</th>
+        <td mat-cell *matCellDef="let row">
+          <span class="role-chip" [class]="roleClass(row.roles)">
+            {{ roleLabel(row.roles) }}
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Estado</th>
+        <td mat-cell *matCellDef="let row">
+          <mat-slide-toggle
+            [checked]="row.isActive"
+            (change)="toggleStatus(row)"
+            color="primary"
+            matTooltip="{{ row.isActive ? 'Activo — click para desactivar' : 'Inactivo — click para activar' }}" />
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let row" class="actions-cell">
+          <button mat-icon-button matTooltip="Editar" (click)="openEdit(row)">
+            <mat-icon>edit</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="data-row" [class.row--inactive]="!row.isActive"></tr>
+
+    </table>
+
+    @if (!store.loading() && rows().length === 0) {
+      <div class="empty-state">
+        <mat-icon>manage_accounts</mat-icon>
+        <span>No hay usuarios registrados</span>
+      </div>
+    }
+  </div>
+
+</div>

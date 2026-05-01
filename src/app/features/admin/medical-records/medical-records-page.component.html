@@ -1,0 +1,75 @@
+<div class="page">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Historial Clínico</h1>
+      <p class="page-subtitle">Consulta el expediente clínico por ID de paciente</p>
+    </div>
+  </div>
+
+  <div class="search-panel">
+    <mat-form-field appearance="outline" class="id-field">
+      <mat-label>ID del paciente</mat-label>
+      <mat-icon matPrefix>badge</mat-icon>
+      <input matInput type="number" [formControl]="patientIdControl" placeholder="Ej: 42" (keydown.enter)="search()" />
+    </mat-form-field>
+    <button mat-flat-button color="primary" (click)="search()" [disabled]="!patientIdControl.value || loading()">
+      <mat-icon>search</mat-icon>
+      Buscar
+    </button>
+    @if (record() || error()) {
+      <button mat-icon-button matTooltip="Limpiar" (click)="clear()">
+        <mat-icon>close</mat-icon>
+      </button>
+    }
+  </div>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" class="progress" />
+  }
+
+  @if (error()) {
+    <div class="error-card">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ error() }}</span>
+    </div>
+  }
+
+  @if (record() && patient()) {
+    <div class="record-card">
+      <div class="record-header">
+        <div class="patient-chip">
+          <div class="patient-avatar">{{ patient()!.firstName[0] }}</div>
+          <div class="patient-info">
+            <span class="patient-name">{{ patient()!.firstName }} {{ patient()!.lastName }}</span>
+            <span class="patient-meta">ID {{ patient()!.id }}</span>
+          </div>
+        </div>
+        <span class="record-id">Expediente #{{ record()!.id }}</span>
+      </div>
+
+      <div class="record-body">
+        <div class="info-row">
+          <span class="info-label">ID Expediente</span>
+          <span class="info-value">{{ record()!.id }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">ID Paciente</span>
+          <span class="info-value">{{ record()!.patientId }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Email de contacto</span>
+          <span class="info-value">{{ patient()!.contactEmail ?? '—' }}</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (!loading() && !record() && !error()) {
+    <div class="placeholder">
+      <mat-icon>folder_open</mat-icon>
+      <p>Ingresa el ID del paciente para consultar su historial clínico</p>
+    </div>
+  }
+
+</div>

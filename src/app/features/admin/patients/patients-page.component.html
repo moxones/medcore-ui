@@ -1,0 +1,69 @@
+<div class="page">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Pacientes</h1>
+      <p class="page-subtitle">Directorio de pacientes registrados</p>
+    </div>
+  </div>
+
+  <div class="search-bar">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Buscar paciente</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput [formControl]="searchControl" placeholder="Nombre o documento..." />
+    </mat-form-field>
+  </div>
+
+  @if (store.loading()) {
+    <mat-progress-bar mode="indeterminate" class="progress" />
+  }
+
+  <div class="table-card">
+    <table mat-table [dataSource]="rows()">
+
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Nombre</th>
+        <td mat-cell *matCellDef="let row">
+          <div class="patient-name-cell">
+            <div class="patient-avatar">{{ row.firstName[0] }}</div>
+            <span>{{ fullName(row) }}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="email">
+        <th mat-header-cell *matHeaderCellDef>Email de contacto</th>
+        <td mat-cell *matCellDef="let row">
+          <span class="muted">{{ row.contactEmail ?? '—' }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let row" class="actions-cell">
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="data-row"></tr>
+
+    </table>
+
+    @if (!store.loading() && rows().length === 0) {
+      <div class="empty-state">
+        <mat-icon>people</mat-icon>
+        <span>No se encontraron pacientes</span>
+      </div>
+    }
+
+    <mat-paginator
+      [length]="totalElements()"
+      [pageSize]="pageSize()"
+      [pageIndex]="pageIndex()"
+      [pageSizeOptions]="[10, 15, 25, 50]"
+      (page)="onPage($event)"
+      showFirstLastButtons />
+  </div>
+
+</div>

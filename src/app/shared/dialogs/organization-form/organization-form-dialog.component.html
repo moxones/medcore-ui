@@ -1,0 +1,102 @@
+<div class="dialog-header">
+  <h2 mat-dialog-title>{{ isEdit ? 'Editar organización' : 'Nueva organización' }}</h2>
+  <button mat-icon-button (click)="cancel()">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="form-grid">
+
+    @if (isEdit) {
+      <div class="subdomain-display">
+        <span class="subdomain-label">Subdominio</span>
+        <span class="subdomain-value">{{ tenant?.subdomain }}</span>
+      </div>
+    } @else {
+      <mat-form-field appearance="outline">
+        <mat-label>Subdominio</mat-label>
+        <input matInput formControlName="subdomain" placeholder="Ej: clinica-san-jose" />
+        <mat-hint>Solo letras minúsculas, números y guiones</mat-hint>
+        @if (form.controls.subdomain.hasError('required')) {
+          <mat-error>El subdominio es requerido</mat-error>
+        }
+        @if (form.controls.subdomain.hasError('pattern')) {
+          <mat-error>Solo letras minúsculas, números y guiones</mat-error>
+        }
+      </mat-form-field>
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>Nombre de la organización</mat-label>
+      <input matInput formControlName="name" placeholder="Ej: Clínica San José" />
+      @if (form.controls.name.hasError('required')) {
+        <mat-error>El nombre es requerido</mat-error>
+      }
+      @if (form.controls.name.hasError('minlength')) {
+        <mat-error>Mínimo 2 caracteres</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Subtítulo</mat-label>
+      <input matInput formControlName="subtitle" placeholder="Ej: Especialistas en salud familiar" />
+      <mat-hint>Visible en la pantalla de inicio de sesión</mat-hint>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>URL del logotipo</mat-label>
+      <input matInput formControlName="logoUrl" placeholder="https://..." />
+    </mat-form-field>
+
+    <div class="color-section">
+      <span class="color-section-label">Color primario</span>
+      <div class="color-palette">
+        @for (color of colorPalette; track color) {
+          <button
+            type="button"
+            class="swatch"
+            [style.background]="color"
+            [class.selected]="isSelected(color)"
+            [matTooltip]="color"
+            (click)="selectColor(color)">
+            @if (isSelected(color)) {
+              <mat-icon [style.color]="swatchTextColor(color)">check</mat-icon>
+            }
+          </button>
+        }
+      </div>
+      <div class="color-input-row">
+        <span class="color-preview" [style.background]="colorPreview"></span>
+        <mat-form-field appearance="outline" class="color-field">
+          <input matInput formControlName="primaryColor" placeholder="#1E3A8A" />
+          @if (form.controls.primaryColor.hasError('pattern')) {
+            <mat-error>Formato HEX válido: #RRGGBB</mat-error>
+          }
+        </mat-form-field>
+      </div>
+    </div>
+
+    @if (isEdit) {
+      <mat-form-field appearance="outline">
+        <mat-label>Estado</mat-label>
+        <mat-select formControlName="status">
+          <mat-option value="ACTIVE">Activo</mat-option>
+          <mat-option value="INACTIVE">Inactivo</mat-option>
+        </mat-select>
+      </mat-form-field>
+    }
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="submit()" [disabled]="store.saving()">
+    @if (store.saving()) {
+      <mat-spinner diameter="18" />
+    } @else {
+      {{ isEdit ? 'Guardar cambios' : 'Crear organización' }}
+    }
+  </button>
+</mat-dialog-actions>

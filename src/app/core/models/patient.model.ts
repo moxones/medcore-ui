@@ -1,3 +1,6 @@
+import { ApiResponse } from './api-response.model';
+import { PagedResponse } from './pagination.model';
+
 export interface CreatePatientRequest {
   firstName: string;
   lastName: string;
@@ -19,3 +22,12 @@ export interface PatientResponse {
   lastName: string;
   contactEmail: string | null;
 }
+
+export interface PatientSearchParams {
+  query?: string;
+  page?: number;
+  size?: number;
+}
+
+export type PatientApiResponse = ApiResponse<PatientResponse>;
+export type PatientListApiResponse = ApiResponse<PagedResponse<PatientResponse>>;

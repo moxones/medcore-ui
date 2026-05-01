@@ -1,0 +1,85 @@
+<div class="dash">
+
+  <div class="dash-header">
+    <div>
+      <h1 class="greeting">Bienvenido a {{ tenantStore.tenant().name }}</h1>
+      <p class="sub">{{ tenantStore.tenant().subtitle }}</p>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <app-kpi-card
+      icon="calendar_today"
+      label="Citas hoy"
+      [value]="dashboardStore.summary()?.totalAppointmentsToday?.toString() ?? '—'"
+      [loading]="dashboardStore.loading()"
+      variant="blue" />
+
+    <app-kpi-card
+      icon="check_circle"
+      label="Completadas"
+      [value]="dashboardStore.summary()?.completedAppointmentsToday?.toString() ?? '—'"
+      [loading]="dashboardStore.loading()"
+      variant="green" />
+
+    <app-kpi-card
+      icon="cancel"
+      label="Canceladas"
+      [value]="dashboardStore.summary()?.cancelledAppointmentsToday?.toString() ?? '—'"
+      [loading]="dashboardStore.loading()"
+      variant="orange" />
+
+    <app-kpi-card
+      icon="payments"
+      label="Ingresos del mes"
+      [value]="formattedRevenue()"
+      [loading]="dashboardStore.loading()"
+      variant="purple" />
+
+    <app-kpi-card
+      icon="person_off"
+      label="Tasa de no-show"
+      [value]="noShowRate()"
+      [loading]="dashboardStore.loading()"
+      variant="red" />
+  </div>
+
+  <div class="section-row">
+    <div class="productivity-card">
+      <div class="card-header">
+        <span class="card-title">Productividad por médico</span>
+        <mat-icon class="card-icon">bar_chart</mat-icon>
+      </div>
+
+      @if (dashboardStore.loadingProductivity()) {
+        <mat-progress-bar mode="indeterminate" />
+      }
+
+      @if (!dashboardStore.loadingProductivity() && dashboardStore.productivity().length === 0) {
+        <div class="empty-state">
+          <mat-icon>analytics</mat-icon>
+          <span>Sin datos de productividad</span>
+        </div>
+      }
+
+      @if (dashboardStore.productivity().length > 0) {
+        <div class="prod-list">
+          @for (item of dashboardStore.productivity(); track item.doctorId; let i = $index) {
+            <div class="prod-row">
+              <span class="prod-rank">{{ i + 1 }}</span>
+              <span class="prod-name">{{ item.doctorName }}</span>
+              <span class="prod-count">{{ item.totalAppointments }}</span>
+              <div class="prod-bar-wrap">
+                <div
+                  class="prod-bar"
+                  [style.width.%]="(item.totalAppointments / dashboardStore.productivity()[0].totalAppointments) * 100">
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+</div>

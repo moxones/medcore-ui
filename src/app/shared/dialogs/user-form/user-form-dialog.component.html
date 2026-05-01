@@ -1,0 +1,127 @@
+<div class="dialog-header">
+  <h2 mat-dialog-title>{{ editMode ? 'Editar usuario' : 'Nuevo usuario' }}</h2>
+  <button mat-icon-button (click)="cancel()">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="form-grid">
+
+    <div class="form-section-label">Acceso</div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Email</mat-label>
+      <mat-icon matPrefix>email</mat-icon>
+      <input matInput formControlName="email" type="email" />
+      @if (form.controls.email.hasError('required')) {
+        <mat-error>El email es requerido</mat-error>
+      }
+      @if (form.controls.email.hasError('email')) {
+        <mat-error>Email inválido</mat-error>
+      }
+    </mat-form-field>
+
+    @if (!editMode) {
+      <mat-form-field appearance="outline">
+        <mat-label>Contraseña</mat-label>
+        <mat-icon matPrefix>lock</mat-icon>
+        <input matInput formControlName="password" type="password" />
+        @if (form.controls.password.hasError('required')) {
+          <mat-error>La contraseña es requerida</mat-error>
+        }
+        @if (form.controls.password.hasError('minlength')) {
+          <mat-error>Mínimo 6 caracteres</mat-error>
+        }
+      </mat-form-field>
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>Roles</mat-label>
+      <mat-select formControlName="roleIds" multiple>
+        @for (opt of roleOptions; track opt.value) {
+          <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+        }
+      </mat-select>
+      @if (form.controls.roleIds.hasError('required')) {
+        <mat-error>Selecciona al menos un rol</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="form-section-label">Datos personales</div>
+
+    <div class="two-col">
+      <mat-form-field appearance="outline">
+        <mat-label>Nombre</mat-label>
+        <input matInput formControlName="firstName" />
+        @if (form.controls.firstName.hasError('required')) {
+          <mat-error>Requerido</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Apellido</mat-label>
+        <input matInput formControlName="lastName" />
+        @if (form.controls.lastName.hasError('required')) {
+          <mat-error>Requerido</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <div class="two-col">
+      <mat-form-field appearance="outline">
+        <mat-label>Tipo de documento</mat-label>
+        <mat-select formControlName="documentTypeCode">
+          @for (opt of documentTypeOptions; track opt.value) {
+            <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Número de documento</mat-label>
+        <input matInput formControlName="documentNumber" />
+        @if (form.controls.documentNumber.hasError('required')) {
+          <mat-error>Requerido</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <div class="two-col">
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha de nacimiento</mat-label>
+        <input matInput type="date" formControlName="birthDate" />
+        @if (form.controls.birthDate.hasError('required')) {
+          <mat-error>Requerido</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Género</mat-label>
+        <mat-select formControlName="gender">
+          @for (opt of genderOptions; track opt.value) {
+            <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Teléfono</mat-label>
+      <mat-icon matPrefix>phone</mat-icon>
+      <input matInput formControlName="phone" type="tel" />
+    </mat-form-field>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="submit()" [disabled]="store.saving()">
+    @if (store.saving()) {
+      <mat-spinner diameter="18" />
+    } @else {
+      {{ editMode ? 'Guardar cambios' : 'Crear usuario' }}
+    }
+  </button>
+</mat-dialog-actions>
