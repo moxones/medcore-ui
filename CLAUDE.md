@@ -48,11 +48,11 @@ No linting script is configured — TypeScript strict mode acts as the primary s
 
 There are five role-based shells under `src/app/layout/shells/`:
 
-| Shell | Route prefix | Role |
+| Shell | Route prefix | Roles |
 |---|---|---|
-| `admin-shell` | `/admin` | ADMIN, SUPERADMIN |
-| `reception-shell` | `/reception` | USER |
-| `doctor-shell` | `/doctor` | (doctor role) |
+| `admin-shell` | `/admin` | SUPER_ADMIN, CLINIC_ADMIN |
+| `reception-shell` | `/reception` | ASSISTANT, RECEPTIONIST |
+| `doctor-shell` | `/doctor` | DOCTOR |
 | `patient-shell` | `/patient` | PATIENT |
 | `public-shell` | `/` | Unauthenticated |
 
@@ -69,14 +69,26 @@ The app is subdomain-driven. `TenantService.getSubdomain()` extracts the subdoma
 `AuthStore` is the single source of truth for authentication state. It stores `accessToken`, `refreshToken`, `roles[]`, and the full `UserMeResponse`. After a successful login the store calls `/auth/me`, resolves `primaryRole`, and navigates using `ROLE_REDIRECTS` from `role.model.ts`:
 
 ```
-ADMIN / SUPERADMIN  → /admin/dashboard
-USER                → /reception/dashboard
-PATIENT             → /patient/dashboard
+SUPER_ADMIN / CLINIC_ADMIN  → /admin/dashboard
+DOCTOR                      → /doctor/dashboard
+ASSISTANT / RECEPTIONIST    → /reception/dashboard
+PATIENT                     → /patient/dashboard
 ```
 
 Tokens are persisted to `localStorage` by `TokenService`. `authInterceptor` reads `access_token` from localStorage and injects `Authorization: Bearer ...` on every request (browser-only, SSR-safe).
 
-Roles are uppercase string literals: `'SUPERADMIN' | 'ADMIN' | 'USER' | 'PATIENT'`.
+**Roles — authoritative DB values** (never use any other code):
+
+| id | code | display name |
+|---|---|---|
+| 1 | `SUPER_ADMIN` | Super Admin |
+| 2 | `CLINIC_ADMIN` | Admin Clínica |
+| 3 | `DOCTOR` | Médico |
+| 4 | `ASSISTANT` | Asistente |
+| 5 | `RECEPTIONIST` | Recepcionista |
+| 6 | `PATIENT` | Paciente |
+
+The `Role` type in `role.model.ts` mirrors these codes exactly. `normalizeRole()` maps API strings to the `Role` type.
 
 ### State Management — NgRx Signals
 

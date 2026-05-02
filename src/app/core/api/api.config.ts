@@ -21,6 +21,10 @@ export const API_ROUTES = {
     base: `${API_BASE}/users`,
     byId: (id: number) => `${API_BASE}/users/${id}`,
     status: (id: number) => `${API_BASE}/users/${id}/status`,
+    roles: (id: number) => `${API_BASE}/users/${id}/roles`,
+  },
+  profile: {
+    password: `${API_BASE}/profile/password`,
   },
   tenant: {
     info: `${API_BASE}/public/tenant-info`,
@@ -48,6 +52,17 @@ export const API_ROUTES = {
   superAdminDashboard: {
     summary: `${API_BASE}/super-admin/dashboard/summary`,
     tenants: `${API_BASE}/super-admin/dashboard/tenants`,
+  },
+  superAdmin: {
+    users: `${API_BASE}/super-admin/users`,
+    userById: (id: number) => `${API_BASE}/super-admin/users/${id}`,
+    userPassword: (id: number) => `${API_BASE}/super-admin/users/${id}/password`,
+    catalogs: {
+      specialties: `${API_BASE}/super-admin/catalogs/specialties`,
+      specialtyById: (id: number) => `${API_BASE}/super-admin/catalogs/specialties/${id}`,
+      appointmentTypes: `${API_BASE}/super-admin/catalogs/appointment-types`,
+      appointmentTypeById: (id: number) => `${API_BASE}/super-admin/catalogs/appointment-types/${id}`,
+    },
   },
   triage: {
     base: `${API_BASE}/triage`,

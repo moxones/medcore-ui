@@ -1,4 +1,6 @@
 import { Routes } from '@angular/router';
+import { authGuard } from '@core/guards/auth.guard';
+import { roleGuard } from '@core/guards/role.guard';
 
 export const routes: Routes = [
   {
@@ -8,6 +10,8 @@ export const routes: Routes = [
   },
   {
     path: 'admin',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['SUPER_ADMIN', 'CLINIC_ADMIN'] },
     loadComponent: () =>
       import('./layout/shells/admin-shell/admin-shell.component').then(
         (m) => m.AdminShellComponent,
@@ -22,6 +26,8 @@ export const routes: Routes = [
       },
       {
         path: 'appointments',
+        canActivate: [roleGuard],
+        data: { roles: ['CLINIC_ADMIN', 'SUPER_ADMIN'] },
         loadComponent: () =>
           import('./features/admin/appointments/appointments-page.component').then(
             (m) => m.AppointmentsPageComponent,
@@ -29,6 +35,8 @@ export const routes: Routes = [
       },
       {
         path: 'patients',
+        canActivate: [roleGuard],
+        data: { roles: ['CLINIC_ADMIN', 'SUPER_ADMIN'] },
         loadComponent: () =>
           import('./features/admin/patients/patients-page.component').then(
             (m) => m.PatientsPageComponent,
@@ -36,6 +44,8 @@ export const routes: Routes = [
       },
       {
         path: 'medical-records',
+        canActivate: [roleGuard],
+        data: { roles: ['CLINIC_ADMIN', 'SUPER_ADMIN'] },
         loadComponent: () =>
           import('./features/admin/medical-records/medical-records-page.component').then(
             (m) => m.MedicalRecordsPageComponent,
@@ -43,6 +53,8 @@ export const routes: Routes = [
       },
       {
         path: 'doctors',
+        canActivate: [roleGuard],
+        data: { roles: ['CLINIC_ADMIN', 'SUPER_ADMIN'] },
         loadComponent: () =>
           import('./features/admin/doctors/doctors-page.component').then(
             (m) => m.DoctorsPageComponent,
@@ -71,6 +83,8 @@ export const routes: Routes = [
       },
       {
         path: 'organizations',
+        canActivate: [roleGuard],
+        data: { roles: ['SUPER_ADMIN'] },
         loadComponent: () =>
           import('./features/admin/organizations/organizations-page.component').then(
             (m) => m.OrganizationsPageComponent,
@@ -78,6 +92,8 @@ export const routes: Routes = [
       },
       {
         path: 'subscriptions',
+        canActivate: [roleGuard],
+        data: { roles: ['SUPER_ADMIN'] },
         loadComponent: () =>
           import('./features/admin/subscriptions/subscriptions-page.component').then(
             (m) => m.SubscriptionsPageComponent,
@@ -88,6 +104,8 @@ export const routes: Routes = [
   },
   {
     path: 'reception',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ASSISTANT', 'RECEPTIONIST'] },
     loadComponent: () =>
       import('./layout/shells/reception-shell/reception-shell.component').then(
         (m) => m.ReceptionShellComponent,
@@ -104,7 +122,28 @@ export const routes: Routes = [
     ],
   },
   {
+    path: 'doctor',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['DOCTOR'] },
+    loadComponent: () =>
+      import('./layout/shells/doctor-shell/doctor-shell.component').then(
+        (m) => m.DoctorShellComponent,
+      ),
+    children: [
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./features/doctor/dashboard/doctor-dashboard.component').then(
+            (m) => m.DoctorDashboardComponent,
+          ),
+      },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+    ],
+  },
+  {
     path: 'patient',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['PATIENT'] },
     loadComponent: () =>
       import('./layout/shells/patient-shell/patient-shell.component').then(
         (m) => m.PatientShellComponent,

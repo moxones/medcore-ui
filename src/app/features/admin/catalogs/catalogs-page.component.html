@@ -1,367 +1,454 @@
 <div class="page">
 
   <div class="page-header">
-    <div>
-      <h1 class="page-title">Catálogos</h1>
-      <p class="page-subtitle">Valores de referencia del sistema</p>
-    </div>
+    <h1 class="page-title">Catálogos</h1>
+    <p class="page-subtitle">Valores de referencia del sistema</p>
   </div>
 
-  <mat-tab-group animationDuration="200ms" class="catalog-tabs">
-
-    <!-- ESPECIALIDADES -->
-    <mat-tab label="Especialidades">
-      <div class="tab-content">
-        <div class="inline-form-card">
-          <h3 class="form-title">Agregar especialidad</h3>
-          <form [formGroup]="specialtyForm" class="inline-form">
-            <mat-form-field appearance="outline">
-              <mat-label>Nombre</mat-label>
-              <input matInput formControlName="name" placeholder="Ej: Cardiología" />
-              @if (specialtyForm.controls.name.hasError('required')) { <mat-error>Requerido</mat-error> }
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="code-field">
-              <mat-label>Código</mat-label>
-              <input matInput formControlName="code" placeholder="CARD" />
-              @if (specialtyForm.controls.code.hasError('required')) { <mat-error>Requerido</mat-error> }
-            </mat-form-field>
-            <button mat-flat-button color="primary" (click)="submitSpecialty()" [disabled]="store.saving()">
-              @if (store.saving()) {
-                <mat-spinner diameter="18" />
-              } @else {
-                <mat-icon>add</mat-icon>
-              }
-              Agregar
-            </button>
-          </form>
+  <div class="catalog-cards">
+    @for (card of visibleCards(); track card.key) {
+      <button
+        class="catalog-card"
+        [class.catalog-card--active]="activeSection() === card.key"
+        [style.--card-color]="card.color"
+        (click)="setActiveSection(card.key)">
+        <div class="card-top">
+          <div class="card-icon-wrap">
+            <mat-icon class="card-icon">{{ card.icon }}</mat-icon>
+          </div>
+          <mat-icon class="card-arrow">arrow_forward</mat-icon>
         </div>
-        @if (store.loadingSpecialties()) { <mat-progress-bar mode="indeterminate" class="progress" /> }
-        <div class="table-card">
-          <table mat-table [dataSource]="store.specialties()">
-            <ng-container matColumnDef="name">
-              <th mat-header-cell *matHeaderCellDef>Nombre</th>
-              <td mat-cell *matCellDef="let row">{{ row.name }}</td>
-            </ng-container>
-            <ng-container matColumnDef="code">
-              <th mat-header-cell *matHeaderCellDef>Código</th>
-              <td mat-cell *matCellDef="let row"><span class="code-badge">{{ row.code }}</span></td>
-            </ng-container>
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef></th>
-              <td mat-cell *matCellDef="let row" class="actions-cell">
-                <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="deleteSpecialty(row)">
-                  <mat-icon>delete</mat-icon>
+        <div class="card-count">{{ catalogCount(card.key) }}</div>
+        <div class="card-label">{{ card.label }}</div>
+      </button>
+    }
+  </div>
+
+  <div class="section-panel">
+
+    <div class="section-toolbar">
+      <div class="search-box">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input
+          class="search-input"
+          [placeholder]="'Buscar ' + activeSectionLabel().toLowerCase() + '...'"
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)" />
+      </div>
+
+      <div class="toolbar-right">
+        @if (showTenantSelector()) {
+          <div class="tenant-selector">
+            <mat-icon class="tenant-icon">business</mat-icon>
+            <mat-select
+              class="tenant-select"
+              placeholder="Seleccionar clínica"
+              [value]="store.selectedTenantId()"
+              [disabled]="orgStore.loading()"
+              (valueChange)="onTenantChange($event)">
+              @for (org of orgStore.items(); track org.id) {
+                <mat-option [value]="org.id">{{ org.name }}</mat-option>
+              }
+            </mat-select>
+          </div>
+        }
+        @if (canModifySection()) {
+          <button mat-flat-button color="primary" class="new-btn" (click)="toggleForm()">
+            + Nueva
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (isLoading(activeSection())) {
+      <mat-progress-bar mode="indeterminate" class="section-progress" />
+    }
+
+    @if (showReadOnlyBanner()) {
+      <div class="info-banner">
+        <mat-icon>info</mat-icon>
+        <span>Este es un catálogo global. Solo el Super Admin puede realizar modificaciones. Si necesitas un cambio, contáctalo.</span>
+      </div>
+    }
+
+    @if (needsTenantSelection()) {
+      <div class="tenant-prompt">
+        <mat-icon>business</mat-icon>
+        <span>Selecciona una clínica para ver y gestionar este catálogo</span>
+      </div>
+    } @else {
+
+      @if (showForm()) {
+        <div class="inline-form-card">
+          <h3 class="form-title">Agregar {{ activeSectionLabel() }}</h3>
+
+          @switch (activeSection()) {
+
+            @case ('specialties') {
+              <form [formGroup]="specialtyForm" class="inline-form">
+                <mat-form-field appearance="outline">
+                  <mat-label>Nombre</mat-label>
+                  <input matInput formControlName="name" placeholder="Ej: Cardiología" />
+                  @if (specialtyForm.controls.name.hasError('required')) {
+                    <mat-error>Requerido</mat-error>
+                  }
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="code-field">
+                  <mat-label>Código</mat-label>
+                  <input matInput formControlName="code" placeholder="CARD" />
+                  @if (specialtyForm.controls.code.hasError('required')) {
+                    <mat-error>Requerido</mat-error>
+                  }
+                </mat-form-field>
+                <button mat-flat-button color="primary" class="form-btn" (click)="submitSpecialty()" [disabled]="store.saving()">
+                  @if (store.saving()) { <mat-spinner diameter="18" /> } @else { Agregar }
                 </button>
-              </td>
-            </ng-container>
-            <tr mat-header-row *matHeaderRowDef="specialtyColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: specialtyColumns;" class="data-row"></tr>
-          </table>
-          @if (!store.loadingSpecialties() && store.specialties().length === 0) {
-            <div class="empty-state"><mat-icon>category</mat-icon><span>Sin especialidades</span></div>
+              </form>
+            }
+
+            @case ('appointmentTypes') {
+              <form [formGroup]="appointmentTypeForm" class="inline-form">
+                <mat-form-field appearance="outline">
+                  <mat-label>Nombre</mat-label>
+                  <input matInput formControlName="name" placeholder="Consulta General" />
+                  @if (appointmentTypeForm.controls.name.hasError('required')) {
+                    <mat-error>Requerido</mat-error>
+                  }
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="code-field">
+                  <mat-label>Código</mat-label>
+                  <input matInput formControlName="code" placeholder="CONSULTATION" />
+                  @if (appointmentTypeForm.controls.code.hasError('required')) {
+                    <mat-error>Requerido</mat-error>
+                  }
+                </mat-form-field>
+                <button mat-flat-button color="primary" class="form-btn" (click)="submitAppointmentType()" [disabled]="store.saving()">
+                  @if (store.saving()) { <mat-spinner diameter="18" /> } @else { Agregar }
+                </button>
+              </form>
+            }
+
+            @case ('plans') {
+              <form [formGroup]="planForm" class="inline-form plan-form">
+                <mat-form-field appearance="outline">
+                  <mat-label>Nombre</mat-label>
+                  <input matInput formControlName="name" placeholder="Plan Básico" />
+                  @if (planForm.controls.name.hasError('required')) {
+                    <mat-error>Requerido</mat-error>
+                  }
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="code-field">
+                  <mat-label>Código</mat-label>
+                  <input matInput formControlName="code" placeholder="BASIC" />
+                  @if (planForm.controls.code.hasError('required')) {
+                    <mat-error>Requerido</mat-error>
+                  }
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="num-field">
+                  <mat-label>Precio (S/.)</mat-label>
+                  <input matInput type="number" formControlName="price" min="0" />
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="num-field">
+                  <mat-label>Máx. usuarios</mat-label>
+                  <input matInput type="number" formControlName="maxUsers" min="1" />
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="num-field">
+                  <mat-label>Máx. sedes</mat-label>
+                  <input matInput type="number" formControlName="maxBranches" min="1" />
+                </mat-form-field>
+                <button mat-flat-button color="primary" class="form-btn" (click)="submitPlan()" [disabled]="store.saving()">
+                  @if (store.saving()) { <mat-spinner diameter="18" /> } @else { Agregar }
+                </button>
+              </form>
+            }
+
+            @default {
+              <form [formGroup]="simpleForm" class="inline-form">
+                <mat-form-field appearance="outline">
+                  <mat-label>Nombre</mat-label>
+                  <input matInput formControlName="name" />
+                  @if (simpleForm.controls.name.hasError('required')) {
+                    <mat-error>Requerido</mat-error>
+                  }
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="code-field">
+                  <mat-label>Código</mat-label>
+                  <input matInput formControlName="code" />
+                  @if (simpleForm.controls.code.hasError('required')) {
+                    <mat-error>Requerido</mat-error>
+                  }
+                </mat-form-field>
+                <button mat-flat-button color="primary" class="form-btn" (click)="submitSimple()" [disabled]="store.saving()">
+                  @if (store.saving()) { <mat-spinner diameter="18" /> } @else { Agregar }
+                </button>
+              </form>
+            }
+
           }
         </div>
-      </div>
-    </mat-tab>
+      }
 
-    <!-- PLANES -->
-    <mat-tab label="Planes">
-      <div class="tab-content">
-        <div class="inline-form-card">
-          <h3 class="form-title">Agregar plan</h3>
-          <form [formGroup]="planForm" class="inline-form plan-form">
-            <mat-form-field appearance="outline">
-              <mat-label>Nombre</mat-label>
-              <input matInput formControlName="name" placeholder="Plan Básico" />
-              @if (planForm.controls.name.hasError('required')) { <mat-error>Requerido</mat-error> }
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="code-field">
-              <mat-label>Código</mat-label>
-              <input matInput formControlName="code" placeholder="BASIC" />
-              @if (planForm.controls.code.hasError('required')) { <mat-error>Requerido</mat-error> }
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="num-field">
-              <mat-label>Precio (S/.)</mat-label>
-              <input matInput type="number" formControlName="price" min="0" />
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="num-field">
-              <mat-label>Máx. usuarios</mat-label>
-              <input matInput type="number" formControlName="maxUsers" min="1" />
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="num-field">
-              <mat-label>Máx. sedes</mat-label>
-              <input matInput type="number" formControlName="maxBranches" min="1" />
-            </mat-form-field>
-            <button mat-flat-button color="primary" (click)="submitPlan()" [disabled]="store.saving()">
-              @if (store.saving()) {
-                <mat-spinner diameter="18" />
-              } @else {
-                <mat-icon>add</mat-icon>
-              }
-              Agregar
-            </button>
-          </form>
-        </div>
-        @if (store.loadingPlans()) { <mat-progress-bar mode="indeterminate" class="progress" /> }
-        <div class="table-card">
-          <table mat-table [dataSource]="store.plans()">
-            <ng-container matColumnDef="name">
-              <th mat-header-cell *matHeaderCellDef>Nombre</th>
-              <td mat-cell *matCellDef="let row">{{ row.name }}</td>
-            </ng-container>
-            <ng-container matColumnDef="code">
-              <th mat-header-cell *matHeaderCellDef>Código</th>
-              <td mat-cell *matCellDef="let row"><span class="code-badge">{{ row.code }}</span></td>
-            </ng-container>
-            <ng-container matColumnDef="price">
-              <th mat-header-cell *matHeaderCellDef>Precio</th>
-              <td mat-cell *matCellDef="let row"><span class="price-value">{{ formatPrice(row.price) }}</span></td>
-            </ng-container>
-            <ng-container matColumnDef="limits">
-              <th mat-header-cell *matHeaderCellDef>Límites</th>
-              <td mat-cell *matCellDef="let row">
-                <span class="limit-badge">{{ row.maxUsers }} usu.</span>
-                <span class="limit-badge">{{ row.maxBranches }} sedes</span>
-              </td>
-            </ng-container>
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef></th>
-              <td mat-cell *matCellDef="let row" class="actions-cell">
-                <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="deletePlan(row)">
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </td>
-            </ng-container>
-            <tr mat-header-row *matHeaderRowDef="planColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: planColumns;" class="data-row"></tr>
-          </table>
-          @if (!store.loadingPlans() && store.plans().length === 0) {
-            <div class="empty-state"><mat-icon>local_offer</mat-icon><span>Sin planes</span></div>
+      <div class="table-card">
+
+        @switch (activeSection()) {
+
+          @case ('specialties') {
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Código</th>
+                  <th>Doctores</th>
+                  <th>Estado</th>
+                  <th>Modificada</th>
+                  @if (canModifySection()) { <th></th> }
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of filteredSpecialties(); track item.id; let i = $index) {
+                  <tr>
+                    <td>
+                      <div class="name-cell">
+                        <span class="color-dot" [style.background-color]="dotColor(i)"></span>
+                        {{ item.name }}
+                      </div>
+                    </td>
+                    <td><span class="code-badge">{{ item.code }}</span></td>
+                    <td class="num-col">{{ item.doctorCount ?? '—' }}</td>
+                    <td>
+                      <span class="status-badge status-badge--active">
+                        <span class="status-dot"></span>Activo
+                      </span>
+                    </td>
+                    <td>
+                      <div class="modified-cell">
+                        <span class="modified-time">{{ formatModified(item.updatedAt) }}</span>
+                        <span class="modified-by">{{ modifierName(item) }}</span>
+                      </div>
+                    </td>
+                    @if (canModifySection()) {
+                      <td class="actions-cell">
+                        <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="deleteSpecialty(item)">
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+            @if (!store.loadingSpecialties() && filteredSpecialties().length === 0) {
+              <div class="empty-state"><mat-icon>healing</mat-icon><span>Sin especialidades</span></div>
+            }
           }
-        </div>
-      </div>
-    </mat-tab>
 
-    <!-- TIPOS DE DOCUMENTO -->
-    <mat-tab label="Tipos de Documento">
-      <div class="tab-content">
-        <div class="inline-form-card">
-          <h3 class="form-title">Agregar tipo de documento</h3>
-          <form [formGroup]="documentTypeForm" class="inline-form">
-            <mat-form-field appearance="outline">
-              <mat-label>Nombre</mat-label>
-              <input matInput formControlName="name" placeholder="Documento Nacional de Identidad" />
-              @if (documentTypeForm.controls.name.hasError('required')) { <mat-error>Requerido</mat-error> }
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="code-field">
-              <mat-label>Código</mat-label>
-              <input matInput formControlName="code" placeholder="DNI" />
-              @if (documentTypeForm.controls.code.hasError('required')) { <mat-error>Requerido</mat-error> }
-            </mat-form-field>
-            <button mat-flat-button color="primary" (click)="submitDocumentType()" [disabled]="store.saving()">
-              @if (store.saving()) {
-                <mat-spinner diameter="18" />
-              } @else {
-                <mat-icon>add</mat-icon>
-              }
-              Agregar
-            </button>
-          </form>
-        </div>
-        @if (store.loadingDocumentTypes()) { <mat-progress-bar mode="indeterminate" class="progress" /> }
-        <div class="table-card">
-          <table mat-table [dataSource]="store.documentTypes()">
-            <ng-container matColumnDef="name">
-              <th mat-header-cell *matHeaderCellDef>Nombre</th>
-              <td mat-cell *matCellDef="let row">{{ row.name }}</td>
-            </ng-container>
-            <ng-container matColumnDef="code">
-              <th mat-header-cell *matHeaderCellDef>Código</th>
-              <td mat-cell *matCellDef="let row"><span class="code-badge">{{ row.code }}</span></td>
-            </ng-container>
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef></th>
-              <td mat-cell *matCellDef="let row" class="actions-cell">
-                <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="deleteDocumentType(row)">
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </td>
-            </ng-container>
-            <tr mat-header-row *matHeaderRowDef="simpleColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: simpleColumns;" class="data-row"></tr>
-          </table>
-          @if (!store.loadingDocumentTypes() && store.documentTypes().length === 0) {
-            <div class="empty-state"><mat-icon>badge</mat-icon><span>Sin tipos de documento</span></div>
+          @case ('plans') {
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Código</th>
+                  <th>Precio</th>
+                  <th>Límites</th>
+                  <th>Modificada</th>
+                  @if (canModifySection()) { <th></th> }
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of filteredPlans(); track item.id) {
+                  <tr>
+                    <td>{{ item.name }}</td>
+                    <td><span class="code-badge">{{ item.code }}</span></td>
+                    <td><span class="price-value">{{ formatPrice(item.price) }}</span></td>
+                    <td>
+                      <span class="limit-badge">{{ item.maxUsers }} usu.</span>
+                      <span class="limit-badge">{{ item.maxBranches }} sedes</span>
+                    </td>
+                    <td>
+                      <div class="modified-cell">
+                        <span class="modified-time">{{ formatModified(item.updatedAt) }}</span>
+                        <span class="modified-by">{{ modifierName(item) }}</span>
+                      </div>
+                    </td>
+                    @if (canModifySection()) {
+                      <td class="actions-cell">
+                        <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="deletePlan(item)">
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+            @if (!store.loadingPlans() && filteredPlans().length === 0) {
+              <div class="empty-state"><mat-icon>local_offer</mat-icon><span>Sin planes</span></div>
+            }
           }
-        </div>
-      </div>
-    </mat-tab>
 
-    <!-- ESTADOS DE SUSCRIPCIÓN -->
-    <mat-tab label="Est. Suscripción">
-      <div class="tab-content">
-        <div class="inline-form-card">
-          <h3 class="form-title">Agregar estado de suscripción</h3>
-          <form [formGroup]="subscriptionStatusForm" class="inline-form">
-            <mat-form-field appearance="outline">
-              <mat-label>Nombre</mat-label>
-              <input matInput formControlName="name" placeholder="Activo" />
-              @if (subscriptionStatusForm.controls.name.hasError('required')) { <mat-error>Requerido</mat-error> }
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="code-field">
-              <mat-label>Código</mat-label>
-              <input matInput formControlName="code" placeholder="ACTIVE" />
-              @if (subscriptionStatusForm.controls.code.hasError('required')) { <mat-error>Requerido</mat-error> }
-            </mat-form-field>
-            <button mat-flat-button color="primary" (click)="submitSubscriptionStatus()" [disabled]="store.saving()">
-              @if (store.saving()) {
-                <mat-spinner diameter="18" />
-              } @else {
-                <mat-icon>add</mat-icon>
-              }
-              Agregar
-            </button>
-          </form>
-        </div>
-        @if (store.loadingSubscriptionStatuses()) { <mat-progress-bar mode="indeterminate" class="progress" /> }
-        <div class="table-card">
-          <table mat-table [dataSource]="store.subscriptionStatuses()">
-            <ng-container matColumnDef="name">
-              <th mat-header-cell *matHeaderCellDef>Nombre</th>
-              <td mat-cell *matCellDef="let row">{{ row.name }}</td>
-            </ng-container>
-            <ng-container matColumnDef="code">
-              <th mat-header-cell *matHeaderCellDef>Código</th>
-              <td mat-cell *matCellDef="let row"><span class="code-badge">{{ row.code }}</span></td>
-            </ng-container>
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef></th>
-              <td mat-cell *matCellDef="let row" class="actions-cell">
-                <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="deleteSubscriptionStatus(row)">
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </td>
-            </ng-container>
-            <tr mat-header-row *matHeaderRowDef="simpleColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: simpleColumns;" class="data-row"></tr>
-          </table>
-          @if (!store.loadingSubscriptionStatuses() && store.subscriptionStatuses().length === 0) {
-            <div class="empty-state"><mat-icon>subscriptions</mat-icon><span>Sin estados</span></div>
+          @case ('documentTypes') {
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Código</th>
+                  <th>Modificada</th>
+                  @if (canModifySection()) { <th></th> }
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of filteredDocumentTypes(); track item.id) {
+                  <tr>
+                    <td>{{ item.name }}</td>
+                    <td><span class="code-badge">{{ item.code }}</span></td>
+                    <td>
+                      <div class="modified-cell">
+                        <span class="modified-time">{{ formatModified(item.updatedAt) }}</span>
+                        <span class="modified-by">{{ modifierName(item) }}</span>
+                      </div>
+                    </td>
+                    @if (canModifySection()) {
+                      <td class="actions-cell">
+                        <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="deleteDocumentType(item)">
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+            @if (!store.loadingDocumentTypes() && filteredDocumentTypes().length === 0) {
+              <div class="empty-state"><mat-icon>badge</mat-icon><span>Sin tipos de documento</span></div>
+            }
           }
-        </div>
-      </div>
-    </mat-tab>
 
-    <!-- ESTADOS DE CITA -->
-    <mat-tab label="Est. de Cita">
-      <div class="tab-content">
-        <div class="inline-form-card">
-          <h3 class="form-title">Agregar estado de cita</h3>
-          <form [formGroup]="appointmentStatusForm" class="inline-form">
-            <mat-form-field appearance="outline">
-              <mat-label>Nombre</mat-label>
-              <input matInput formControlName="name" placeholder="Programada" />
-              @if (appointmentStatusForm.controls.name.hasError('required')) { <mat-error>Requerido</mat-error> }
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="code-field">
-              <mat-label>Código</mat-label>
-              <input matInput formControlName="code" placeholder="SCHEDULED" />
-              @if (appointmentStatusForm.controls.code.hasError('required')) { <mat-error>Requerido</mat-error> }
-            </mat-form-field>
-            <button mat-flat-button color="primary" (click)="submitAppointmentStatus()" [disabled]="store.saving()">
-              @if (store.saving()) {
-                <mat-spinner diameter="18" />
-              } @else {
-                <mat-icon>add</mat-icon>
-              }
-              Agregar
-            </button>
-          </form>
-        </div>
-        @if (store.loadingAppointmentStatuses()) { <mat-progress-bar mode="indeterminate" class="progress" /> }
-        <div class="table-card">
-          <table mat-table [dataSource]="store.appointmentStatuses()">
-            <ng-container matColumnDef="name">
-              <th mat-header-cell *matHeaderCellDef>Nombre</th>
-              <td mat-cell *matCellDef="let row">{{ row.name }}</td>
-            </ng-container>
-            <ng-container matColumnDef="code">
-              <th mat-header-cell *matHeaderCellDef>Código</th>
-              <td mat-cell *matCellDef="let row"><span class="code-badge">{{ row.code }}</span></td>
-            </ng-container>
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef></th>
-              <td mat-cell *matCellDef="let row" class="actions-cell">
-                <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="deleteAppointmentStatus(row)">
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </td>
-            </ng-container>
-            <tr mat-header-row *matHeaderRowDef="simpleColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: simpleColumns;" class="data-row"></tr>
-          </table>
-          @if (!store.loadingAppointmentStatuses() && store.appointmentStatuses().length === 0) {
-            <div class="empty-state"><mat-icon>event_available</mat-icon><span>Sin estados</span></div>
+          @case ('subscriptionStatuses') {
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Código</th>
+                  <th>Modificada</th>
+                  @if (canModifySection()) { <th></th> }
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of filteredSubscriptionStatuses(); track item.id) {
+                  <tr>
+                    <td>{{ item.name }}</td>
+                    <td><span class="code-badge">{{ item.code }}</span></td>
+                    <td>
+                      <div class="modified-cell">
+                        <span class="modified-time">{{ formatModified(item.updatedAt) }}</span>
+                        <span class="modified-by">{{ modifierName(item) }}</span>
+                      </div>
+                    </td>
+                    @if (canModifySection()) {
+                      <td class="actions-cell">
+                        <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="deleteSubscriptionStatus(item)">
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+            @if (!store.loadingSubscriptionStatuses() && filteredSubscriptionStatuses().length === 0) {
+              <div class="empty-state"><mat-icon>subscriptions</mat-icon><span>Sin estados</span></div>
+            }
           }
-        </div>
-      </div>
-    </mat-tab>
 
-    <!-- TIPOS DE CITA -->
-    <mat-tab label="Tipos de Cita">
-      <div class="tab-content">
-        <div class="inline-form-card">
-          <h3 class="form-title">Agregar tipo de cita</h3>
-          <form [formGroup]="appointmentTypeForm" class="inline-form">
-            <mat-form-field appearance="outline">
-              <mat-label>Nombre</mat-label>
-              <input matInput formControlName="name" placeholder="Consulta General" />
-              @if (appointmentTypeForm.controls.name.hasError('required')) { <mat-error>Requerido</mat-error> }
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="code-field">
-              <mat-label>Código</mat-label>
-              <input matInput formControlName="code" placeholder="CONSULTATION" />
-              @if (appointmentTypeForm.controls.code.hasError('required')) { <mat-error>Requerido</mat-error> }
-            </mat-form-field>
-            <button mat-flat-button color="primary" (click)="submitAppointmentType()" [disabled]="store.saving()">
-              @if (store.saving()) {
-                <mat-spinner diameter="18" />
-              } @else {
-                <mat-icon>add</mat-icon>
-              }
-              Agregar
-            </button>
-          </form>
-        </div>
-        @if (store.loadingAppointmentTypes()) { <mat-progress-bar mode="indeterminate" class="progress" /> }
-        <div class="table-card">
-          <table mat-table [dataSource]="store.appointmentTypes()">
-            <ng-container matColumnDef="name">
-              <th mat-header-cell *matHeaderCellDef>Nombre</th>
-              <td mat-cell *matCellDef="let row">{{ row.name }}</td>
-            </ng-container>
-            <ng-container matColumnDef="code">
-              <th mat-header-cell *matHeaderCellDef>Código</th>
-              <td mat-cell *matCellDef="let row"><span class="code-badge">{{ row.code }}</span></td>
-            </ng-container>
-            <ng-container matColumnDef="actions">
-              <th mat-header-cell *matHeaderCellDef></th>
-              <td mat-cell *matCellDef="let row" class="actions-cell">
-                <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="deleteAppointmentType(row)">
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </td>
-            </ng-container>
-            <tr mat-header-row *matHeaderRowDef="simpleColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: simpleColumns;" class="data-row"></tr>
-          </table>
-          @if (!store.loadingAppointmentTypes() && store.appointmentTypes().length === 0) {
-            <div class="empty-state"><mat-icon>medical_services</mat-icon><span>Sin tipos de cita</span></div>
+          @case ('appointmentStatuses') {
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Código</th>
+                  <th>Modificada</th>
+                  @if (canModifySection()) { <th></th> }
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of filteredAppointmentStatuses(); track item.id) {
+                  <tr>
+                    <td>{{ item.name }}</td>
+                    <td><span class="code-badge">{{ item.code }}</span></td>
+                    <td>
+                      <div class="modified-cell">
+                        <span class="modified-time">{{ formatModified(item.updatedAt) }}</span>
+                        <span class="modified-by">{{ modifierName(item) }}</span>
+                      </div>
+                    </td>
+                    @if (canModifySection()) {
+                      <td class="actions-cell">
+                        <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="deleteAppointmentStatus(item)">
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+            @if (!store.loadingAppointmentStatuses() && filteredAppointmentStatuses().length === 0) {
+              <div class="empty-state"><mat-icon>event_available</mat-icon><span>Sin estados</span></div>
+            }
           }
-        </div>
-      </div>
-    </mat-tab>
 
-  </mat-tab-group>
+          @case ('appointmentTypes') {
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Código</th>
+                  <th>Estado</th>
+                  <th>Modificada</th>
+                  @if (canModifySection()) { <th></th> }
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of filteredAppointmentTypes(); track item.id; let i = $index) {
+                  <tr>
+                    <td>
+                      <div class="name-cell">
+                        <span class="color-dot" [style.background-color]="dotColor(i)"></span>
+                        {{ item.name }}
+                      </div>
+                    </td>
+                    <td><span class="code-badge">{{ item.code }}</span></td>
+                    <td>
+                      <span class="status-badge status-badge--active">
+                        <span class="status-dot"></span>Activo
+                      </span>
+                    </td>
+                    <td>
+                      <div class="modified-cell">
+                        <span class="modified-time">{{ formatModified(item.updatedAt) }}</span>
+                        <span class="modified-by">{{ modifierName(item) }}</span>
+                      </div>
+                    </td>
+                    @if (canModifySection()) {
+                      <td class="actions-cell">
+                        <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="deleteAppointmentType(item)">
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+            @if (!store.loadingAppointmentTypes() && filteredAppointmentTypes().length === 0) {
+              <div class="empty-state"><mat-icon>calendar_today</mat-icon><span>Sin tipos de cita</span></div>
+            }
+          }
+
+        }
+      </div>
+    }
+
+  </div>
 
 </div>

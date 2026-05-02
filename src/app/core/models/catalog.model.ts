@@ -4,6 +4,11 @@ export interface CatalogItemResponse {
   id: number;
   code: string;
   name: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdById?: number | null;
+  updatedById?: number | null;
+  updatedByName?: string | null;
 }
 
 export interface CreateCatalogItemRequest {
@@ -11,8 +16,18 @@ export interface CreateCatalogItemRequest {
   name: string;
 }
 
-export interface SpecialtyResponse extends CatalogItemResponse {}
+export interface SpecialtyResponse extends CatalogItemResponse {
+  tenantId?: number;
+  isActive?: boolean;
+  doctorCount?: number;
+}
+
 export interface CreateSpecialtyRequest extends CreateCatalogItemRequest {}
+
+export interface AppointmentTypeResponse extends CatalogItemResponse {
+  tenantId?: number;
+  isActive?: boolean;
+}
 
 export interface PlanResponse {
   id: number;
@@ -22,6 +37,11 @@ export interface PlanResponse {
   maxUsers: number;
   maxBranches: number;
   isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  createdById?: number | null;
+  updatedById?: number | null;
+  updatedByName?: string | null;
 }
 
 export interface CreatePlanRequest {
@@ -34,6 +54,8 @@ export interface CreatePlanRequest {
 
 export type SpecialtyApiResponse = ApiResponse<SpecialtyResponse>;
 export type SpecialtyListApiResponse = ApiResponse<SpecialtyResponse[]>;
+export type AppointmentTypeApiResponse = ApiResponse<AppointmentTypeResponse>;
+export type AppointmentTypeListApiResponse = ApiResponse<AppointmentTypeResponse[]>;
 export type PlanApiResponse = ApiResponse<PlanResponse>;
 export type PlanListApiResponse = ApiResponse<PlanResponse[]>;
 export type CatalogItemApiResponse = ApiResponse<CatalogItemResponse>;

@@ -2,7 +2,9 @@ import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
 import { inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { CatalogService } from '../services/catalog.service';
+import { AuthStore } from '../auth/auth.store';
 import {
+  AppointmentTypeResponse,
   CatalogItemResponse,
   CreateCatalogItemRequest,
   CreatePlanRequest,
@@ -17,7 +19,7 @@ interface CatalogState {
   documentTypes: CatalogItemResponse[];
   subscriptionStatuses: CatalogItemResponse[];
   appointmentStatuses: CatalogItemResponse[];
-  appointmentTypes: CatalogItemResponse[];
+  appointmentTypes: AppointmentTypeResponse[];
   loadingSpecialties: boolean;
   loadingPlans: boolean;
   loadingDocumentTypes: boolean;
@@ -25,6 +27,7 @@ interface CatalogState {
   loadingAppointmentStatuses: boolean;
   loadingAppointmentTypes: boolean;
   saving: boolean;
+  selectedTenantId: number | null;
 }
 
 export const CatalogStore = signalStore(
@@ -43,12 +46,23 @@ export const CatalogStore = signalStore(
     loadingAppointmentStatuses: false,
     loadingAppointmentTypes: false,
     saving: false,
+    selectedTenantId: null,
   }),
-  withMethods((store, service = inject(CatalogService)) => ({
+  withMethods((store, service = inject(CatalogService), authStore = inject(AuthStore)) => ({
+    setSelectedTenantId(id: number | null): void {
+      patchState(store, { selectedTenantId: id });
+    },
+
     async loadSpecialties(): Promise<void> {
+      if (authStore.isSuperAdmin() && store.selectedTenantId() === null) {
+        patchState(store, { specialties: [] });
+        return;
+      }
       patchState(store, { loadingSpecialties: true });
       try {
-        const res = await firstValueFrom(service.getSpecialties());
+        const res = authStore.isSuperAdmin()
+          ? await firstValueFrom(service.getSuperAdminSpecialties(store.selectedTenantId()!))
+          : await firstValueFrom(service.getSpecialties());
         patchState(store, { specialties: res.data, loadingSpecialties: false });
       } catch {
         patchState(store, { loadingSpecialties: false });
@@ -58,9 +72,17 @@ export const CatalogStore = signalStore(
     async createSpecialty(body: CreateSpecialtyRequest): Promise<boolean> {
       patchState(store, { saving: true });
       try {
-        await firstValueFrom(service.createSpecialty(body));
-        const res = await firstValueFrom(service.getSpecialties());
-        patchState(store, { specialties: res.data, saving: false });
+        if (authStore.isSuperAdmin()) {
+          const tenantId = store.selectedTenantId();
+          if (tenantId === null) { patchState(store, { saving: false }); return false; }
+          await firstValueFrom(service.createSuperAdminSpecialty(body, tenantId));
+          const res = await firstValueFrom(service.getSuperAdminSpecialties(tenantId));
+          patchState(store, { specialties: res.data, saving: false });
+        } else {
+          await firstValueFrom(service.createSpecialty(body));
+          const res = await firstValueFrom(service.getSpecialties());
+          patchState(store, { specialties: res.data, saving: false });
+        }
         return true;
       } catch {
         patchState(store, { saving: false });
@@ -71,7 +93,11 @@ export const CatalogStore = signalStore(
     async deleteSpecialty(id: number): Promise<boolean> {
       patchState(store, { saving: true });
       try {
-        await firstValueFrom(service.deleteSpecialty(id));
+        if (authStore.isSuperAdmin()) {
+          await firstValueFrom(service.deleteSuperAdminSpecialty(id));
+        } else {
+          await firstValueFrom(service.deleteSpecialty(id));
+        }
         patchState(store, { specialties: store.specialties().filter((s) => s.id !== id), saving: false });
         return true;
       } catch {
@@ -221,9 +247,15 @@ export const CatalogStore = signalStore(
     },
 
     async loadAppointmentTypes(): Promise<void> {
+      if (authStore.isSuperAdmin() && store.selectedTenantId() === null) {
+        patchState(store, { appointmentTypes: [] });
+        return;
+      }
       patchState(store, { loadingAppointmentTypes: true });
       try {
-        const res = await firstValueFrom(service.getAppointmentTypes());
+        const res = authStore.isSuperAdmin()
+          ? await firstValueFrom(service.getSuperAdminAppointmentTypes(store.selectedTenantId()!))
+          : await firstValueFrom(service.getAppointmentTypes());
         patchState(store, { appointmentTypes: res.data, loadingAppointmentTypes: false });
       } catch {
         patchState(store, { loadingAppointmentTypes: false });
@@ -233,9 +265,17 @@ export const CatalogStore = signalStore(
     async createAppointmentType(body: CreateCatalogItemRequest): Promise<boolean> {
       patchState(store, { saving: true });
       try {
-        await firstValueFrom(service.createAppointmentType(body));
-        const res = await firstValueFrom(service.getAppointmentTypes());
-        patchState(store, { appointmentTypes: res.data, saving: false });
+        if (authStore.isSuperAdmin()) {
+          const tenantId = store.selectedTenantId();
+          if (tenantId === null) { patchState(store, { saving: false }); return false; }
+          await firstValueFrom(service.createSuperAdminAppointmentType(body, tenantId));
+          const res = await firstValueFrom(service.getSuperAdminAppointmentTypes(tenantId));
+          patchState(store, { appointmentTypes: res.data, saving: false });
+        } else {
+          await firstValueFrom(service.createAppointmentType(body));
+          const res = await firstValueFrom(service.getAppointmentTypes());
+          patchState(store, { appointmentTypes: res.data, saving: false });
+        }
         return true;
       } catch {
         patchState(store, { saving: false });
@@ -246,7 +286,11 @@ export const CatalogStore = signalStore(
     async deleteAppointmentType(id: number): Promise<boolean> {
       patchState(store, { saving: true });
       try {
-        await firstValueFrom(service.deleteAppointmentType(id));
+        if (authStore.isSuperAdmin()) {
+          await firstValueFrom(service.deleteSuperAdminAppointmentType(id));
+        } else {
+          await firstValueFrom(service.deleteAppointmentType(id));
+        }
         patchState(store, { appointmentTypes: store.appointmentTypes().filter((t) => t.id !== id), saving: false });
         return true;
       } catch {

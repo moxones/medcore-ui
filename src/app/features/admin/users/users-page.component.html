@@ -5,7 +5,7 @@
       <h1 class="page-title">Usuarios</h1>
       <p class="page-subtitle">Gestión de cuentas y control de accesos</p>
     </div>
-    <button mat-flat-button color="primary" (click)="openCreate()">
+    <button class="new-btn" (click)="openCreate()">
       <mat-icon>person_add</mat-icon>
       Nuevo usuario
     </button>
@@ -15,71 +15,178 @@
     <mat-progress-bar mode="indeterminate" class="progress" />
   }
 
-  <div class="table-card">
-    <table mat-table [dataSource]="rows()">
+  <app-alert-banner [message]="pageError()" />
 
-      <ng-container matColumnDef="name">
-        <th mat-header-cell *matHeaderCellDef>Nombre</th>
-        <td mat-cell *matCellDef="let row">
-          <div class="user-name-cell">
-            <div class="user-avatar" [class.inactive]="!row.isActive">
-              {{ row.person.firstName[0] }}
-            </div>
-            <div class="user-info">
-              <span class="user-name">{{ fullName(row) }}</span>
-              <span class="user-doc">{{ row.person.phone || '—' }}</span>
-            </div>
-          </div>
-        </td>
-      </ng-container>
+  <div class="toolbar">
+    <div class="search-box">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input
+        class="search-input"
+        type="text"
+        placeholder="Buscar por nombre, correo o documento..."
+        [value]="searchQuery()"
+        (input)="onSearchInput($event)"
+      />
+      @if (searchQuery()) {
+        <button class="search-clear" (click)="searchQuery.set('')">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </div>
 
-      <ng-container matColumnDef="email">
-        <th mat-header-cell *matHeaderCellDef>Email</th>
-        <td mat-cell *matCellDef="let row">
-          <span class="email">{{ row.email }}</span>
-        </td>
-      </ng-container>
+    <div class="filter-pills">
+      <button
+        class="filter-pill"
+        [class.filter-pill--active]="statusFilter() === 'all'"
+        (click)="statusFilter.set('all')">
+        Todos
+      </button>
+      <button
+        class="filter-pill"
+        [class.filter-pill--active]="statusFilter() === 'active'"
+        (click)="statusFilter.set('active')">
+        <span class="dot dot--green"></span>
+        Activos
+      </button>
+      <button
+        class="filter-pill"
+        [class.filter-pill--active]="statusFilter() === 'inactive'"
+        (click)="statusFilter.set('inactive')">
+        <span class="dot dot--gray"></span>
+        Inactivos
+      </button>
+    </div>
+  </div>
 
-      <ng-container matColumnDef="roles">
-        <th mat-header-cell *matHeaderCellDef>Rol</th>
-        <td mat-cell *matCellDef="let row">
-          <span class="role-chip" [class]="roleClass(row.roles)">
-            {{ roleLabel(row.roles) }}
+  @if (!store.loading()) {
+    <div class="results-summary">
+      <span class="results-count">
+        {{ filteredUsers().length }} {{ filteredUsers().length === 1 ? 'usuario' : 'usuarios' }}
+        @if (searchQuery() || statusFilter() !== 'all') {
+          encontrados
+        }
+      </span>
+    </div>
+  }
+
+  @for (group of groupedUsers(); track group.tenantId ?? 0) {
+    @if (authStore.isSuperAdmin() && group.tenantName) {
+      <div class="tenant-header">
+        <div class="tenant-header__icon">
+          <mat-icon>business</mat-icon>
+        </div>
+        <div class="tenant-header__info">
+          <span class="tenant-header__name">{{ group.tenantName }}</span>
+          <span class="tenant-header__count">
+            {{ group.users.length }} {{ group.users.length === 1 ? 'usuario' : 'usuarios' }}
           </span>
-        </td>
-      </ng-container>
-
-      <ng-container matColumnDef="status">
-        <th mat-header-cell *matHeaderCellDef>Estado</th>
-        <td mat-cell *matCellDef="let row">
-          <mat-slide-toggle
-            [checked]="row.isActive"
-            (change)="toggleStatus(row)"
-            color="primary"
-            matTooltip="{{ row.isActive ? 'Activo — click para desactivar' : 'Inactivo — click para activar' }}" />
-        </td>
-      </ng-container>
-
-      <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef></th>
-        <td mat-cell *matCellDef="let row" class="actions-cell">
-          <button mat-icon-button matTooltip="Editar" (click)="openEdit(row)">
-            <mat-icon>edit</mat-icon>
-          </button>
-        </td>
-      </ng-container>
-
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="data-row" [class.row--inactive]="!row.isActive"></tr>
-
-    </table>
-
-    @if (!store.loading() && rows().length === 0) {
-      <div class="empty-state">
-        <mat-icon>manage_accounts</mat-icon>
-        <span>No hay usuarios registrados</span>
+        </div>
       </div>
     }
-  </div>
+
+    <div class="users-grid">
+      @for (row of group.users; track row.id) {
+        <div class="user-card"
+          [class.user-card--inactive]="!row.isActive"
+          [class.user-card--superadmin]="isSuperAdminUser(row)">
+
+          <div class="card-accent" [class]="cardAccentClass(row)">
+            <div class="card-avatar-wrapper">
+              <div class="user-avatar" [class]="avatarClass(row)">
+                {{ avatarInitials(row) }}
+              </div>
+              <span
+                class="status-dot"
+                [class.status-dot--active]="row.isActive"
+                [class.status-dot--inactive]="!row.isActive">
+              </span>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <h3 class="user-name">{{ fullName(row) }}</h3>
+            <span class="role-chip" [class]="roleClass(row.roles)">
+              {{ roleLabel(row.roles) }}
+            </span>
+
+            <div class="user-meta">
+              <span class="meta-item" [title]="row.email">
+                <mat-icon class="meta-icon">mail_outline</mat-icon>
+                {{ row.email }}
+              </span>
+              @if (primaryDoc(row)) {
+                <span class="meta-item">
+                  <mat-icon class="meta-icon">badge</mat-icon>
+                  {{ primaryDoc(row) }}
+                </span>
+              }
+              @if (row.person.phone) {
+                <span class="meta-item">
+                  <mat-icon class="meta-icon">phone</mat-icon>
+                  {{ row.person.phone }}
+                </span>
+              }
+            </div>
+          </div>
+
+          <div class="card-footer">
+            @if (isSuperAdminUser(row)) {
+              <div class="protected-badge">
+                <mat-icon>shield</mat-icon>
+                <span>Cuenta protegida</span>
+              </div>
+            } @else {
+              <div class="card-actions">
+                <button
+                  class="ios-toggle"
+                  [class.ios-toggle--on]="row.isActive"
+                  (click)="toggleStatus(row)"
+                  [attr.aria-label]="row.isActive ? 'Desactivar usuario' : 'Activar usuario'">
+                  <span class="ios-toggle__thumb"></span>
+                </button>
+                <div class="action-btns">
+                  <button
+                    class="action-btn"
+                    matTooltip="Editar usuario"
+                    (click)="openEdit(row)">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  @if (authStore.isSuperAdmin()) {
+                    <button
+                      class="action-btn"
+                      matTooltip="Cambiar contraseña"
+                      (click)="openSetPassword(row)">
+                      <mat-icon>key</mat-icon>
+                    </button>
+                  }
+                  <button
+                    class="action-btn action-btn--danger"
+                    [disabled]="row.isActive"
+                    [matTooltip]="row.isActive ? 'Desactiva el usuario antes de eliminar' : 'Eliminar usuario'"
+                    (click)="openDelete(row)">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+
+        </div>
+      }
+    </div>
+  }
+
+  @if (!store.loading() && filteredUsers().length === 0) {
+    <div class="empty-state">
+      <mat-icon>manage_accounts</mat-icon>
+      <span>
+        @if (searchQuery() || statusFilter() !== 'all') {
+          No hay usuarios que coincidan con los filtros aplicados
+        } @else {
+          No hay usuarios registrados
+        }
+      </span>
+    </div>
+  }
 
 </div>

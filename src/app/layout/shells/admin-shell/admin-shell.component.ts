@@ -14,12 +14,12 @@ import { map } from 'rxjs';
 import { TenantStore } from '@core/tenant/tenant.store';
 import { AuthStore } from '@core/auth/auth.store';
 import { ChangePasswordDialogComponent } from '@shared/dialogs/change-password/change-password-dialog.component';
+import { LogoutOverlayComponent } from '@shared/components/logout-overlay/logout-overlay.component';
 
 interface NavItem {
   icon: string;
   label: string;
   route: string;
-  superAdminOnly?: boolean;
 }
 
 interface NavGroup {
@@ -42,6 +42,7 @@ interface NavGroup {
     MatBadgeModule,
     MatDividerModule,
     MatDialogModule,
+    LogoutOverlayComponent,
   ],
   templateUrl: './admin-shell.component.html',
   styleUrl: './admin-shell.component.scss',
@@ -77,40 +78,68 @@ export class AdminShellComponent {
 
   readonly roleName = computed(() => {
     const roles = this.authStore.roles();
-    if (roles.includes('SUPERADMIN')) return 'Super Administrador';
-    if (roles.includes('ADMIN')) return 'Administrador';
-    if (roles.includes('USER')) return 'Recepcionista';
-    if (roles.includes('PATIENT')) return 'Paciente';
+    if (roles.includes('SUPER_ADMIN'))  return 'Super Administrador';
+    if (roles.includes('CLINIC_ADMIN')) return 'Admin Clínica';
+    if (roles.includes('DOCTOR'))       return 'Médico';
+    if (roles.includes('ASSISTANT'))    return 'Asistente';
+    if (roles.includes('RECEPTIONIST')) return 'Recepcionista';
+    if (roles.includes('PATIENT'))      return 'Paciente';
     return '';
   });
 
-  readonly navGroups: NavGroup[] = [
-    {
-      label: 'Operaciones',
-      items: [
-        { icon: 'dashboard', label: 'Dashboard', route: '/admin/dashboard' },
-        { icon: 'calendar_month', label: 'Citas', route: '/admin/appointments' },
-        { icon: 'people', label: 'Pacientes', route: '/admin/patients' },
-      ],
-    },
-    {
-      label: 'Clínica',
-      items: [
-        { icon: 'folder_open', label: 'Historial Clínico', route: '/admin/medical-records' },
-        { icon: 'medical_services', label: 'Médicos', route: '/admin/doctors' },
-      ],
-    },
-    {
-      label: 'Configuración',
-      items: [
-        { icon: 'business', label: 'Sucursales', route: '/admin/branches' },
-        { icon: 'category', label: 'Catálogos', route: '/admin/catalogs' },
-        { icon: 'manage_accounts', label: 'Usuarios', route: '/admin/users' },
-        { icon: 'corporate_fare', label: 'Organizaciones', route: '/admin/organizations', superAdminOnly: true },
-        { icon: 'card_membership', label: 'Suscripciones', route: '/admin/subscriptions', superAdminOnly: true },
-      ],
-    },
-  ];
+  readonly navGroups = computed((): NavGroup[] => {
+    if (this.authStore.isSuperAdmin()) {
+      return [
+        {
+          label: 'General',
+          items: [
+            { icon: 'dashboard', label: 'Dashboard', route: '/admin/dashboard' },
+          ],
+        },
+        {
+          label: 'Gestión Global',
+          items: [
+            { icon: 'corporate_fare', label: 'Organizaciones', route: '/admin/organizations' },
+            { icon: 'card_membership', label: 'Suscripciones', route: '/admin/subscriptions' },
+          ],
+        },
+        {
+          label: 'Administración',
+          items: [
+            { icon: 'manage_accounts', label: 'Usuarios', route: '/admin/users' },
+            { icon: 'business', label: 'Sucursales', route: '/admin/branches' },
+            { icon: 'category', label: 'Catálogos', route: '/admin/catalogs' },
+          ],
+        },
+      ];
+    }
+
+    return [
+      {
+        label: 'Operaciones',
+        items: [
+          { icon: 'dashboard', label: 'Dashboard', route: '/admin/dashboard' },
+          { icon: 'calendar_month', label: 'Citas', route: '/admin/appointments' },
+          { icon: 'people', label: 'Pacientes', route: '/admin/patients' },
+        ],
+      },
+      {
+        label: 'Clínica',
+        items: [
+          { icon: 'folder_open', label: 'Historial Clínico', route: '/admin/medical-records' },
+          { icon: 'medical_services', label: 'Médicos', route: '/admin/doctors' },
+        ],
+      },
+      {
+        label: 'Configuración',
+        items: [
+          { icon: 'business', label: 'Sucursales', route: '/admin/branches' },
+          { icon: 'category', label: 'Catálogos', route: '/admin/catalogs' },
+          { icon: 'manage_accounts', label: 'Usuarios', route: '/admin/users' },
+        ],
+      },
+    ];
+  });
 
   onMenuClick(): void {
     if (this.isHandset()) {

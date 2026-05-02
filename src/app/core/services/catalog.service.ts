@@ -1,9 +1,11 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_ROUTES } from '@core/api/api.config';
 import { ApiResponse } from '@core/models/api-response.model';
 import {
+  AppointmentTypeApiResponse,
+  AppointmentTypeListApiResponse,
   CatalogItemApiResponse,
   CatalogItemListApiResponse,
   CreateCatalogItemRequest,
@@ -19,6 +21,12 @@ import {
 export class CatalogService {
   private readonly http = inject(HttpClient);
 
+  private buildParams(filters: object): HttpParams {
+    return Object.entries(filters)
+      .filter(([, v]) => v !== undefined && v !== null)
+      .reduce((params, [k, v]) => params.set(k, String(v)), new HttpParams());
+  }
+
   getSpecialties(): Observable<SpecialtyListApiResponse> {
     return this.http.get<SpecialtyListApiResponse>(API_ROUTES.catalogs.specialties);
   }
@@ -29,6 +37,20 @@ export class CatalogService {
 
   deleteSpecialty(id: number): Observable<ApiResponse<null>> {
     return this.http.delete<ApiResponse<null>>(API_ROUTES.catalogs.specialtyById(id));
+  }
+
+  getSuperAdminSpecialties(tenantId: number): Observable<SpecialtyListApiResponse> {
+    const params = this.buildParams({ tenantId });
+    return this.http.get<SpecialtyListApiResponse>(API_ROUTES.superAdmin.catalogs.specialties, { params });
+  }
+
+  createSuperAdminSpecialty(body: CreateSpecialtyRequest, tenantId: number): Observable<SpecialtyApiResponse> {
+    const params = this.buildParams({ tenantId });
+    return this.http.post<SpecialtyApiResponse>(API_ROUTES.superAdmin.catalogs.specialties, body, { params });
+  }
+
+  deleteSuperAdminSpecialty(id: number): Observable<ApiResponse<null>> {
+    return this.http.delete<ApiResponse<null>>(API_ROUTES.superAdmin.catalogs.specialtyById(id));
   }
 
   getPlans(): Observable<PlanListApiResponse> {
@@ -79,15 +101,29 @@ export class CatalogService {
     return this.http.delete<ApiResponse<null>>(API_ROUTES.catalogs.appointmentStatusById(id));
   }
 
-  getAppointmentTypes(): Observable<CatalogItemListApiResponse> {
-    return this.http.get<CatalogItemListApiResponse>(API_ROUTES.catalogs.appointmentTypes);
+  getAppointmentTypes(): Observable<AppointmentTypeListApiResponse> {
+    return this.http.get<AppointmentTypeListApiResponse>(API_ROUTES.catalogs.appointmentTypes);
   }
 
-  createAppointmentType(body: CreateCatalogItemRequest): Observable<CatalogItemApiResponse> {
-    return this.http.post<CatalogItemApiResponse>(API_ROUTES.catalogs.appointmentTypes, body);
+  createAppointmentType(body: CreateCatalogItemRequest): Observable<AppointmentTypeApiResponse> {
+    return this.http.post<AppointmentTypeApiResponse>(API_ROUTES.catalogs.appointmentTypes, body);
   }
 
   deleteAppointmentType(id: number): Observable<ApiResponse<null>> {
     return this.http.delete<ApiResponse<null>>(API_ROUTES.catalogs.appointmentTypeById(id));
+  }
+
+  getSuperAdminAppointmentTypes(tenantId: number): Observable<AppointmentTypeListApiResponse> {
+    const params = this.buildParams({ tenantId });
+    return this.http.get<AppointmentTypeListApiResponse>(API_ROUTES.superAdmin.catalogs.appointmentTypes, { params });
+  }
+
+  createSuperAdminAppointmentType(body: CreateCatalogItemRequest, tenantId: number): Observable<AppointmentTypeApiResponse> {
+    const params = this.buildParams({ tenantId });
+    return this.http.post<AppointmentTypeApiResponse>(API_ROUTES.superAdmin.catalogs.appointmentTypes, body, { params });
+  }
+
+  deleteSuperAdminAppointmentType(id: number): Observable<ApiResponse<null>> {
+    return this.http.delete<ApiResponse<null>>(API_ROUTES.superAdmin.catalogs.appointmentTypeById(id));
   }
 }

@@ -1,3 +1,4 @@
+<app-logout-overlay />
 <mat-sidenav-container class="shell" autosize>
 
   <mat-sidenav
@@ -26,28 +27,26 @@
       </div>
 
       <nav class="nav-list">
-        @for (group of navGroups; track group.label) {
+        @for (group of navGroups(); track group.label) {
           @if (!sidenavCollapsed()) {
             <span class="nav-group-label">{{ group.label }}</span>
           } @else {
             <div class="nav-group-divider"></div>
           }
           @for (item of group.items; track item.route) {
-            @if (!item.superAdminOnly || authStore.roles().includes('SUPERADMIN')) {
-              <a
-                class="nav-item"
-                [routerLink]="item.route"
-                routerLinkActive="active"
-                [class.icon-only]="sidenavCollapsed()"
-                [matTooltip]="sidenavCollapsed() ? item.label : ''"
-                matTooltipPosition="right"
-                (click)="onNavItemClick()">
-                <mat-icon>{{ item.icon }}</mat-icon>
-                @if (!sidenavCollapsed()) {
-                  <span class="nav-label">{{ item.label }}</span>
-                }
-              </a>
-            }
+            <a
+              class="nav-item"
+              [routerLink]="item.route"
+              routerLinkActive="active"
+              [class.icon-only]="sidenavCollapsed()"
+              [matTooltip]="sidenavCollapsed() ? item.label : ''"
+              matTooltipPosition="right"
+              (click)="onNavItemClick()">
+              <mat-icon>{{ item.icon }}</mat-icon>
+              @if (!sidenavCollapsed()) {
+                <span class="nav-label">{{ item.label }}</span>
+              }
+            </a>
           }
         }
       </nav>
