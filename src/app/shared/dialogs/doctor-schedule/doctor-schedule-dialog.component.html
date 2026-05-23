@@ -1,0 +1,201 @@
+<div class="schedule-dialog">
+
+  <div class="dialog-header">
+    <div class="header-icon">
+      <mat-icon>schedule</mat-icon>
+    </div>
+    <div class="header-text">
+      <h2 class="dialog-title">Horarios semanales</h2>
+      <p class="dialog-subtitle">{{ data.doctorName }}</p>
+    </div>
+    <button class="close-btn" (click)="close()" matTooltip="Cerrar" aria-label="Cerrar">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" class="progress" />
+  }
+
+  @if (error()) {
+    <div class="dialog-alert">
+      <app-alert-banner type="error" [message]="error()!" (dismissed)="clearError()" />
+    </div>
+  }
+
+  @if (!loading()) {
+
+    @if (branches().length === 0) {
+      <div class="no-branches">
+        <mat-icon>location_off</mat-icon>
+        <p>Este médico no tiene sucursales asignadas.</p>
+        <span>Asigná al menos una sucursal antes de configurar horarios.</span>
+      </div>
+    } @else {
+
+      @if (branches().length > 1) {
+        <div class="branch-bar">
+          <mat-icon class="branch-bar-icon">location_on</mat-icon>
+          <span class="branch-bar-label">Sucursal</span>
+          <select
+            class="branch-select"
+            [value]="selectedBranchId()"
+            (change)="onBranchChange($event)">
+            @for (b of branches(); track b.id) {
+              <option [value]="b.branchId">{{ b.branchName }}</option>
+            }
+          </select>
+        </div>
+      } @else {
+        <div class="branch-single">
+          <mat-icon>storefront</mat-icon>
+          <span>{{ branches()[0].branchName }}</span>
+        </div>
+      }
+
+      <div class="dialog-body">
+        @for (day of DAYS; track day) {
+          <div class="day-row">
+
+            <span class="day-name">{{ DAY_NAMES[day] }}</span>
+
+            <div class="slots-area">
+              @for (slot of schedulesForDay(day); track slot.id) {
+                @if (editingId() === slot.id) {
+                  <div class="slot-form" [formGroup]="slotForm">
+                    <input
+                      class="time-input"
+                      type="time"
+                      formControlName="startTime"
+                      aria-label="Hora de inicio" />
+                    <span class="time-sep">–</span>
+                    <input
+                      class="time-input"
+                      type="time"
+                      formControlName="endTime"
+                      aria-label="Hora de fin" />
+                    <div class="dur-wrap">
+                      <input
+                        class="dur-input"
+                        type="number"
+                        formControlName="slotDurationMinutes"
+                        min="5"
+                        max="240"
+                        aria-label="Duración en minutos" />
+                      <span class="dur-label">min</span>
+                    </div>
+                    <button
+                      class="form-btn form-btn--save"
+                      (click)="saveSlot()"
+                      [disabled]="saving() || slotForm.invalid"
+                      matTooltip="Guardar">
+                      @if (saving()) {
+                        <mat-icon class="spin">autorenew</mat-icon>
+                      } @else {
+                        <mat-icon>check</mat-icon>
+                      }
+                    </button>
+                    <button
+                      class="form-btn form-btn--cancel"
+                      (click)="cancelForm()"
+                      [disabled]="saving()"
+                      matTooltip="Cancelar">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+                } @else {
+                  <div class="slot-chip">
+                    <mat-icon class="slot-icon">access_time</mat-icon>
+                    <span class="slot-time">{{ formatSlot(slot) }}</span>
+                    <span class="slot-dur">{{ slot.slotDurationMinutes }}min</span>
+                    <button
+                      class="slot-btn"
+                      (click)="startEdit(slot)"
+                      [disabled]="saving()"
+                      matTooltip="Editar horario"
+                      aria-label="Editar horario">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    <button
+                      class="slot-btn slot-btn--danger"
+                      (click)="deleteSlot(slot)"
+                      [disabled]="saving()"
+                      matTooltip="Eliminar horario"
+                      aria-label="Eliminar horario">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+                }
+              }
+
+              @if (addingForDay() === day) {
+                <div class="slot-form" [formGroup]="slotForm">
+                  <input
+                    class="time-input"
+                    type="time"
+                    formControlName="startTime"
+                    aria-label="Hora de inicio" />
+                  <span class="time-sep">–</span>
+                  <input
+                    class="time-input"
+                    type="time"
+                    formControlName="endTime"
+                    aria-label="Hora de fin" />
+                  <div class="dur-wrap">
+                    <input
+                      class="dur-input"
+                      type="number"
+                      formControlName="slotDurationMinutes"
+                      min="5"
+                      max="240"
+                      aria-label="Duración en minutos" />
+                    <span class="dur-label">min</span>
+                  </div>
+                  <button
+                    class="form-btn form-btn--save"
+                    (click)="saveSlot()"
+                    [disabled]="saving() || slotForm.invalid"
+                    matTooltip="Guardar">
+                    @if (saving()) {
+                      <mat-icon class="spin">autorenew</mat-icon>
+                    } @else {
+                      <mat-icon>check</mat-icon>
+                    }
+                  </button>
+                  <button
+                    class="form-btn form-btn--cancel"
+                    (click)="cancelForm()"
+                    [disabled]="saving()"
+                    matTooltip="Cancelar">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div>
+              }
+
+              @if (!isFormOpenForDay(day)) {
+                <button
+                  class="add-btn"
+                  (click)="startAdd(day)"
+                  [disabled]="saving()"
+                  [matTooltip]="'Agregar horario para ' + DAY_NAMES[day]"
+                  [attr.aria-label]="'Agregar horario para ' + DAY_NAMES[day]">
+                  <mat-icon>add</mat-icon>
+                </button>
+              }
+            </div>
+
+          </div>
+        }
+      </div>
+
+    }
+  }
+
+  <div class="dialog-footer">
+    <button class="btn-done" (click)="close()">
+      <mat-icon>check</mat-icon>
+      Listo
+    </button>
+  </div>
+
+</div>

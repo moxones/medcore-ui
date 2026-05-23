@@ -1,0 +1,243 @@
+.alert-header {
+  padding: 28px 28px 8px;
+
+  .alert-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: color-mix(in srgb, var(--color-warning) 14%, transparent);
+    color: var(--color-warning);
+    border-radius: 100px;
+    padding: 4px 12px 4px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+
+    mat-icon {
+      font-size: 15px;
+      width: 15px;
+      height: 15px;
+    }
+  }
+
+  h2 {
+    margin: 0 0 8px;
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--color-text-primary);
+  }
+
+  .subtitle {
+    margin: 0;
+    font-size: 13.5px;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+  }
+}
+
+mat-dialog-content {
+  padding: 8px 28px 0 !important;
+  margin: 0 !important;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.email-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  margin-bottom: 20px;
+  background: color-mix(in srgb, var(--mat-sys-primary) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mat-sys-primary) 20%, transparent);
+  border-radius: 10px;
+
+  .email-icon {
+    color: var(--mat-sys-primary);
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+
+  .email-info {
+    flex: 1;
+    min-width: 0;
+
+    .email-value {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .email-note {
+      display: block;
+      font-size: 11px;
+      color: var(--color-text-muted);
+      margin-top: 1px;
+    }
+  }
+
+  .verified-chip {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-success);
+    background: color-mix(in srgb, var(--color-success) 12%, transparent);
+    border-radius: 6px;
+    padding: 4px 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+    }
+  }
+}
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+
+  mat-form-field {
+    width: 100%;
+  }
+}
+
+.name-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+
+  @media (max-width: 420px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.optional-label {
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.6;
+}
+
+.phone-field {
+  margin-top: 4px;
+}
+
+.phone-prefix {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0 10px 0 4px;
+
+  .country-code {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    line-height: 1;
+  }
+
+  .prefix-sep {
+    display: block;
+    width: 1px;
+    height: 18px;
+    background: var(--color-border);
+    margin-left: 4px;
+  }
+}
+
+.phone-note {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: -8px 0 12px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+
+  .info-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+}
+
+mat-dialog-actions.dialog-footer {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px 20px !important;
+  margin: 0 !important;
+  min-height: unset !important;
+  border-top: 1px solid var(--color-border);
+}
+
+.logout-btn {
+  color: var(--color-text-muted);
+  font-size: 13px;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-right: 2px;
+  }
+
+  &:hover {
+    color: var(--color-danger);
+  }
+}
+
+.footer-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.field-counter {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  transition: color 200ms ease;
+
+  &.complete {
+    color: var(--color-success);
+    font-weight: 600;
+  }
+}
+
+.submit-btn {
+  background: var(--color-text-primary) !important;
+  color: #fff !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  padding: 0 20px !important;
+  height: 40px;
+  transition: opacity 200ms ease;
+
+  &:disabled {
+    opacity: 0.35 !important;
+    color: #fff !important;
+  }
+
+  mat-spinner {
+    display: inline-block;
+  }
+}

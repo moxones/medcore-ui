@@ -1,6 +1,13 @@
-﻿import { ErrorHandler, Injectable } from '@angular/core';
+﻿import { ErrorHandler, Injectable, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 
 @Injectable()
 export class GlobalErrorHandler implements ErrorHandler {
-  handleError(error: any): void {}
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  handleError(error: unknown): void {
+    if (this.isBrowser) {
+      console.error(error);
+    }
+  }
 }

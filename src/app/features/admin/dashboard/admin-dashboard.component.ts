@@ -1,20 +1,45 @@
 import { Component, OnInit, inject, computed } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { RouterLink } from '@angular/router';
 import { TenantStore } from '@core/tenant/tenant.store';
 import { DashboardStore } from '@core/dashboard/dashboard.store';
+import { AuthStore } from '@core/auth/auth.store';
 import { KpiCardComponent } from '@shared/widgets/kpi-card/kpi-card.component';
+
+interface QuickLink {
+  icon: string;
+  label: string;
+  description: string;
+  route: string;
+  accentClass: string;
+}
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [MatIconModule, MatProgressBarModule, KpiCardComponent],
+  imports: [MatIconModule, MatProgressBarModule, KpiCardComponent, RouterLink],
   templateUrl: './admin-dashboard.component.html',
   styleUrl: './admin-dashboard.component.scss',
 })
 export class AdminDashboardComponent implements OnInit {
   readonly tenantStore = inject(TenantStore);
   readonly dashboardStore = inject(DashboardStore);
+  readonly authStore = inject(AuthStore);
+
+  readonly todayLabel = new Intl.DateTimeFormat('es-PE', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(new Date());
+
+  readonly greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Buenos días';
+    if (h < 18) return 'Buenas tardes';
+    return 'Buenas noches';
+  })();
 
   readonly formattedRevenue = computed(() => {
     const revenue = this.dashboardStore.summary()?.totalRevenueThisMonth ?? null;
@@ -27,6 +52,85 @@ export class AdminDashboardComponent implements OnInit {
     if (rate === null) return '—';
     return `${rate.toFixed(1)}%`;
   });
+
+  readonly waitingCount = computed(() => {
+    const s = this.dashboardStore.summary();
+    if (!s) return 0;
+    return Math.max(0, s.totalAppointmentsToday - s.completedAppointmentsToday - s.cancelledAppointmentsToday);
+  });
+
+  readonly completedPct = computed(() => {
+    const s = this.dashboardStore.summary();
+    if (!s || s.totalAppointmentsToday === 0) return 0;
+    return Math.round((s.completedAppointmentsToday / s.totalAppointmentsToday) * 100);
+  });
+
+  readonly cancelledPct = computed(() => {
+    const s = this.dashboardStore.summary();
+    if (!s || s.totalAppointmentsToday === 0) return 0;
+    return Math.round((s.cancelledAppointmentsToday / s.totalAppointmentsToday) * 100);
+  });
+
+  readonly waitingPct = computed(() => {
+    const s = this.dashboardStore.summary();
+    if (!s || s.totalAppointmentsToday === 0) return 0;
+    return Math.round((this.waitingCount() / s.totalAppointmentsToday) * 100);
+  });
+
+  readonly donutBackground = computed(() => {
+    const s = this.dashboardStore.summary();
+    if (!s || s.totalAppointmentsToday === 0) {
+      return 'conic-gradient(#e2e8f0 0% 100%)';
+    }
+    const cp = this.completedPct();
+    const ca = cp + this.cancelledPct();
+    return `conic-gradient(#22c55e 0% ${cp}%, #f97316 ${cp}% ${ca}%, #3b82f6 ${ca}% 100%)`;
+  });
+
+  readonly quickLinks: QuickLink[] = [
+    {
+      icon: 'calendar_month',
+      label: 'Citas',
+      description: 'Gestionar agenda diaria',
+      route: '/admin/appointments',
+      accentClass: 'link--blue',
+    },
+    {
+      icon: 'groups',
+      label: 'Médicos',
+      description: 'Equipo y especialidades',
+      route: '/admin/doctors',
+      accentClass: 'link--green',
+    },
+    {
+      icon: 'personal_injury',
+      label: 'Pacientes',
+      description: 'Historial y registros',
+      route: '/admin/patients',
+      accentClass: 'link--teal',
+    },
+    {
+      icon: 'manage_accounts',
+      label: 'Usuarios',
+      description: 'Accesos y permisos',
+      route: '/admin/users',
+      accentClass: 'link--purple',
+    },
+    {
+      icon: 'location_on',
+      label: 'Sucursales',
+      description: 'Sedes y locales',
+      route: '/admin/branches',
+      accentClass: 'link--orange',
+    },
+    {
+      icon: 'category',
+      label: 'Catálogos',
+      description: 'Tipos y configuración',
+      route: '/admin/catalogs',
+      accentClass: 'link--pink',
+    },
+  ];
 
   ngOnInit(): void {
     void this.dashboardStore.loadSummary();

@@ -9,6 +9,18 @@ export const routes: Routes = [
       import('./features/auth/login/login.component').then((m) => m.LoginComponent),
   },
   {
+    path: 'register',
+    loadComponent: () =>
+      import('./features/auth/register/register.component').then((m) => m.RegisterComponent),
+  },
+  {
+    path: 'forgot-password',
+    loadComponent: () =>
+      import('./features/auth/forgot-password/forgot-password.component').then(
+        (m) => m.ForgotPasswordComponent,
+      ),
+  },
+  {
     path: 'admin',
     canActivate: [authGuard, roleGuard],
     data: { roles: ['SUPER_ADMIN', 'CLINIC_ADMIN'] },
@@ -69,9 +81,20 @@ export const routes: Routes = [
       },
       {
         path: 'catalogs',
+        canActivate: [roleGuard],
+        data: { roles: ['CLINIC_ADMIN', 'SUPER_ADMIN'] },
         loadComponent: () =>
           import('./features/admin/catalogs/catalogs-page.component').then(
             (m) => m.CatalogsPageComponent,
+          ),
+      },
+      {
+        path: 'catalog-master',
+        canActivate: [roleGuard],
+        data: { roles: ['SUPER_ADMIN'] },
+        loadComponent: () =>
+          import('./features/admin/catalog-master/catalog-master-page.component').then(
+            (m) => m.CatalogMasterPageComponent,
           ),
       },
       {
@@ -118,6 +141,34 @@ export const routes: Routes = [
             (m) => m.ReceptionDashboardComponent,
           ),
       },
+      {
+        path: 'agenda',
+        loadComponent: () =>
+          import('./features/reception/agenda/agenda-page.component').then(
+            (m) => m.AgendaPageComponent,
+          ),
+      },
+      {
+        path: 'queue',
+        loadComponent: () =>
+          import('./features/reception/queue/queue-page.component').then(
+            (m) => m.QueuePageComponent,
+          ),
+      },
+      {
+        path: 'appointments/new',
+        loadComponent: () =>
+          import('./features/reception/new-appointment/new-appointment-page.component').then(
+            (m) => m.NewAppointmentPageComponent,
+          ),
+      },
+      {
+        path: 'patients',
+        loadComponent: () =>
+          import('./features/reception/patients/patients-page.component').then(
+            (m) => m.ReceptionPatientsPageComponent,
+          ),
+      },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },
@@ -137,6 +188,13 @@ export const routes: Routes = [
             (m) => m.DoctorDashboardComponent,
           ),
       },
+      {
+        path: 'profile',
+        loadComponent: () =>
+          import('./features/admin/doctors/doctors-page.component').then(
+            (m) => m.DoctorsPageComponent,
+          ),
+      },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },
@@ -154,6 +212,20 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/patient/dashboard/patient-dashboard.component').then(
             (m) => m.PatientDashboardComponent,
+          ),
+      },
+      {
+        path: 'appointments',
+        loadComponent: () =>
+          import('./features/patient/appointments/patient-appointments.component').then(
+            (m) => m.PatientAppointmentsComponent,
+          ),
+      },
+      {
+        path: 'profile',
+        loadComponent: () =>
+          import('./features/patient/profile/patient-profile.component').then(
+            (m) => m.PatientProfileComponent,
           ),
       },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },

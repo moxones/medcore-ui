@@ -1,4 +1,4 @@
-import { Component, ViewChild, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, afterNextRender, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { MatIconModule } from '@angular/material/icon';
@@ -13,6 +13,7 @@ import { map } from 'rxjs';
 import { TenantStore } from '@core/tenant/tenant.store';
 import { AuthStore } from '@core/auth/auth.store';
 import { ChangePasswordDialogComponent } from '@shared/dialogs/change-password/change-password-dialog.component';
+import { CompleteProfileDialogComponent } from '@shared/dialogs/complete-profile/complete-profile-dialog.component';
 import { LogoutOverlayComponent } from '@shared/components/logout-overlay/logout-overlay.component';
 
 interface NavItem {
@@ -45,7 +46,7 @@ interface NavGroup {
   templateUrl: './patient-shell.component.html',
   styleUrl: './patient-shell.component.scss',
 })
-export class PatientShellComponent {
+export class PatientShellComponent implements OnInit {
   @ViewChild('sidenav') private readonly sidenav!: MatSidenav;
 
   private readonly breakpointObserver = inject(BreakpointObserver);
@@ -70,7 +71,9 @@ export class PatientShellComponent {
   readonly initials = computed(() => {
     const user = this.authStore.user();
     if (!user) return '?';
-    return `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase();
+    const first = user.firstName?.[0] ?? '';
+    const last = user.lastName?.[0] ?? '';
+    return `${first}${last}`.toUpperCase() || '?';
   });
 
   readonly navGroups: NavGroup[] = [
@@ -84,6 +87,18 @@ export class PatientShellComponent {
     },
   ];
 
+  constructor() {
+    afterNextRender(() => {
+      if (this.authStore.needsProfileCompletion()) {
+        this.openCompleteProfile();
+      }
+    });
+  }
+
+  ngOnInit(): void {
+    this.tenantStore.load();
+  }
+
   onMenuClick(): void {
     if (this.isHandset()) {
       this.sidenav.toggle();
@@ -96,6 +111,14 @@ export class PatientShellComponent {
     if (this.isHandset()) {
       this.sidenav.close();
     }
+  }
+
+  openCompleteProfile(): void {
+    this.dialog.open(CompleteProfileDialogComponent, {
+      width: '480px',
+      maxWidth: '95vw',
+      disableClose: true,
+    });
   }
 
   openChangePassword(): void {

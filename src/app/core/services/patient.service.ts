@@ -2,10 +2,16 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_ROUTES } from '@core/api/api.config';
+import { ApiResponse } from '@core/models/api-response.model';
 import {
   PatientApiResponse,
   PatientListApiResponse,
   PatientSearchParams,
+  PatientRegisterRequest,
+  PatientRegisterResult,
+  EmailAvailabilityResult,
+  UpdateProfileRequest,
+  PatientProfileResponse,
 } from '@core/models/patient.model';
 
 @Injectable({ providedIn: 'root' })
@@ -24,6 +30,23 @@ export class PatientService {
 
   getById(id: number): Observable<PatientApiResponse> {
     return this.http.get<PatientApiResponse>(API_ROUTES.patients.byId(id));
+  }
+
+  checkEmail(email: string): Observable<ApiResponse<EmailAvailabilityResult>> {
+    const params = new HttpParams().set('email', email);
+    return this.http.get<ApiResponse<EmailAvailabilityResult>>(API_ROUTES.public.checkEmail, { params });
+  }
+
+  registerPatient(data: PatientRegisterRequest): Observable<ApiResponse<PatientRegisterResult>> {
+    return this.http.post<ApiResponse<PatientRegisterResult>>(API_ROUTES.public.registerPatient, data);
+  }
+
+  getProfile(): Observable<ApiResponse<PatientProfileResponse>> {
+    return this.http.get<ApiResponse<PatientProfileResponse>>(API_ROUTES.patients.profile);
+  }
+
+  updateProfile(data: UpdateProfileRequest): Observable<ApiResponse<PatientProfileResponse>> {
+    return this.http.put<ApiResponse<PatientProfileResponse>>(API_ROUTES.patients.profile, data);
   }
 
   private buildParams(filters: object): HttpParams {

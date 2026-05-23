@@ -17,6 +17,7 @@ import {
 } from '@core/models/appointment.model';
 import { ApiResponse } from '@core/models/api-response.model';
 
+
 @Injectable({ providedIn: 'root' })
 export class AppointmentService {
   private readonly http = inject(HttpClient);
@@ -40,16 +41,20 @@ export class AppointmentService {
     return this.http.get<TimeSlotsApiResponse>(API_ROUTES.appointments.availableSlots, { params });
   }
 
-  reschedule(id: number, body: RescheduleAppointmentRequest): Observable<AppointmentApiResponse> {
-    return this.http.put<AppointmentApiResponse>(API_ROUTES.appointments.reschedule(id), body);
+  getById(id: number): Observable<AppointmentApiResponse> {
+    return this.http.get<AppointmentApiResponse>(API_ROUTES.appointments.byId(id));
   }
 
-  updateFlowStatus(id: number, body: UpdateFlowStatusRequest): Observable<AppointmentApiResponse> {
-    return this.http.patch<AppointmentApiResponse>(API_ROUTES.appointments.flowStatus(id), body);
+  reschedule(id: number, body: RescheduleAppointmentRequest): Observable<ApiResponse<null>> {
+    return this.http.put<ApiResponse<null>>(API_ROUTES.appointments.reschedule(id), body);
   }
 
-  cancel(id: number, body: CancelAppointmentRequest): Observable<ApiResponse<void>> {
-    return this.http.post<ApiResponse<void>>(API_ROUTES.appointments.cancel(id), body);
+  updateFlowStatus(id: number, body: UpdateFlowStatusRequest): Observable<ApiResponse<null>> {
+    return this.http.patch<ApiResponse<null>>(API_ROUTES.appointments.flowStatus(id), body);
+  }
+
+  cancel(id: number, body: CancelAppointmentRequest): Observable<ApiResponse<null>> {
+    return this.http.post<ApiResponse<null>>(API_ROUTES.appointments.cancel(id), body);
   }
 
   private buildParams(filters: object): HttpParams {

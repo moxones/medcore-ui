@@ -1,0 +1,85 @@
+<div class="dialog-header">
+  <div>
+    <h2 mat-dialog-title>Especialidades del médico</h2>
+    <p class="dialog-sub">{{ data.doctorName }}</p>
+  </div>
+  <button mat-icon-button (click)="close()" aria-label="Cerrar">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+@if (store.loading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<mat-dialog-content>
+  <app-alert-banner [message]="store.error()" />
+
+  <section class="block">
+    <div class="block__head">
+      <h3>Asignadas</h3>
+      <span class="count">{{ store.assigned().length }}</span>
+    </div>
+    @if (store.assigned().length === 0) {
+      <p class="hint">Este médico aún no tiene especialidades asignadas.</p>
+    } @else {
+      <div class="chips">
+        @for (sp of store.assigned(); track sp.id) {
+          <div class="chip chip--on">
+            <span class="chip__name">{{ sp.name }}</span>
+            <button
+              class="chip__action"
+              [disabled]="isBusy(sp)"
+              (click)="remove(sp)"
+              [attr.aria-label]="'Quitar ' + sp.name">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="block">
+    <div class="block__head">
+      <h3>Disponibles</h3>
+      <span class="count">{{ filteredAvailable().length }}</span>
+    </div>
+
+    <div class="search-box">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input
+        class="search-input"
+        type="text"
+        placeholder="Buscar especialidad..."
+        [value]="query()"
+        (input)="onSearchInput($event)" />
+    </div>
+
+    @if (filteredAvailable().length === 0) {
+      <p class="hint">
+        @if (query()) {
+          Ninguna especialidad coincide con la búsqueda.
+        } @else {
+          No hay más especialidades activadas por la clínica para asignar.
+        }
+      </p>
+    } @else {
+      <div class="chips">
+        @for (sp of filteredAvailable(); track sp.id) {
+          <button
+            class="chip chip--add"
+            [disabled]="isBusy(sp)"
+            (click)="assign(sp)">
+            <mat-icon>add</mat-icon>
+            <span class="chip__name">{{ sp.name }}</span>
+          </button>
+        }
+      </div>
+    }
+  </section>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-flat-button color="primary" (click)="close()">Listo</button>
+</mat-dialog-actions>

@@ -1,0 +1,188 @@
+<div class="page">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Mi Perfil</h1>
+      <p class="page-sub">Gestiona tu información personal</p>
+    </div>
+    @if (!editing()) {
+      <div class="header-actions">
+        <button mat-stroked-button (click)="openChangePassword()">
+          <mat-icon>lock</mat-icon>
+          Cambiar contraseña
+        </button>
+        <button mat-flat-button color="primary" (click)="startEdit()">
+          <mat-icon>edit</mat-icon>
+          Editar perfil
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (store.loading()) {
+    <mat-progress-bar mode="indeterminate" class="progress" />
+  }
+
+  @if (!store.loading()) {
+
+    @if (saveSuccess()) {
+      <div class="success-banner">
+        <mat-icon>check_circle</mat-icon>
+        <span>Perfil actualizado correctamente.</span>
+      </div>
+    }
+
+    <app-alert-banner [message]="store.error()" />
+
+    <div class="profile-layout">
+
+      <div class="identity-card">
+        <div class="avatar-circle">{{ initials() }}</div>
+        <div class="identity-info">
+          <span class="identity-name">{{ authStore.fullName() }}</span>
+          <span class="identity-email">{{ authStore.user()?.email }}</span>
+          @if (authStore.needsProfileCompletion()) {
+            <span class="profile-badge incomplete">
+              <mat-icon>warning</mat-icon>
+              Perfil incompleto
+            </span>
+          } @else {
+            <span class="profile-badge complete">
+              <mat-icon>check_circle</mat-icon>
+              Perfil completo
+            </span>
+          }
+        </div>
+      </div>
+
+      <div class="data-card">
+
+        @if (!editing()) {
+          <div class="section-header">
+            <span class="section-title">Información personal</span>
+          </div>
+
+          <div class="data-grid">
+            <div class="data-item">
+              <mat-icon class="data-icon">phone</mat-icon>
+              <div>
+                <span class="data-label">Teléfono</span>
+                <span class="data-value">{{ store.profile()?.phone || '—' }}</span>
+              </div>
+            </div>
+            <div class="data-item">
+              <mat-icon class="data-icon">email</mat-icon>
+              <div>
+                <span class="data-label">Email de contacto</span>
+                <span class="data-value">{{ store.profile()?.contactEmail || '—' }}</span>
+              </div>
+            </div>
+            <div class="data-item">
+              <mat-icon class="data-icon">cake</mat-icon>
+              <div>
+                <span class="data-label">Fecha de nacimiento</span>
+                <span class="data-value">{{ formatDate(store.profile()?.birthDate ?? null) }}</span>
+              </div>
+            </div>
+            <div class="data-item">
+              <mat-icon class="data-icon">wc</mat-icon>
+              <div>
+                <span class="data-label">Género</span>
+                <span class="data-value">{{ genderLabel() }}</span>
+              </div>
+            </div>
+          </div>
+        }
+
+        @if (editing()) {
+          <div class="section-header">
+            <span class="section-title">Editar información</span>
+          </div>
+
+          <form [formGroup]="form" class="edit-form" autocomplete="off">
+
+            <div class="form-section-label">Nombre</div>
+
+            <div class="two-col">
+              <mat-form-field appearance="outline">
+                <mat-label>Nombre</mat-label>
+                <mat-icon matPrefix>person</mat-icon>
+                <input matInput formControlName="firstName" />
+                @if (form.controls.firstName.touched && form.controls.firstName.hasError('required')) {
+                  <mat-error>Requerido</mat-error>
+                }
+                @if (form.controls.firstName.touched && form.controls.firstName.hasError('minlength')) {
+                  <mat-error>Mínimo 2 caracteres</mat-error>
+                }
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Apellido</mat-label>
+                <mat-icon matPrefix>person</mat-icon>
+                <input matInput formControlName="lastName" />
+                @if (form.controls.lastName.touched && form.controls.lastName.hasError('required')) {
+                  <mat-error>Requerido</mat-error>
+                }
+                @if (form.controls.lastName.touched && form.controls.lastName.hasError('minlength')) {
+                  <mat-error>Mínimo 2 caracteres</mat-error>
+                }
+              </mat-form-field>
+            </div>
+
+            <div class="form-section-label">Contacto</div>
+
+            <div class="two-col">
+              <mat-form-field appearance="outline">
+                <mat-label>Teléfono</mat-label>
+                <mat-icon matPrefix>phone</mat-icon>
+                <input matInput formControlName="phone" type="tel" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Email de contacto</mat-label>
+                <mat-icon matPrefix>email</mat-icon>
+                <input matInput formControlName="contactEmail" type="email" />
+                @if (form.controls.contactEmail.touched && form.controls.contactEmail.hasError('email')) {
+                  <mat-error>Email inválido</mat-error>
+                }
+              </mat-form-field>
+            </div>
+
+            <div class="form-section-label">Datos personales</div>
+
+            <div class="two-col">
+              <mat-form-field appearance="outline">
+                <mat-label>Fecha de nacimiento</mat-label>
+                <mat-icon matPrefix>cake</mat-icon>
+                <input matInput type="date" formControlName="birthDate" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Género</mat-label>
+                <mat-select formControlName="gender">
+                  @for (opt of genderOptions; track opt.value) {
+                    <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+          </form>
+
+          <div class="form-actions">
+            <button mat-button (click)="cancelEdit()" [disabled]="store.saving()">Cancelar</button>
+            <button mat-flat-button color="primary" (click)="save()" [disabled]="store.saving()">
+              @if (store.saving()) {
+                <mat-spinner diameter="18" />
+              } @else {
+                Guardar cambios
+              }
+            </button>
+          </div>
+        }
+
+      </div>
+    </div>
+  }
+
+</div>

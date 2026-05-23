@@ -84,6 +84,7 @@ export type UserApiResponse = ApiResponse<UserResponse>;
 export type UserListApiResponse = ApiResponse<UserResponse[]>;
 
 export interface SuperAdminPersonResponse {
+  id: number;
   firstName: string;
   lastName: string;
   birthDate: string | null;

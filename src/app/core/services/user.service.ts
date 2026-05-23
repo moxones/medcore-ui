@@ -30,7 +30,7 @@ export class UserService {
       tenantId: u.tenantId,
       createdAt: '',
       person: {
-        id: 0,
+        id: u.person.id,
         firstName: u.person.firstName,
         lastName: u.person.lastName,
         birthDate: u.person.birthDate ?? '',

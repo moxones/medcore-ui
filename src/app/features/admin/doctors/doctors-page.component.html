@@ -3,73 +3,296 @@
   <div class="page-header">
     <div>
       <h1 class="page-title">Médicos</h1>
-      <p class="page-subtitle">Personal médico registrado en el sistema</p>
+      <p class="page-subtitle">Personal médico activo del tenant</p>
     </div>
-    <button mat-flat-button color="primary" (click)="openCreate()">
-      <mat-icon>add</mat-icon>
-      Registrar médico
-    </button>
+    @if (isAdmin()) {
+      <button class="new-btn" (click)="openCreate()">
+        <mat-icon>add</mat-icon>
+        Registrar médico
+      </button>
+    }
   </div>
+
+  @if (isAdmin()) {
+    <div class="kpi-section">
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <mat-icon class="kpi-icon">groups</mat-icon>
+          <span class="kpi-number">{{ doctors().length }}</span>
+        </div>
+        <span class="kpi-label">Médicos en total</span>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <mat-icon class="kpi-icon">phone_in_talk</mat-icon>
+          <span class="kpi-number">{{ getAvailableCount() }}</span>
+        </div>
+        <span class="kpi-label">Disponibles hoy</span>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <mat-icon class="kpi-icon">medical_services</mat-icon>
+          <span class="kpi-number">{{ getSpecialtiesCount() }}</span>
+        </div>
+        <span class="kpi-label">Especialidades</span>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <mat-icon class="kpi-icon">event_note</mat-icon>
+          <span class="kpi-number">{{ getTotalAppointments() }}</span>
+        </div>
+        <span class="kpi-label">Citas este mes</span>
+      </div>
+    </div>
+  }
 
   @if (store.loading()) {
     <mat-progress-bar mode="indeterminate" class="progress" />
   }
 
-  <div class="table-card">
-    <table mat-table [dataSource]="rows()">
+  @if (isAdmin()) {
+    <div class="toolbar">
+      <div class="search-box">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input
+          class="search-input"
+          type="text"
+          placeholder="Buscar por nombre, especialidad o matrícula..."
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+        />
+        @if (searchQuery()) {
+          <button class="search-clear" (click)="searchQuery.set('')">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </div>
 
-      <ng-container matColumnDef="name">
-        <th mat-header-cell *matHeaderCellDef>Nombre</th>
-        <td mat-cell *matCellDef="let row">
-          <div class="doctor-name-cell">
-            <div class="doctor-avatar">{{ row.person.firstName[0] }}</div>
-            <div class="doctor-info">
-              <span class="doctor-name">{{ fullName(row.person) }}</span>
-              <span class="doctor-id">ID {{ row.person.id }}</span>
-            </div>
-          </div>
-        </td>
-      </ng-container>
+      <div class="filter-controls">
+        <select class="filter-select" [value]="availabilityFilter()" (change)="toggleAvailability($event)">
+          <option value="all">Todos</option>
+          <option value="available">Disponibles hoy</option>
+          <option value="unavailable">No disponibles</option>
+        </select>
 
-      <ng-container matColumnDef="license">
-        <th mat-header-cell *matHeaderCellDef>Colegiatura</th>
-        <td mat-cell *matCellDef="let row">
-          <span class="license-badge">{{ row.licenseNumber }}</span>
-        </td>
-      </ng-container>
+        <select class="filter-select" [value]="sortBy()" (change)="toggleSort($event)">
+          <option value="name">Nombre</option>
+          <option value="appointments">Citas</option>
+        </select>
+      </div>
+    </div>
 
-      <ng-container matColumnDef="phone">
-        <th mat-header-cell *matHeaderCellDef>Teléfono</th>
-        <td mat-cell *matCellDef="let row">
-          <span class="muted">{{ row.person.phone ?? '—' }}</span>
-        </td>
-      </ng-container>
-
-      <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef></th>
-        <td mat-cell *matCellDef="let row" class="actions-cell">
-        </td>
-      </ng-container>
-
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="data-row"></tr>
-
-    </table>
-
-    @if (!store.loading() && rows().length === 0) {
-      <div class="empty-state">
-        <mat-icon>medical_services</mat-icon>
-        <span>No hay médicos registrados</span>
+    @if (!store.loading()) {
+      <div class="results-summary">
+        <span class="results-count">
+          {{ sortedDoctors().length }} {{ sortedDoctors().length === 1 ? 'médico' : 'médicos' }}
+          @if (searchQuery() || availabilityFilter() !== 'all') {
+            encontrados
+          }
+        </span>
       </div>
     }
+  }
 
-    <mat-paginator
-      [length]="totalElements()"
-      [pageSize]="pageSize()"
-      [pageIndex]="pageIndex()"
-      [pageSizeOptions]="[10, 15, 25]"
-      (page)="onPage($event)"
-      showFirstLastButtons />
-  </div>
+  @if (!store.loading() && sortedDoctors().length > 0) {
+    <div class="doctors-list">
+      @for (doctor of sortedDoctors(); track doctor.id) {
+        <div class="doctor-card" [class.doctor-card--incomplete]="!isComplete(doctor)">
+
+          <div class="card-accent" [class.card-accent--incomplete]="!isComplete(doctor)"></div>
+
+          <div class="card-body">
+
+            <div class="card-header">
+              <div class="header-identity">
+                <div class="avatar-wrap">
+                  <div class="doctor-avatar">{{ doctor.initials }}</div>
+                  <span
+                    class="status-dot"
+                    [class.status-dot--on]="doctor.availableToday"
+                    [class.status-dot--off]="!doctor.availableToday">
+                  </span>
+                </div>
+                <div class="identity-info">
+                  <span class="doctor-name">{{ doctor.fullName }}</span>
+                  @if (doctor.specialties.length > 0) {
+                    <span class="doctor-specialty">{{ doctor.specialties.join(' · ') }}</span>
+                  } @else {
+                    <span class="doctor-specialty doctor-specialty--empty">Sin especialidad registrada</span>
+                  }
+                  <div class="doctor-badges">
+                    @if (doctor.licenseNumber) {
+                      <span class="badge-license">Mat. {{ doctor.licenseNumber }}</span>
+                    }
+                    @if (doctor.seniorityYears > 0) {
+                      <span class="badge-seniority">
+                        <mat-icon>workspace_premium</mat-icon>
+                        {{ doctor.seniorityYears }} año{{ doctor.seniorityYears === 1 ? '' : 's' }} de antigüedad
+                      </span>
+                    }
+                  </div>
+                </div>
+              </div>
+
+              <div class="header-actions">
+                @if (!isComplete(doctor)) {
+                  @if (doctor.branches.length === 0) {
+                    <span class="status-chip status-chip--warn" matTooltip="Asignar sucursal para activar">
+                      <mat-icon>location_off</mat-icon>
+                      Sin sucursal
+                    </span>
+                  } @else {
+                    <span class="status-chip status-chip--warn" matTooltip="Configurar horarios para activar">
+                      <mat-icon>schedule</mat-icon>
+                      Sin horario
+                    </span>
+                  }
+                } @else {
+                  <span
+                    class="status-chip"
+                    [class.status-chip--on]="doctor.availableToday"
+                    [class.status-chip--off]="!doctor.availableToday">
+                    <span class="status-dot-sm"></span>
+                    {{ doctor.availableToday ? 'Disponible hoy' : 'No disponible' }}
+                  </span>
+                }
+
+                @if (isAdmin()) {
+                  <button
+                    class="menu-btn"
+                    [matMenuTriggerFor]="doctorMenu"
+                    matTooltip="Acciones"
+                    aria-label="Opciones del médico">
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+                  <mat-menu #doctorMenu="matMenu" class="doctors-menu">
+                    <button mat-menu-item (click)="openEditInfo(doctor)">
+                      <mat-icon>edit</mat-icon>
+                      <span>Editar información</span>
+                    </button>
+                    <button mat-menu-item (click)="openSpecialties(doctor)">
+                      <mat-icon>medical_services</mat-icon>
+                      <span>Especialidades</span>
+                    </button>
+                    <button mat-menu-item (click)="openBranches(doctor)">
+                      <mat-icon>location_on</mat-icon>
+                      <span>Sucursales</span>
+                    </button>
+                    <button mat-menu-item (click)="openSchedule(doctor)">
+                      <mat-icon>schedule</mat-icon>
+                      <span>Horarios</span>
+                    </button>
+                    <mat-divider></mat-divider>
+                    <button mat-menu-item class="menu-item--danger" (click)="confirmDeactivate(doctor)">
+                      <mat-icon>block</mat-icon>
+                      <span>Desactivar</span>
+                    </button>
+                  </mat-menu>
+                }
+              </div>
+            </div>
+
+            <div class="card-divider"></div>
+
+            <div class="card-meta">
+              <div class="meta-group">
+                <span class="meta-group-label">
+                  <mat-icon>location_on</mat-icon>
+                  Sucursales
+                </span>
+                @if (doctor.branches.length > 0) {
+                  <div class="chips-wrap">
+                    @for (branch of doctor.branches; track branch) {
+                      <span class="chip">{{ branch }}</span>
+                    }
+                  </div>
+                } @else {
+                  <span class="no-data">Sin sucursal asignada</span>
+                }
+              </div>
+
+              <div class="meta-sep"></div>
+
+              <div class="meta-group">
+                <span class="meta-group-label">
+                  <mat-icon>calendar_today</mat-icon>
+                  Disponibilidad semanal
+                </span>
+                @let branchSchedules = getScheduleBranches(doctor);
+                @if (branchSchedules.length > 0) {
+                  <div class="branch-schedules">
+                    @for (branch of branchSchedules; track branch.branchName) {
+                      <div class="branch-schedule-row">
+                        @if (branchSchedules.length > 1) {
+                          <span class="branch-schedule-label">{{ branch.branchName }}</span>
+                        }
+                        <div class="week-row">
+                          @for (label of DAY_LABELS; track $index) {
+                            <div
+                              class="day-pill"
+                              [class.day-pill--on]="getDayIsActive(branch.scheduleByDay, $index)"
+                              [matTooltip]="getDayTooltip(branch.scheduleByDay, $index)">
+                              {{ label }}
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <span class="no-data">Sin horarios configurados</span>
+                }
+              </div>
+
+              <div class="meta-sep"></div>
+
+              <div class="meta-group meta-group--narrow">
+                <span class="meta-group-label">
+                  <mat-icon>event_note</mat-icon>
+                  Citas este mes
+                </span>
+                <div class="stat-row">
+                  <span class="stat-num">{{ doctor.appointmentsThisMonth }}</span>
+                  <span class="stat-trend" [class]="getAppointmentTrendClass(doctor.appointmentsGrowthPercent)">
+                    <mat-icon>{{ getAppointmentTrendIcon(doctor.appointmentsGrowthPercent) }}</mat-icon>
+                    {{ doctor.appointmentsGrowthPercent > 0 ? '+' : '' }}{{ doctor.appointmentsGrowthPercent }}%
+                  </span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  @if (!store.loading() && sortedDoctors().length === 0) {
+    <div class="empty-state">
+      <div class="empty-icon-wrapper">
+        <mat-icon>stethoscope</mat-icon>
+      </div>
+      <h2 class="empty-title">
+        @if (searchQuery() || availabilityFilter() !== 'all') {
+          Sin resultados para la búsqueda
+        } @else {
+          Aún no hay médicos en tu equipo
+        }
+      </h2>
+      <p class="empty-subtitle">
+        @if (searchQuery() || availabilityFilter() !== 'all') {
+          Intentá con otros términos o quitá los filtros activos.
+        } @else {
+          Comencemos con tu primer médico. Una vez registrados, podrás asignarles especialidades, sucursales y horarios.
+        }
+      </p>
+      @if (!searchQuery() && availabilityFilter() === 'all' && isAdmin()) {
+        <button class="empty-cta" (click)="openCreate()">
+          <mat-icon>add</mat-icon>
+          Registrar médico
+        </button>
+      }
+    </div>
+  }
 
 </div>

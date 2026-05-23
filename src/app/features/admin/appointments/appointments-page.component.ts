@@ -53,9 +53,8 @@ export class AppointmentsPageComponent implements OnInit {
   readonly statusOptions: StatusOption[] = [
     { label: 'Todos', value: '', cssClass: '' },
     { label: 'En espera', value: 'WAITING', cssClass: 'chip--warning' },
-    { label: 'En consulta', value: 'IN_CONSULTATION', cssClass: 'chip--primary' },
+    { label: 'En consulta', value: 'IN_PROCESS', cssClass: 'chip--primary' },
     { label: 'Completada', value: 'COMPLETED', cssClass: 'chip--success' },
-    { label: 'Cancelada', value: 'CANCELLED', cssClass: 'chip--danger' },
   ];
 
   readonly activeStatus = signal<AppointmentFlowStatus | ''>('');
@@ -102,9 +101,8 @@ export class AppointmentsPageComponent implements OnInit {
   statusLabel(status: AppointmentFlowStatus): string {
     const map: Record<AppointmentFlowStatus, string> = {
       WAITING: 'En espera',
-      IN_CONSULTATION: 'En consulta',
+      IN_PROCESS: 'En consulta',
       COMPLETED: 'Completada',
-      CANCELLED: 'Cancelada',
     };
     return map[status] ?? status;
   }
@@ -112,9 +110,8 @@ export class AppointmentsPageComponent implements OnInit {
   statusClass(status: AppointmentFlowStatus): string {
     const map: Record<AppointmentFlowStatus, string> = {
       WAITING: 'chip--warning',
-      IN_CONSULTATION: 'chip--primary',
+      IN_PROCESS: 'chip--primary',
       COMPLETED: 'chip--success',
-      CANCELLED: 'chip--danger',
     };
     return map[status] ?? '';
   }
@@ -134,9 +131,8 @@ export class AppointmentsPageComponent implements OnInit {
   private statusToId(status: AppointmentFlowStatus): number {
     const map: Record<AppointmentFlowStatus, number> = {
       WAITING: 1,
-      IN_CONSULTATION: 2,
+      IN_PROCESS: 2,
       COMPLETED: 3,
-      CANCELLED: 4,
     };
     return map[status];
   }

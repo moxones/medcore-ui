@@ -1,0 +1,169 @@
+<div class="page">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Catálogo Maestro</h1>
+      <p class="page-subtitle">Define los catálogos globales disponibles para todas las clínicas</p>
+    </div>
+    <button class="new-btn" (click)="openCreate()">
+      <mat-icon>add</mat-icon>
+      Nuevo · {{ activeCard().singular }}
+    </button>
+  </div>
+
+  <div class="section-cards">
+    @for (section of sections; track section.key) {
+      <button
+        class="section-card"
+        [class.section-card--active]="activeSection() === section.key"
+        [style.--card-color]="section.color"
+        (click)="setActiveSection(section)">
+        <div class="section-card__icon">
+          <mat-icon>{{ section.icon }}</mat-icon>
+        </div>
+        <span class="section-card__label">{{ section.label }}</span>
+      </button>
+    }
+  </div>
+
+  @if (store.loading()) {
+    <mat-progress-bar mode="indeterminate" class="progress" />
+  }
+
+  <app-alert-banner [message]="store.error()" />
+
+  <div class="toolbar">
+    <div class="search-box">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input
+        class="search-input"
+        type="text"
+        [placeholder]="'Buscar en ' + activeCard().label.toLowerCase() + '...'"
+        [value]="searchQuery()"
+        (input)="onSearchInput($event)" />
+      @if (searchQuery()) {
+        <button class="search-clear" (click)="searchQuery.set('')">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </div>
+
+    <div class="filter-pills">
+      <button
+        class="filter-pill"
+        [class.filter-pill--active]="statusFilter() === 'all'"
+        (click)="statusFilter.set('all')">
+        Todos
+      </button>
+      <button
+        class="filter-pill"
+        [class.filter-pill--active]="statusFilter() === 'active'"
+        (click)="statusFilter.set('active')">
+        <span class="dot dot--green"></span>
+        Activos ({{ activeCount() }})
+      </button>
+      <button
+        class="filter-pill"
+        [class.filter-pill--active]="statusFilter() === 'inactive'"
+        (click)="statusFilter.set('inactive')">
+        <span class="dot dot--gray"></span>
+        Inactivos
+      </button>
+    </div>
+  </div>
+
+  <div class="results-summary">
+    <span class="results-count">
+      {{ filteredItems().length }}
+      {{ filteredItems().length === 1 ? 'elemento' : 'elementos' }}
+    </span>
+  </div>
+
+  <div class="items-grid">
+    @for (item of filteredItems(); track item.id) {
+      <div class="item-card" [class.item-card--inactive]="!item.isActive">
+
+        <div class="item-card__top">
+          <div class="item-card__icon" [style.--card-color]="activeCard().color">
+            <mat-icon>{{ activeCard().icon }}</mat-icon>
+          </div>
+          <span
+            class="status-tag"
+            [class.status-tag--on]="item.isActive">
+            <span class="status-tag__dot"></span>
+            {{ item.isActive ? 'Activo' : 'Inactivo' }}
+          </span>
+        </div>
+
+        <div class="item-card__body">
+          <h3 class="item-card__name">{{ item.name }}</h3>
+          <span class="code-badge">{{ item.code }}</span>
+          @if (item.description) {
+            <p class="item-card__desc">{{ item.description }}</p>
+          }
+          @if (isPlans()) {
+            <div class="plan-meta">
+              <span class="price-tag">{{ formatPrice(asPlan(item).price) }}</span>
+              <span class="meta-line">
+                <mat-icon>groups</mat-icon>
+                {{ asPlan(item).maxUsers }} usuarios · {{ asPlan(item).maxBranches }} sedes
+              </span>
+            </div>
+          }
+          @if (activeSection() === 'appointmentTypes' && item.durationMinutes != null) {
+            <span class="meta-line">
+              <mat-icon>schedule</mat-icon>{{ item.durationMinutes }} min por defecto
+            </span>
+          }
+          @if (item.updatedAt) {
+            <span
+              class="meta-line meta-line--age"
+              [matTooltip]="'Última modificación: ' + (item.updatedAt | relativeTime: 'absolute')">
+              <mat-icon>history</mat-icon>Actualizado {{ item.updatedAt | relativeTime }}
+            </span>
+          } @else if (item.createdAt) {
+            <span
+              class="meta-line meta-line--age"
+              [matTooltip]="'Fecha de creación: ' + (item.createdAt | relativeTime: 'absolute')">
+              <mat-icon>schedule</mat-icon>Creado {{ item.createdAt | relativeTime }}
+            </span>
+          }
+        </div>
+
+        <div class="item-card__footer">
+          <button
+            class="action-btn"
+            matTooltip="Editar"
+            (click)="openEdit(item)">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button
+            class="action-btn action-btn--danger"
+            matTooltip="Eliminar"
+            (click)="openDelete(item)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+
+      </div>
+    }
+  </div>
+
+  @if (!store.loading() && filteredItems().length === 0) {
+    <div class="empty-state">
+      <mat-icon>{{ activeCard().icon }}</mat-icon>
+      <span>
+        @if (searchQuery() || statusFilter() !== 'all') {
+          No hay elementos que coincidan con los filtros
+        } @else {
+          Aún no hay elementos en {{ activeCard().label.toLowerCase() }}
+        }
+      </span>
+      <button class="new-btn" (click)="openCreate()">
+        <mat-icon>add</mat-icon>
+        Crear el primero
+      </button>
+    </div>
+  }
+
+</div>

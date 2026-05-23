@@ -1,4 +1,4 @@
-import { Component, ViewChild, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { MatIconModule } from '@angular/material/icon';
@@ -45,7 +45,7 @@ interface NavGroup {
   templateUrl: './reception-shell.component.html',
   styleUrl: './reception-shell.component.scss',
 })
-export class ReceptionShellComponent {
+export class ReceptionShellComponent implements OnInit {
   @ViewChild('sidenav') private readonly sidenav!: MatSidenav;
 
   private readonly breakpointObserver = inject(BreakpointObserver);
@@ -70,19 +70,42 @@ export class ReceptionShellComponent {
   readonly initials = computed(() => {
     const user = this.authStore.user();
     if (!user) return '?';
-    return `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase();
+    const first = user.firstName?.[0] ?? '';
+    const last = user.lastName?.[0] ?? '';
+    return `${first}${last}`.toUpperCase() || '?';
   });
 
   readonly navGroups: NavGroup[] = [
     {
-      label: 'Operaciones',
+      label: 'Principal',
       items: [
         { icon: 'dashboard', label: 'Dashboard', route: '/reception/dashboard' },
-        { icon: 'calendar_month', label: 'Citas', route: '/reception/appointments' },
+      ],
+    },
+    {
+      label: 'Agenda',
+      items: [
+        { icon: 'calendar_month', label: 'Agenda del Día', route: '/reception/agenda' },
+      ],
+    },
+    {
+      label: 'Atención',
+      items: [
+        { icon: 'queue', label: 'Cola de Espera', route: '/reception/queue' },
+        { icon: 'add_circle', label: 'Nueva Cita', route: '/reception/appointments/new' },
+      ],
+    },
+    {
+      label: 'Pacientes',
+      items: [
         { icon: 'people', label: 'Pacientes', route: '/reception/patients' },
       ],
     },
   ];
+
+  ngOnInit(): void {
+    this.tenantStore.load();
+  }
 
   onMenuClick(): void {
     if (this.isHandset()) {

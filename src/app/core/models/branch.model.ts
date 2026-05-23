@@ -3,12 +3,20 @@ import { PagedResponse, PageRequest } from './pagination.model';
 
 export interface CreateBranchRequest {
   name: string;
+  address: string;
+  ruc?: string;
+  openingTime?: string;
+  closingTime?: string;
   appointmentDurationMinutes: number;
 }
 
 export interface BranchResponse {
   id: number;
   name: string;
+  address: string;
+  ruc?: string;
+  openingTime?: string;
+  closingTime?: string;
   appointmentDurationMinutes: number;
 }
 

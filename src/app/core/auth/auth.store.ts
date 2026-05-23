@@ -3,6 +3,7 @@ import { computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService, LoginRequest } from './auth.service';
+import { TokenService } from './token.service';
 import { firstValueFrom } from 'rxjs';
 import { Role, ROLE_REDIRECTS, normalizeRole } from '@core/models/role.model';
 import { UserMeResponse } from '@core/models/auth.model';
@@ -52,55 +53,102 @@ export const AuthStore = signalStore(
     isAssistant: computed(() => roles().includes('ASSISTANT')),
     isReceptionist: computed(() => roles().includes('RECEPTIONIST')),
     isPatient: computed(() => roles().includes('PATIENT')),
-    fullName: computed(() => (user() ? `${user()!.firstName} ${user()!.lastName}` : '')),
+    needsProfileCompletion: computed(
+      () => !!user() && !user()!.profileCompleted && roles().includes('PATIENT'),
+    ),
+    fullName: computed(() => {
+      const u = user();
+      if (!u) return '';
+      const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+      return [u.firstName, u.lastName].filter(Boolean).map(cap).join(' ');
+    }),
     tenantId: computed(() => user()?.tenantId ?? null),
   })),
-  withMethods((store, auth = inject(AuthService), router = inject(Router)) => ({
-    async login(credentials: LoginRequest): Promise<void> {
-      patchState(store, { loading: true, error: null });
-      try {
-        const res = await firstValueFrom(auth.login(credentials));
+  withMethods(
+    (store, auth = inject(AuthService), router = inject(Router), tokens = inject(TokenService)) => {
+      let refreshInFlight: Promise<string | null> | null = null;
 
-        localStorage.setItem('access_token', res.accessToken);
-        localStorage.setItem('refresh_token', res.refreshToken);
+      return {
+        async login(credentials: LoginRequest): Promise<void> {
+          patchState(store, { loading: true, error: null });
+          try {
+            const res = await firstValueFrom(auth.login(credentials));
+            tokens.setTokens(res.accessToken, res.refreshToken);
 
-        const me = await firstValueFrom(auth.me());
+            const me = await firstValueFrom(auth.me());
+            const roles = me.roles.map(normalizeRole).filter((r): r is Role => r !== null);
+            tokens.setSession(roles, me);
 
-        const roles = me.roles.map(normalizeRole).filter((r): r is Role => r !== null);
-        localStorage.setItem('roles', JSON.stringify(roles));
-        localStorage.setItem('user', JSON.stringify(me));
+            patchState(store, {
+              accessToken: res.accessToken,
+              roles,
+              user: me,
+              loading: false,
+            });
 
-        patchState(store, {
-          accessToken: res.accessToken,
-          roles,
-          user: me,
-          loading: false,
-        });
+            const priority: Role[] = ['SUPER_ADMIN', 'CLINIC_ADMIN', 'DOCTOR', 'ASSISTANT', 'RECEPTIONIST', 'PATIENT'];
+            const primaryRole = priority.find((r) => roles.includes(r)) ?? 'PATIENT';
+            router.navigate([ROLE_REDIRECTS[primaryRole]]);
+          } catch (err: unknown) {
+            patchState(store, { loading: false, error: resolveLoginError(err) });
+          }
+        },
 
-        const priority: Role[] = ['SUPER_ADMIN', 'CLINIC_ADMIN', 'DOCTOR', 'ASSISTANT', 'RECEPTIONIST', 'PATIENT'];
-        const primaryRole = priority.find((r) => roles.includes(r)) ?? 'PATIENT';
-        router.navigate([ROLE_REDIRECTS[primaryRole]]);
-      } catch (err: unknown) {
-        patchState(store, { loading: false, error: resolveLoginError(err) });
-      }
+        refreshAccessToken(): Promise<string | null> {
+          if (refreshInFlight) return refreshInFlight;
+
+          const refreshToken = tokens.getRefreshToken();
+          if (!refreshToken) return Promise.resolve(null);
+
+          refreshInFlight = (async () => {
+            try {
+              const res = await firstValueFrom(auth.refresh({ refreshToken }));
+              tokens.setTokens(res.accessToken, res.refreshToken);
+              patchState(store, { accessToken: res.accessToken });
+              return res.accessToken;
+            } catch {
+              return null;
+            } finally {
+              refreshInFlight = null;
+            }
+          })();
+
+          return refreshInFlight;
+        },
+
+        resetSession(): void {
+          tokens.clear();
+          patchState(store, { accessToken: null, roles: [], user: null });
+          router.navigate(['/login']);
+        },
+
+        markProfileCompleted(firstName?: string, lastName?: string): void {
+          const u = store.user();
+          if (!u) return;
+          const updated: UserMeResponse = {
+            ...u,
+            profileCompleted: true,
+            firstName: firstName ?? u.firstName,
+            lastName: lastName ?? u.lastName,
+          };
+          patchState(store, { user: updated });
+          tokens.setSession(store.roles(), updated);
+        },
+
+        async logout(): Promise<void> {
+          patchState(store, { loggingOut: true });
+          const refreshToken = tokens.getRefreshToken();
+          tokens.clear();
+          patchState(store, { accessToken: null, roles: [], user: null });
+
+          if (refreshToken) {
+            void firstValueFrom(auth.logout(refreshToken)).catch(() => undefined);
+          }
+
+          await router.navigate(['/login']);
+          patchState(store, { loggingOut: false });
+        },
+      };
     },
-
-    async logout(): Promise<void> {
-      patchState(store, { loggingOut: true });
-      const refreshToken = localStorage.getItem('refresh_token');
-      if (refreshToken) {
-        try {
-          await firstValueFrom(auth.logout(refreshToken));
-        } catch {}
-      }
-      if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('roles');
-        localStorage.removeItem('user');
-      }
-      patchState(store, { accessToken: null, roles: [], user: null, loggingOut: false });
-      router.navigate(['/login']);
-    },
-  })),
+  ),
 );

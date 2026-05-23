@@ -7,6 +7,7 @@ import {
   BranchListApiResponse,
   CreateBranchRequest,
 } from '@core/models/branch.model';
+import { DoctorBranchListApiResponse } from '@core/models/doctor.model';
 import { PageRequest } from '@core/models/pagination.model';
 
 @Injectable({ providedIn: 'root' })
@@ -26,5 +27,9 @@ export class BranchService {
 
   create(body: CreateBranchRequest): Observable<BranchApiResponse> {
     return this.http.post<BranchApiResponse>(API_ROUTES.branches.base, body);
+  }
+
+  getBranchDoctors(branchId: number): Observable<DoctorBranchListApiResponse> {
+    return this.http.get<DoctorBranchListApiResponse>(API_ROUTES.branches.doctors(branchId));
   }
 }

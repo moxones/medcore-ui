@@ -1,0 +1,83 @@
+<div class="dialog-header">
+  <h2 mat-dialog-title>{{ isEdit() ? 'Editar' : 'Nuevo' }} · {{ data.title }}</h2>
+  <button mat-icon-button (click)="cancel()" aria-label="Cerrar">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content>
+  <app-alert-banner [message]="formError()" />
+
+  <form [formGroup]="form" class="form-grid">
+
+    <mat-form-field appearance="outline">
+      <mat-label>Nombre</mat-label>
+      <input matInput formControlName="name" placeholder="Ej: Cardiología" />
+      @if (form.controls.name.hasError('required')) {
+        <mat-error>El nombre es requerido</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Código</mat-label>
+      <input matInput formControlName="code" placeholder="Ej: CARD" />
+      @if (form.controls.code.hasError('required')) {
+        <mat-error>El código es requerido</mat-error>
+      }
+    </mat-form-field>
+
+    @if (showDescription()) {
+      <mat-form-field appearance="outline">
+        <mat-label>Descripción</mat-label>
+        <textarea matInput formControlName="description" rows="2"></textarea>
+      </mat-form-field>
+    }
+
+    @if (showDuration()) {
+      <mat-form-field appearance="outline">
+        <mat-label>Duración por defecto (minutos)</mat-label>
+        <input matInput type="number" formControlName="durationMinutes" min="5" step="5" />
+        @if (form.controls.durationMinutes.hasError('required') || form.controls.durationMinutes.hasError('min')) {
+          <mat-error>Ingresa una duración válida</mat-error>
+        }
+      </mat-form-field>
+    }
+
+    @if (showPlanFields()) {
+      <div class="row">
+        <mat-form-field appearance="outline">
+          <mat-label>Precio (S/.)</mat-label>
+          <input matInput type="number" formControlName="price" min="0" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Máx. usuarios</mat-label>
+          <input matInput type="number" formControlName="maxUsers" min="1" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Máx. sedes</mat-label>
+          <input matInput type="number" formControlName="maxBranches" min="1" />
+        </mat-form-field>
+      </div>
+    }
+
+    <div class="toggle-row">
+      <div>
+        <span class="toggle-row__title">Activo en el sistema</span>
+        <span class="toggle-row__hint">Si está inactivo, no estará disponible para ninguna clínica</span>
+      </div>
+      <mat-slide-toggle formControlName="isActive" color="primary" />
+    </div>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="submit()" [disabled]="store.saving()">
+    @if (store.saving()) {
+      <mat-spinner diameter="18" />
+    } @else {
+      {{ isEdit() ? 'Guardar cambios' : 'Crear' }}
+    }
+  </button>
+</mat-dialog-actions>

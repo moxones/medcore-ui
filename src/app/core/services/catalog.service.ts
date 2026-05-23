@@ -4,126 +4,197 @@ import { Observable } from 'rxjs';
 import { API_ROUTES } from '@core/api/api.config';
 import { ApiResponse } from '@core/models/api-response.model';
 import {
-  AppointmentTypeApiResponse,
-  AppointmentTypeListApiResponse,
+  AppointmentTypeMasterRequest,
   CatalogItemApiResponse,
   CatalogItemListApiResponse,
-  CreateCatalogItemRequest,
-  CreatePlanRequest,
-  CreateSpecialtyRequest,
+  DocumentTypeMasterRequest,
+  MasterCatalogApiResponse,
+  MasterCatalogListApiResponse,
   PlanApiResponse,
   PlanListApiResponse,
-  SpecialtyApiResponse,
-  SpecialtyListApiResponse,
+  PlanMasterRequest,
+  SpecialtyMasterRequest,
+  SystemCatalogRequest,
 } from '@core/models/catalog.model';
 
 @Injectable({ providedIn: 'root' })
 export class CatalogService {
   private readonly http = inject(HttpClient);
 
-  private buildParams(filters: object): HttpParams {
-    return Object.entries(filters)
-      .filter(([, v]) => v !== undefined && v !== null)
-      .reduce((params, [k, v]) => params.set(k, String(v)), new HttpParams());
+  private get<T>(url: string): Observable<ApiResponse<T>> {
+    return this.http.get<ApiResponse<T>>(url);
   }
 
-  getSpecialties(): Observable<SpecialtyListApiResponse> {
-    return this.http.get<SpecialtyListApiResponse>(API_ROUTES.catalogs.specialties);
+  private post<T, B>(url: string, body: B): Observable<ApiResponse<T>> {
+    return this.http.post<ApiResponse<T>>(url, body);
   }
 
-  createSpecialty(body: CreateSpecialtyRequest): Observable<SpecialtyApiResponse> {
-    return this.http.post<SpecialtyApiResponse>(API_ROUTES.catalogs.specialties, body);
+  private put<T, B>(url: string, body: B): Observable<ApiResponse<T>> {
+    return this.http.put<ApiResponse<T>>(url, body);
   }
 
-  deleteSpecialty(id: number): Observable<ApiResponse<null>> {
-    return this.http.delete<ApiResponse<null>>(API_ROUTES.catalogs.specialtyById(id));
+  private remove(url: string): Observable<ApiResponse<null>> {
+    return this.http.delete<ApiResponse<null>>(url);
   }
 
-  getSuperAdminSpecialties(tenantId: number): Observable<SpecialtyListApiResponse> {
-    const params = this.buildParams({ tenantId });
-    return this.http.get<SpecialtyListApiResponse>(API_ROUTES.superAdmin.catalogs.specialties, { params });
+  listMasterSpecialties(): Observable<MasterCatalogListApiResponse> {
+    return this.get(API_ROUTES.superAdmin.catalogs.specialties);
   }
 
-  createSuperAdminSpecialty(body: CreateSpecialtyRequest, tenantId: number): Observable<SpecialtyApiResponse> {
-    const params = this.buildParams({ tenantId });
-    return this.http.post<SpecialtyApiResponse>(API_ROUTES.superAdmin.catalogs.specialties, body, { params });
+  createMasterSpecialty(body: SpecialtyMasterRequest): Observable<MasterCatalogApiResponse> {
+    return this.post(API_ROUTES.superAdmin.catalogs.specialties, body);
   }
 
-  deleteSuperAdminSpecialty(id: number): Observable<ApiResponse<null>> {
-    return this.http.delete<ApiResponse<null>>(API_ROUTES.superAdmin.catalogs.specialtyById(id));
+  updateMasterSpecialty(id: number, body: SpecialtyMasterRequest): Observable<MasterCatalogApiResponse> {
+    return this.put(API_ROUTES.superAdmin.catalogs.specialtyById(id), body);
   }
 
-  getPlans(): Observable<PlanListApiResponse> {
-    return this.http.get<PlanListApiResponse>(API_ROUTES.catalogs.plans);
+  deleteMasterSpecialty(id: number): Observable<ApiResponse<null>> {
+    return this.remove(API_ROUTES.superAdmin.catalogs.specialtyById(id));
   }
 
-  createPlan(body: CreatePlanRequest): Observable<PlanApiResponse> {
-    return this.http.post<PlanApiResponse>(API_ROUTES.catalogs.plans, body);
+  listMasterAppointmentTypes(): Observable<MasterCatalogListApiResponse> {
+    return this.get(API_ROUTES.superAdmin.catalogs.appointmentTypes);
   }
 
-  deletePlan(id: number): Observable<ApiResponse<null>> {
-    return this.http.delete<ApiResponse<null>>(API_ROUTES.catalogs.planById(id));
+  createMasterAppointmentType(body: AppointmentTypeMasterRequest): Observable<MasterCatalogApiResponse> {
+    return this.post(API_ROUTES.superAdmin.catalogs.appointmentTypes, body);
   }
 
-  getDocumentTypes(): Observable<CatalogItemListApiResponse> {
-    return this.http.get<CatalogItemListApiResponse>(API_ROUTES.catalogs.documentTypes);
+  updateMasterAppointmentType(id: number, body: AppointmentTypeMasterRequest): Observable<MasterCatalogApiResponse> {
+    return this.put(API_ROUTES.superAdmin.catalogs.appointmentTypeById(id), body);
   }
 
-  createDocumentType(body: CreateCatalogItemRequest): Observable<CatalogItemApiResponse> {
-    return this.http.post<CatalogItemApiResponse>(API_ROUTES.catalogs.documentTypes, body);
+  deleteMasterAppointmentType(id: number): Observable<ApiResponse<null>> {
+    return this.remove(API_ROUTES.superAdmin.catalogs.appointmentTypeById(id));
   }
 
-  deleteDocumentType(id: number): Observable<ApiResponse<null>> {
-    return this.http.delete<ApiResponse<null>>(API_ROUTES.catalogs.documentTypeById(id));
+  listMasterDocumentTypes(): Observable<MasterCatalogListApiResponse> {
+    return this.get(API_ROUTES.superAdmin.catalogs.documentTypes);
   }
 
-  getSubscriptionStatuses(): Observable<CatalogItemListApiResponse> {
-    return this.http.get<CatalogItemListApiResponse>(API_ROUTES.catalogs.subscriptionStatuses);
+  createMasterDocumentType(body: DocumentTypeMasterRequest): Observable<MasterCatalogApiResponse> {
+    return this.post(API_ROUTES.superAdmin.catalogs.documentTypes, body);
   }
 
-  createSubscriptionStatus(body: CreateCatalogItemRequest): Observable<CatalogItemApiResponse> {
-    return this.http.post<CatalogItemApiResponse>(API_ROUTES.catalogs.subscriptionStatuses, body);
+  updateMasterDocumentType(id: number, body: DocumentTypeMasterRequest): Observable<MasterCatalogApiResponse> {
+    return this.put(API_ROUTES.superAdmin.catalogs.documentTypeById(id), body);
   }
 
-  deleteSubscriptionStatus(id: number): Observable<ApiResponse<null>> {
-    return this.http.delete<ApiResponse<null>>(API_ROUTES.catalogs.subscriptionStatusById(id));
+  deleteMasterDocumentType(id: number): Observable<ApiResponse<null>> {
+    return this.remove(API_ROUTES.superAdmin.catalogs.documentTypeById(id));
   }
 
-  getAppointmentStatuses(): Observable<CatalogItemListApiResponse> {
-    return this.http.get<CatalogItemListApiResponse>(API_ROUTES.catalogs.appointmentStatuses);
+  listMasterPlans(): Observable<PlanListApiResponse> {
+    return this.get(API_ROUTES.superAdmin.catalogs.plans);
   }
 
-  createAppointmentStatus(body: CreateCatalogItemRequest): Observable<CatalogItemApiResponse> {
-    return this.http.post<CatalogItemApiResponse>(API_ROUTES.catalogs.appointmentStatuses, body);
+  createMasterPlan(body: PlanMasterRequest): Observable<PlanApiResponse> {
+    return this.post(API_ROUTES.superAdmin.catalogs.plans, body);
   }
 
-  deleteAppointmentStatus(id: number): Observable<ApiResponse<null>> {
-    return this.http.delete<ApiResponse<null>>(API_ROUTES.catalogs.appointmentStatusById(id));
+  updateMasterPlan(id: number, body: PlanMasterRequest): Observable<PlanApiResponse> {
+    return this.put(API_ROUTES.superAdmin.catalogs.planById(id), body);
   }
 
-  getAppointmentTypes(): Observable<AppointmentTypeListApiResponse> {
-    return this.http.get<AppointmentTypeListApiResponse>(API_ROUTES.catalogs.appointmentTypes);
+  deleteMasterPlan(id: number): Observable<ApiResponse<null>> {
+    return this.remove(API_ROUTES.superAdmin.catalogs.planById(id));
   }
 
-  createAppointmentType(body: CreateCatalogItemRequest): Observable<AppointmentTypeApiResponse> {
-    return this.http.post<AppointmentTypeApiResponse>(API_ROUTES.catalogs.appointmentTypes, body);
+  listMasterSubscriptionStatuses(): Observable<MasterCatalogListApiResponse> {
+    return this.get(API_ROUTES.superAdmin.catalogs.subscriptionStatuses);
   }
 
-  deleteAppointmentType(id: number): Observable<ApiResponse<null>> {
-    return this.http.delete<ApiResponse<null>>(API_ROUTES.catalogs.appointmentTypeById(id));
+  createMasterSubscriptionStatus(body: SystemCatalogRequest): Observable<MasterCatalogApiResponse> {
+    return this.post(API_ROUTES.superAdmin.catalogs.subscriptionStatuses, body);
   }
 
-  getSuperAdminAppointmentTypes(tenantId: number): Observable<AppointmentTypeListApiResponse> {
-    const params = this.buildParams({ tenantId });
-    return this.http.get<AppointmentTypeListApiResponse>(API_ROUTES.superAdmin.catalogs.appointmentTypes, { params });
+  updateMasterSubscriptionStatus(id: number, body: SystemCatalogRequest): Observable<MasterCatalogApiResponse> {
+    return this.put(API_ROUTES.superAdmin.catalogs.subscriptionStatusById(id), body);
   }
 
-  createSuperAdminAppointmentType(body: CreateCatalogItemRequest, tenantId: number): Observable<AppointmentTypeApiResponse> {
-    const params = this.buildParams({ tenantId });
-    return this.http.post<AppointmentTypeApiResponse>(API_ROUTES.superAdmin.catalogs.appointmentTypes, body, { params });
+  deleteMasterSubscriptionStatus(id: number): Observable<ApiResponse<null>> {
+    return this.remove(API_ROUTES.superAdmin.catalogs.subscriptionStatusById(id));
   }
 
-  deleteSuperAdminAppointmentType(id: number): Observable<ApiResponse<null>> {
-    return this.http.delete<ApiResponse<null>>(API_ROUTES.superAdmin.catalogs.appointmentTypeById(id));
+  listMasterAppointmentStatuses(): Observable<MasterCatalogListApiResponse> {
+    return this.get(API_ROUTES.superAdmin.catalogs.appointmentStatuses);
+  }
+
+  createMasterAppointmentStatus(body: SystemCatalogRequest): Observable<MasterCatalogApiResponse> {
+    return this.post(API_ROUTES.superAdmin.catalogs.appointmentStatuses, body);
+  }
+
+  updateMasterAppointmentStatus(id: number, body: SystemCatalogRequest): Observable<MasterCatalogApiResponse> {
+    return this.put(API_ROUTES.superAdmin.catalogs.appointmentStatusById(id), body);
+  }
+
+  deleteMasterAppointmentStatus(id: number): Observable<ApiResponse<null>> {
+    return this.remove(API_ROUTES.superAdmin.catalogs.appointmentStatusById(id));
+  }
+
+  getClinicSpecialties(): Observable<CatalogItemListApiResponse> {
+    return this.get(API_ROUTES.catalogs.specialties);
+  }
+
+  getAvailableSpecialties(): Observable<CatalogItemListApiResponse> {
+    return this.get(API_ROUTES.catalogs.specialtiesAvailable);
+  }
+
+  activateSpecialty(id: number): Observable<CatalogItemApiResponse> {
+    return this.post(API_ROUTES.catalogs.specialtyLink(id), {});
+  }
+
+  deactivateSpecialty(id: number): Observable<ApiResponse<null>> {
+    return this.remove(API_ROUTES.catalogs.specialtyLink(id));
+  }
+
+  getClinicAppointmentTypes(): Observable<CatalogItemListApiResponse> {
+    return this.get(API_ROUTES.catalogs.appointmentTypes);
+  }
+
+  getAvailableAppointmentTypes(): Observable<CatalogItemListApiResponse> {
+    return this.get(API_ROUTES.catalogs.appointmentTypesAvailable);
+  }
+
+  activateAppointmentType(id: number, durationMinutes?: number): Observable<CatalogItemApiResponse> {
+    const url = API_ROUTES.catalogs.appointmentTypeLink(id);
+    if (durationMinutes === undefined) {
+      return this.post(url, {});
+    }
+    const params = new HttpParams().set('durationMinutes', String(durationMinutes));
+    return this.http.post<CatalogItemApiResponse>(url, {}, { params });
+  }
+
+  deactivateAppointmentType(id: number): Observable<ApiResponse<null>> {
+    return this.remove(API_ROUTES.catalogs.appointmentTypeLink(id));
+  }
+
+  getClinicDocumentTypes(): Observable<CatalogItemListApiResponse> {
+    return this.get(API_ROUTES.catalogs.documentTypes);
+  }
+
+  getAvailableDocumentTypes(): Observable<CatalogItemListApiResponse> {
+    return this.get(API_ROUTES.catalogs.documentTypesAvailable);
+  }
+
+  activateDocumentType(id: number): Observable<CatalogItemApiResponse> {
+    return this.post(API_ROUTES.catalogs.documentTypeLink(id), {});
+  }
+
+  deactivateDocumentType(id: number): Observable<ApiResponse<null>> {
+    return this.remove(API_ROUTES.catalogs.documentTypeLink(id));
+  }
+
+  getClinicPlans(): Observable<PlanListApiResponse> {
+    return this.get(API_ROUTES.catalogs.plans);
+  }
+
+  getClinicSubscriptionStatuses(): Observable<MasterCatalogListApiResponse> {
+    return this.get(API_ROUTES.catalogs.subscriptionStatuses);
+  }
+
+  getClinicAppointmentStatuses(): Observable<MasterCatalogListApiResponse> {
+    return this.get(API_ROUTES.catalogs.appointmentStatuses);
   }
 }

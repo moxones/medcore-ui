@@ -1,0 +1,403 @@
+<div class="wizard-container">
+
+  <div class="stepper-header">
+    <div class="step-item" [class.step-item--active]="step() === 1" [class.step-item--done]="step1Done()">
+      <div class="step-circle">
+        @if (step1Done()) {
+          <mat-icon>check</mat-icon>
+        } @else {
+          <span>1</span>
+        }
+      </div>
+      <span class="step-label">Identidad</span>
+    </div>
+
+    <div class="step-connector" [class.step-connector--done]="step1Done()"></div>
+
+    <div class="step-item" [class.step-item--active]="step() === 2" [class.step-item--done]="step2Done()">
+      <div class="step-circle">
+        @if (step2Done()) {
+          <mat-icon>check</mat-icon>
+        } @else {
+          <span>2</span>
+        }
+      </div>
+      <span class="step-label">
+        Sucursales
+        @if (step() === 1) {
+          <span class="step-skip-tag">OPC</span>
+        }
+      </span>
+    </div>
+
+    <div class="step-connector" [class.step-connector--done]="step2Done()"></div>
+
+    <div class="step-item" [class.step-item--active]="step() === 3">
+      <div class="step-circle"><span>3</span></div>
+      <span class="step-label">
+        Horarios
+        @if (step() < 3) {
+          <span class="step-skip-tag">OPC</span>
+        }
+      </span>
+    </div>
+  </div>
+
+  @if (step() === 1) {
+    <div class="step-content">
+      <h2 class="step-title">¿Qué usuario va a ser médico?</h2>
+      <p class="step-subtitle">Solo usuarios con rol <strong>médico</strong> que aún no tienen perfil profesional.</p>
+
+      @if (loadingData()) {
+        <div class="loading-state">
+          <mat-spinner diameter="32" />
+          <span>Cargando usuarios...</span>
+        </div>
+      } @else {
+        <div class="search-box">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            class="search-input"
+            type="text"
+            placeholder="Buscar por nombre o correo..."
+            [value]="searchQuery()"
+            (input)="onSearchInput($event)"
+          />
+        </div>
+
+        <div class="user-list">
+          @if (filteredUsers().length === 0) {
+            <div class="list-empty">
+              <mat-icon>person_off</mat-icon>
+              <span>No hay usuarios con rol médico disponibles.</span>
+            </div>
+          }
+          @for (user of filteredUsers(); track user.id) {
+            <button
+              type="button"
+              class="user-row"
+              [class.user-row--selected]="isUserSelected(user.id)"
+              [class.user-row--locked]="step1Done()"
+              (click)="selectUser(user.id)">
+              <div class="user-radio">
+                <div class="radio-dot" [class.radio-dot--active]="isUserSelected(user.id)"></div>
+              </div>
+              <div class="user-avatar">{{ getUserInitials(user) }}</div>
+              <div class="user-info">
+                <span class="user-name">{{ user.person.firstName }} {{ user.person.lastName }}</span>
+                <span class="user-meta">
+                  {{ user.email }}
+                  @if (getDocumentNumber(user)) {
+                    · {{ getDocumentNumber(user) }}
+                  }
+                </span>
+              </div>
+              <span class="user-badge">SIN PERFIL</span>
+            </button>
+          }
+        </div>
+
+        <div class="identity-fields">
+          <div class="field-group">
+            <label class="field-label">
+              MATRÍCULA
+              <span class="field-optional">opcional</span>
+            </label>
+            <input
+              class="field-input"
+              type="text"
+              placeholder="Ej. MN 45.882"
+              [formControl]="licenseControl"
+              [disabled]="step1Done()"
+            />
+          </div>
+          <div class="field-group">
+            <label class="field-label">
+              ESPECIALIDAD
+              <span class="field-optional">opcional</span>
+            </label>
+            <div class="specialty-chips">
+              @if (specialties().length === 0) {
+                <span class="specialty-empty">Sin especialidades configuradas en el tenant.</span>
+              }
+              @for (spec of specialties(); track spec.id) {
+                <button
+                  type="button"
+                  class="specialty-chip"
+                  [class.specialty-chip--selected]="isSpecialtySelected(spec.id)"
+                  [disabled]="step1Done()"
+                  (click)="toggleSpecialty(spec.id)">
+                  @if (isSpecialtySelected(spec.id)) {
+                    <mat-icon>check</mat-icon>
+                  }
+                  {{ spec.name }}
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (error()) {
+        <app-alert-banner type="error" [message]="error()!" (dismissed)="clearError()" />
+      }
+    </div>
+
+    <div class="wizard-footer">
+      <button class="btn-cancel" (click)="cancel()">Cancelar</button>
+      <button
+        class="btn-primary"
+        [disabled]="!canContinue1() || saving()"
+        (click)="continueStep1()">
+        @if (saving()) {
+          <mat-spinner diameter="16" />
+        }
+        Continuar
+        <mat-icon>arrow_forward</mat-icon>
+      </button>
+    </div>
+  }
+
+  @if (step() === 2) {
+    <div class="step-content">
+      @if (selectedUser(); as user) {
+        <div class="doctor-summary-bar">
+          <div class="summary-avatar">{{ getUserInitials(user) }}</div>
+          <div class="summary-info">
+            <span class="summary-name">Dr. {{ user.person.firstName }} {{ user.person.lastName }}</span>
+            @if (licenseControl.value || selectedSpecialtyIds().length > 0) {
+              <span class="summary-meta">
+                @if (licenseControl.value) { {{ licenseControl.value }} }
+                @if (licenseControl.value && selectedSpecialtyIds().length > 0) { · }
+                @if (selectedSpecialtyIds().length > 0) {
+                  {{ selectedSpecialtyIds().length }} especialidad{{ selectedSpecialtyIds().length === 1 ? '' : 'es' }}
+                }
+              </span>
+            }
+          </div>
+        </div>
+      }
+
+      <h2 class="step-title">¿Dónde atiende?</h2>
+      <p class="step-subtitle">Marcá una o más sucursales. Sin esto, el médico no aparece al crear citas.</p>
+
+      @if (loadingData()) {
+        <div class="loading-state">
+          <mat-spinner diameter="32" />
+          <span>Cargando sucursales...</span>
+        </div>
+      } @else {
+        <div class="branch-list">
+          @if (branches().length === 0) {
+            <div class="list-empty">
+              <mat-icon>location_off</mat-icon>
+              <span>No hay sucursales registradas en el tenant.</span>
+            </div>
+          }
+          @for (branch of branches(); track branch.id) {
+            <button
+              type="button"
+              class="branch-row"
+              [class.branch-row--selected]="isBranchSelected(branch.id)"
+              [class.branch-row--locked]="step2Done()"
+              (click)="toggleBranch(branch.id)">
+              <div class="branch-check">
+                @if (isBranchSelected(branch.id)) {
+                  <mat-icon>check</mat-icon>
+                }
+              </div>
+              <div class="branch-dot"></div>
+              <div class="branch-info">
+                <span class="branch-name">{{ branch.name }}</span>
+                <span class="branch-address">{{ branch.address }}</span>
+              </div>
+            </button>
+          }
+        </div>
+      }
+
+      @if (error()) {
+        <app-alert-banner type="error" [message]="error()!" (dismissed)="clearError()" />
+      }
+    </div>
+
+    <div class="wizard-footer">
+      <button class="btn-back" (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
+        Atrás
+      </button>
+      <button class="btn-skip" (click)="skipStep2()">Saltar por ahora</button>
+      <button
+        class="btn-primary"
+        [disabled]="selectedBranchIds().length === 0 || saving()"
+        (click)="continueStep2()">
+        @if (saving()) {
+          <mat-spinner diameter="16" />
+        }
+        Continuar
+        <mat-icon>arrow_forward</mat-icon>
+      </button>
+    </div>
+  }
+
+  @if (step() === 3) {
+    <div class="step-content">
+      <h2 class="step-title">Cuándo atiende en cada sucursal</h2>
+      <p class="step-subtitle">Elegí un punto de partida. Después se puede ajustar en el perfil.</p>
+
+      @if (doctorBranches().length > 0) {
+        <div class="branch-tabs">
+          @for (branch of doctorBranches(); track branch.id) {
+            <button
+              type="button"
+              class="branch-tab"
+              [class.branch-tab--active]="activeDoctorBranchId() === branch.id"
+              (click)="setActiveBranch(branch.id)">
+              {{ branch.branchName }}
+            </button>
+          }
+        </div>
+
+        @if (activeDoctorBranchId(); as branchId) {
+          @if (scheduleConfigs()[branchId]; as cfg) {
+            <div class="schedule-panels">
+
+              <div class="schedule-panel-left">
+                <div class="preset-cards">
+                  <button
+                    type="button"
+                    class="preset-card"
+                    [class.preset-card--active]="cfg.preset === 'mananas'"
+                    (click)="selectPreset(branchId, 'mananas')">
+                    <span class="preset-name">Mañanas L–V</span>
+                    <span class="preset-detail">08–12 · 20 min</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="preset-card"
+                    [class.preset-card--active]="cfg.preset === 'jornada'"
+                    (click)="selectPreset(branchId, 'jornada')">
+                    <span class="preset-name">Jornada completa</span>
+                    <span class="preset-detail">09–18 · 30 min</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="preset-card"
+                    [class.preset-card--active]="cfg.preset === 'custom'"
+                    (click)="selectPreset(branchId, 'custom')">
+                    <span class="preset-name">Personalizado</span>
+                    <span class="preset-detail">elegir días y horario</span>
+                  </button>
+                </div>
+
+                @if (cfg.preset === 'custom') {
+                  <div class="custom-config">
+                    <div class="day-picker">
+                      @for (label of DAY_LABELS; track $index) {
+                        <button
+                          type="button"
+                          class="day-btn"
+                          [class.day-btn--active]="isDaySelected(branchId, $index)"
+                          (click)="toggleDay(branchId, $index)">
+                          {{ label }}
+                        </button>
+                      }
+                    </div>
+                    <div class="time-fields">
+                      <div class="time-field">
+                        <label class="field-label">DESDE</label>
+                        <input
+                          class="field-input field-input--time"
+                          type="time"
+                          [value]="cfg.startTime"
+                          (change)="updateTime(branchId, 'startTime', $any($event.target).value)"
+                        />
+                      </div>
+                      <div class="time-field">
+                        <label class="field-label">HASTA</label>
+                        <input
+                          class="field-input field-input--time"
+                          type="time"
+                          [value]="cfg.endTime"
+                          (change)="updateTime(branchId, 'endTime', $any($event.target).value)"
+                        />
+                      </div>
+                    </div>
+                    <div class="time-field">
+                      <label class="field-label">DURACIÓN POR CITA</label>
+                      <select
+                        class="field-input"
+                        [value]="cfg.slotDurationMinutes"
+                        (change)="updateSlotDuration(branchId, $any($event.target).value)">
+                        @for (d of SLOT_DURATIONS; track d) {
+                          <option [value]="d">{{ d }} min</option>
+                        }
+                      </select>
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <div class="schedule-panel-right">
+                <div class="week-grid">
+                  <div class="grid-header">
+                    <span class="grid-row-label"></span>
+                    @for (label of DAY_LABELS; track $index) {
+                      <span class="grid-day-label">{{ label }}</span>
+                    }
+                  </div>
+                  @for (row of gridRows(); track row.hour) {
+                    <div class="grid-row">
+                      <span class="grid-row-label">{{ row.label }}</span>
+                      @for (filled of row.cells; track $index) {
+                        <div class="grid-cell" [class.grid-cell--filled]="filled"></div>
+                      }
+                    </div>
+                  }
+                </div>
+
+                <div class="schedule-summary">
+                  <mat-icon>schedule</mat-icon>
+                  <span>
+                    <strong>{{ weeklyHours() }} h</strong> / semana
+                    · {{ activeConfig()?.slotDurationMinutes }} min por cita
+                    · <strong>{{ weeklySlots() }}</strong> slots
+                  </span>
+                </div>
+              </div>
+
+            </div>
+          }
+        }
+      } @else {
+        <div class="list-empty">
+          <mat-icon>event_busy</mat-icon>
+          <span>No se asignaron sucursales. Los horarios se pueden configurar desde el perfil del médico.</span>
+        </div>
+      }
+
+      @if (error()) {
+        <app-alert-banner type="error" [message]="error()!" (dismissed)="clearError()" />
+      }
+    </div>
+
+    <div class="wizard-footer">
+      <button class="btn-back" (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
+        Atrás
+      </button>
+      <button class="btn-skip" (click)="skipStep3()">Crear sin horarios</button>
+      <button
+        class="btn-primary btn-primary--success"
+        [disabled]="saving() || doctorBranches().length === 0"
+        (click)="createDoctor()">
+        @if (saving()) {
+          <mat-spinner diameter="16" />
+        }
+        Crear médico
+        <mat-icon>check</mat-icon>
+      </button>
+    </div>
+  }
+
+</div>

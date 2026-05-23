@@ -1,4 +1,4 @@
-import { Component, ViewChild, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { MatIconModule } from '@angular/material/icon';
@@ -47,7 +47,7 @@ interface NavGroup {
   templateUrl: './admin-shell.component.html',
   styleUrl: './admin-shell.component.scss',
 })
-export class AdminShellComponent {
+export class AdminShellComponent implements OnInit {
   @ViewChild('sidenav') private readonly sidenav!: MatSidenav;
 
   private readonly router = inject(Router);
@@ -73,7 +73,9 @@ export class AdminShellComponent {
   readonly initials = computed(() => {
     const user = this.authStore.user();
     if (!user) return '?';
-    return `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase();
+    const first = user.firstName?.[0] ?? '';
+    const last = user.lastName?.[0] ?? '';
+    return `${first}${last}`.toUpperCase() || '?';
   });
 
   readonly roleName = computed(() => {
@@ -108,7 +110,7 @@ export class AdminShellComponent {
           items: [
             { icon: 'manage_accounts', label: 'Usuarios', route: '/admin/users' },
             { icon: 'business', label: 'Sucursales', route: '/admin/branches' },
-            { icon: 'category', label: 'Catálogos', route: '/admin/catalogs' },
+            { icon: 'inventory_2', label: 'Catálogo Maestro', route: '/admin/catalog-master' },
           ],
         },
       ];
@@ -140,6 +142,10 @@ export class AdminShellComponent {
       },
     ];
   });
+
+  ngOnInit(): void {
+    this.tenantStore.load();
+  }
 
   onMenuClick(): void {
     if (this.isHandset()) {

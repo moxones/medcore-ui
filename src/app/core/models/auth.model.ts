@@ -33,4 +33,5 @@ export interface UserMeResponse {
   firstName: string;
   lastName: string;
   tenantId: number;
+  profileCompleted: boolean;
 }

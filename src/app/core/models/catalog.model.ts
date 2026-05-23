@@ -1,32 +1,65 @@
 import { ApiResponse } from './api-response.model';
 
+export type CatalogKind = 'specialties' | 'appointmentTypes' | 'documentTypes';
+
+export type MasterKind =
+  | 'specialties'
+  | 'appointmentTypes'
+  | 'documentTypes'
+  | 'plans'
+  | 'subscriptionStatuses'
+  | 'appointmentStatuses';
+
 export interface CatalogItemResponse {
   id: number;
   code: string;
   name: string;
+  description?: string | null;
+  durationMinutes?: number | null;
+  masterActive: boolean;
+  activated: boolean;
+  tenantActive: boolean;
+  tenantLinkId?: number | null;
   createdAt?: string;
   updatedAt?: string;
-  createdById?: number | null;
-  updatedById?: number | null;
+}
+
+export interface MasterCatalogItem {
+  id: number;
+  code: string;
+  name: string;
+  description?: string | null;
+  durationMinutes?: number | null;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
   updatedByName?: string | null;
 }
 
-export interface CreateCatalogItemRequest {
+export interface SpecialtyMasterRequest {
   code: string;
   name: string;
+  description: string;
+  isActive: boolean;
 }
 
-export interface SpecialtyResponse extends CatalogItemResponse {
-  tenantId?: number;
-  isActive?: boolean;
-  doctorCount?: number;
+export interface AppointmentTypeMasterRequest {
+  code: string;
+  name: string;
+  durationMinutes: number;
+  isActive: boolean;
 }
 
-export interface CreateSpecialtyRequest extends CreateCatalogItemRequest {}
+export interface DocumentTypeMasterRequest {
+  code: string;
+  name: string;
+  isActive: boolean;
+}
 
-export interface AppointmentTypeResponse extends CatalogItemResponse {
-  tenantId?: number;
-  isActive?: boolean;
+export interface SystemCatalogRequest {
+  code: string;
+  name: string;
+  isActive: boolean;
 }
 
 export interface PlanResponse {
@@ -39,24 +72,34 @@ export interface PlanResponse {
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
-  createdById?: number | null;
-  updatedById?: number | null;
   updatedByName?: string | null;
 }
 
-export interface CreatePlanRequest {
+export interface PlanMasterRequest {
   name: string;
   code: string;
   price: number;
   maxUsers: number;
   maxBranches: number;
+  isActive: boolean;
 }
 
-export type SpecialtyApiResponse = ApiResponse<SpecialtyResponse>;
-export type SpecialtyListApiResponse = ApiResponse<SpecialtyResponse[]>;
-export type AppointmentTypeApiResponse = ApiResponse<AppointmentTypeResponse>;
-export type AppointmentTypeListApiResponse = ApiResponse<AppointmentTypeResponse[]>;
-export type PlanApiResponse = ApiResponse<PlanResponse>;
-export type PlanListApiResponse = ApiResponse<PlanResponse[]>;
-export type CatalogItemApiResponse = ApiResponse<CatalogItemResponse>;
+export interface DoctorSpecialty {
+  id: number;
+  code: string;
+  name: string;
+  description?: string | null;
+  isActive?: boolean;
+  isMasterActive?: boolean;
+  isAssigned?: boolean;
+  tenantActivated?: boolean;
+  linkId?: number;
+}
+
 export type CatalogItemListApiResponse = ApiResponse<CatalogItemResponse[]>;
+export type CatalogItemApiResponse = ApiResponse<CatalogItemResponse>;
+export type MasterCatalogListApiResponse = ApiResponse<MasterCatalogItem[]>;
+export type MasterCatalogApiResponse = ApiResponse<MasterCatalogItem>;
+export type PlanListApiResponse = ApiResponse<PlanResponse[]>;
+export type PlanApiResponse = ApiResponse<PlanResponse>;
+export type DoctorSpecialtyListApiResponse = ApiResponse<DoctorSpecialty[]>;

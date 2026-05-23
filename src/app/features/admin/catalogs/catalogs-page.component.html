@@ -1,454 +1,283 @@
 <div class="page">
 
   <div class="page-header">
-    <h1 class="page-title">Catálogos</h1>
-    <p class="page-subtitle">Valores de referencia del sistema</p>
+    <div>
+      <h1 class="page-title">Catálogos</h1>
+      <p class="page-subtitle">Activa para tu clínica los catálogos disponibles en el sistema</p>
+    </div>
   </div>
 
-  <div class="catalog-cards">
-    @for (card of visibleCards(); track card.key) {
+  <div class="section-cards">
+    @for (card of sections; track card.key) {
       <button
-        class="catalog-card"
-        [class.catalog-card--active]="activeSection() === card.key"
+        class="section-card"
+        [class.section-card--active]="activeSection() === card.key"
         [style.--card-color]="card.color"
-        (click)="setActiveSection(card.key)">
-        <div class="card-top">
-          <div class="card-icon-wrap">
-            <mat-icon class="card-icon">{{ card.icon }}</mat-icon>
-          </div>
-          <mat-icon class="card-arrow">arrow_forward</mat-icon>
+        (click)="setActiveSection(card)">
+        <div class="section-card__icon">
+          <mat-icon>{{ card.icon }}</mat-icon>
         </div>
-        <div class="card-count">{{ catalogCount(card.key) }}</div>
-        <div class="card-label">{{ card.label }}</div>
+        <span class="section-card__label">{{ card.label }}</span>
       </button>
     }
   </div>
 
-  <div class="section-panel">
+  @if (store.loading()) {
+    <mat-progress-bar mode="indeterminate" class="progress" />
+  }
 
-    <div class="section-toolbar">
+  <app-alert-banner [message]="store.error()" />
+
+  @if (isActivatable()) {
+
+    <div class="toolbar">
       <div class="search-box">
         <mat-icon class="search-icon">search</mat-icon>
         <input
           class="search-input"
-          [placeholder]="'Buscar ' + activeSectionLabel().toLowerCase() + '...'"
+          type="text"
+          [placeholder]="'Buscar en ' + activeCard().label.toLowerCase() + '...'"
           [value]="searchQuery()"
           (input)="onSearchInput($event)" />
-      </div>
-
-      <div class="toolbar-right">
-        @if (showTenantSelector()) {
-          <div class="tenant-selector">
-            <mat-icon class="tenant-icon">business</mat-icon>
-            <mat-select
-              class="tenant-select"
-              placeholder="Seleccionar clínica"
-              [value]="store.selectedTenantId()"
-              [disabled]="orgStore.loading()"
-              (valueChange)="onTenantChange($event)">
-              @for (org of orgStore.items(); track org.id) {
-                <mat-option [value]="org.id">{{ org.name }}</mat-option>
-              }
-            </mat-select>
-          </div>
-        }
-        @if (canModifySection()) {
-          <button mat-flat-button color="primary" class="new-btn" (click)="toggleForm()">
-            + Nueva
+        @if (searchQuery()) {
+          <button class="search-clear" (click)="searchQuery.set('')">
+            <mat-icon>close</mat-icon>
           </button>
         }
       </div>
+
+      <div class="filter-pills">
+        <button
+          class="filter-pill"
+          [class.filter-pill--active]="statusFilter() === 'all'"
+          (click)="statusFilter.set('all')">
+          Todas
+        </button>
+        <button
+          class="filter-pill"
+          [class.filter-pill--active]="statusFilter() === 'active'"
+          (click)="statusFilter.set('active')">
+          <span class="dot dot--green"></span>
+          Activadas ({{ activeCount() }})
+        </button>
+        <button
+          class="filter-pill"
+          [class.filter-pill--active]="statusFilter() === 'available'"
+          (click)="statusFilter.set('available')">
+          <span class="dot dot--gray"></span>
+          Disponibles ({{ availableCount() }})
+        </button>
+      </div>
     </div>
 
-    @if (isLoading(activeSection())) {
-      <mat-progress-bar mode="indeterminate" class="section-progress" />
-    }
+    <div class="results-summary">
+      <span class="results-count">
+        {{ filteredItems().length }}
+        {{ filteredItems().length === 1 ? 'elemento' : 'elementos' }}
+      </span>
+    </div>
 
-    @if (showReadOnlyBanner()) {
-      <div class="info-banner">
-        <mat-icon>info</mat-icon>
-        <span>Este es un catálogo global. Solo el Super Admin puede realizar modificaciones. Si necesitas un cambio, contáctalo.</span>
-      </div>
-    }
+    <div class="items-grid">
+      @for (item of filteredItems(); track item.id) {
+        <div class="item-card" [class.item-card--on]="item.activated">
 
-    @if (needsTenantSelection()) {
-      <div class="tenant-prompt">
-        <mat-icon>business</mat-icon>
-        <span>Selecciona una clínica para ver y gestionar este catálogo</span>
-      </div>
-    } @else {
+          <div class="item-card__top">
+            <div class="item-card__icon">
+              <mat-icon>{{ iconFor(activeSection()) }}</mat-icon>
+            </div>
+            <button
+              class="ios-toggle"
+              [class.ios-toggle--on]="item.activated"
+              [disabled]="isBusy(item)"
+              (click)="toggleItem(item)"
+              [attr.aria-label]="item.activated ? 'Desactivar ' + item.name : 'Activar ' + item.name">
+              <span class="ios-toggle__thumb"></span>
+            </button>
+          </div>
 
-      @if (showForm()) {
-        <div class="inline-form-card">
-          <h3 class="form-title">Agregar {{ activeSectionLabel() }}</h3>
+          <div class="item-card__body">
+            <h3 class="item-card__name">{{ item.name }}</h3>
+            <span class="code-badge">{{ item.code }}</span>
+            @if (item.description) {
+              <p class="item-card__desc">{{ item.description }}</p>
+            }
+            @if (item.updatedAt) {
+              <span
+                class="meta-line meta-line--age"
+                [matTooltip]="'Última modificación: ' + (item.updatedAt | relativeTime: 'absolute')">
+                <mat-icon>history</mat-icon>Actualizado {{ item.updatedAt | relativeTime }}
+              </span>
+            } @else if (item.createdAt) {
+              <span
+                class="meta-line meta-line--age"
+                [matTooltip]="'Fecha de creación: ' + (item.createdAt | relativeTime: 'absolute')">
+                <mat-icon>schedule</mat-icon>Agregado {{ item.createdAt | relativeTime }}
+              </span>
+            }
+          </div>
 
-          @switch (activeSection()) {
-
-            @case ('specialties') {
-              <form [formGroup]="specialtyForm" class="inline-form">
-                <mat-form-field appearance="outline">
-                  <mat-label>Nombre</mat-label>
-                  <input matInput formControlName="name" placeholder="Ej: Cardiología" />
-                  @if (specialtyForm.controls.name.hasError('required')) {
-                    <mat-error>Requerido</mat-error>
-                  }
-                </mat-form-field>
-                <mat-form-field appearance="outline" class="code-field">
-                  <mat-label>Código</mat-label>
-                  <input matInput formControlName="code" placeholder="CARD" />
-                  @if (specialtyForm.controls.code.hasError('required')) {
-                    <mat-error>Requerido</mat-error>
-                  }
-                </mat-form-field>
-                <button mat-flat-button color="primary" class="form-btn" (click)="submitSpecialty()" [disabled]="store.saving()">
-                  @if (store.saving()) { <mat-spinner diameter="18" /> } @else { Agregar }
-                </button>
-              </form>
+          <div class="item-card__footer">
+            @if (activeSection() === 'appointmentTypes') {
+              @if (item.activated) {
+                <span class="duration-chip">
+                  <mat-icon>schedule</mat-icon>
+                  {{ item.durationMinutes ?? '—' }} min
+                </span>
+              } @else {
+                <label class="duration-input" matTooltip="Duración al activar (minutos)">
+                  <mat-icon>schedule</mat-icon>
+                  <input
+                    type="number"
+                    min="5"
+                    step="5"
+                    [value]="draftDuration(item)"
+                    (input)="onDurationInput(item.id, $event)" />
+                  <span class="duration-input__suffix">min</span>
+                </label>
+              }
+            } @else {
+              <span
+                class="status-tag"
+                [class.status-tag--on]="item.activated">
+                {{ item.activated ? 'Activada' : 'Disponible' }}
+              </span>
             }
 
-            @case ('appointmentTypes') {
-              <form [formGroup]="appointmentTypeForm" class="inline-form">
-                <mat-form-field appearance="outline">
-                  <mat-label>Nombre</mat-label>
-                  <input matInput formControlName="name" placeholder="Consulta General" />
-                  @if (appointmentTypeForm.controls.name.hasError('required')) {
-                    <mat-error>Requerido</mat-error>
-                  }
-                </mat-form-field>
-                <mat-form-field appearance="outline" class="code-field">
-                  <mat-label>Código</mat-label>
-                  <input matInput formControlName="code" placeholder="CONSULTATION" />
-                  @if (appointmentTypeForm.controls.code.hasError('required')) {
-                    <mat-error>Requerido</mat-error>
-                  }
-                </mat-form-field>
-                <button mat-flat-button color="primary" class="form-btn" (click)="submitAppointmentType()" [disabled]="store.saving()">
-                  @if (store.saving()) { <mat-spinner diameter="18" /> } @else { Agregar }
-                </button>
-              </form>
+            @if (isBusy(item)) {
+              <span class="busy-spinner"></span>
             }
+          </div>
 
-            @case ('plans') {
-              <form [formGroup]="planForm" class="inline-form plan-form">
-                <mat-form-field appearance="outline">
-                  <mat-label>Nombre</mat-label>
-                  <input matInput formControlName="name" placeholder="Plan Básico" />
-                  @if (planForm.controls.name.hasError('required')) {
-                    <mat-error>Requerido</mat-error>
-                  }
-                </mat-form-field>
-                <mat-form-field appearance="outline" class="code-field">
-                  <mat-label>Código</mat-label>
-                  <input matInput formControlName="code" placeholder="BASIC" />
-                  @if (planForm.controls.code.hasError('required')) {
-                    <mat-error>Requerido</mat-error>
-                  }
-                </mat-form-field>
-                <mat-form-field appearance="outline" class="num-field">
-                  <mat-label>Precio (S/.)</mat-label>
-                  <input matInput type="number" formControlName="price" min="0" />
-                </mat-form-field>
-                <mat-form-field appearance="outline" class="num-field">
-                  <mat-label>Máx. usuarios</mat-label>
-                  <input matInput type="number" formControlName="maxUsers" min="1" />
-                </mat-form-field>
-                <mat-form-field appearance="outline" class="num-field">
-                  <mat-label>Máx. sedes</mat-label>
-                  <input matInput type="number" formControlName="maxBranches" min="1" />
-                </mat-form-field>
-                <button mat-flat-button color="primary" class="form-btn" (click)="submitPlan()" [disabled]="store.saving()">
-                  @if (store.saving()) { <mat-spinner diameter="18" /> } @else { Agregar }
-                </button>
-              </form>
-            }
-
-            @default {
-              <form [formGroup]="simpleForm" class="inline-form">
-                <mat-form-field appearance="outline">
-                  <mat-label>Nombre</mat-label>
-                  <input matInput formControlName="name" />
-                  @if (simpleForm.controls.name.hasError('required')) {
-                    <mat-error>Requerido</mat-error>
-                  }
-                </mat-form-field>
-                <mat-form-field appearance="outline" class="code-field">
-                  <mat-label>Código</mat-label>
-                  <input matInput formControlName="code" />
-                  @if (simpleForm.controls.code.hasError('required')) {
-                    <mat-error>Requerido</mat-error>
-                  }
-                </mat-form-field>
-                <button mat-flat-button color="primary" class="form-btn" (click)="submitSimple()" [disabled]="store.saving()">
-                  @if (store.saving()) { <mat-spinner diameter="18" /> } @else { Agregar }
-                </button>
-              </form>
-            }
-
-          }
         </div>
       }
+    </div>
 
-      <div class="table-card">
-
-        @switch (activeSection()) {
-
-          @case ('specialties') {
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Código</th>
-                  <th>Doctores</th>
-                  <th>Estado</th>
-                  <th>Modificada</th>
-                  @if (canModifySection()) { <th></th> }
-                </tr>
-              </thead>
-              <tbody>
-                @for (item of filteredSpecialties(); track item.id; let i = $index) {
-                  <tr>
-                    <td>
-                      <div class="name-cell">
-                        <span class="color-dot" [style.background-color]="dotColor(i)"></span>
-                        {{ item.name }}
-                      </div>
-                    </td>
-                    <td><span class="code-badge">{{ item.code }}</span></td>
-                    <td class="num-col">{{ item.doctorCount ?? '—' }}</td>
-                    <td>
-                      <span class="status-badge status-badge--active">
-                        <span class="status-dot"></span>Activo
-                      </span>
-                    </td>
-                    <td>
-                      <div class="modified-cell">
-                        <span class="modified-time">{{ formatModified(item.updatedAt) }}</span>
-                        <span class="modified-by">{{ modifierName(item) }}</span>
-                      </div>
-                    </td>
-                    @if (canModifySection()) {
-                      <td class="actions-cell">
-                        <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="deleteSpecialty(item)">
-                          <mat-icon>delete</mat-icon>
-                        </button>
-                      </td>
-                    }
-                  </tr>
-                }
-              </tbody>
-            </table>
-            @if (!store.loadingSpecialties() && filteredSpecialties().length === 0) {
-              <div class="empty-state"><mat-icon>healing</mat-icon><span>Sin especialidades</span></div>
-            }
+    @if (!store.loading() && filteredItems().length === 0) {
+      <div class="empty-state">
+        <mat-icon>{{ iconFor(activeSection()) }}</mat-icon>
+        <span>
+          @if (searchQuery() || statusFilter() !== 'all') {
+            No hay elementos que coincidan con los filtros
+          } @else {
+            El sistema aún no ofrece elementos en este catálogo
           }
-
-          @case ('plans') {
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Código</th>
-                  <th>Precio</th>
-                  <th>Límites</th>
-                  <th>Modificada</th>
-                  @if (canModifySection()) { <th></th> }
-                </tr>
-              </thead>
-              <tbody>
-                @for (item of filteredPlans(); track item.id) {
-                  <tr>
-                    <td>{{ item.name }}</td>
-                    <td><span class="code-badge">{{ item.code }}</span></td>
-                    <td><span class="price-value">{{ formatPrice(item.price) }}</span></td>
-                    <td>
-                      <span class="limit-badge">{{ item.maxUsers }} usu.</span>
-                      <span class="limit-badge">{{ item.maxBranches }} sedes</span>
-                    </td>
-                    <td>
-                      <div class="modified-cell">
-                        <span class="modified-time">{{ formatModified(item.updatedAt) }}</span>
-                        <span class="modified-by">{{ modifierName(item) }}</span>
-                      </div>
-                    </td>
-                    @if (canModifySection()) {
-                      <td class="actions-cell">
-                        <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="deletePlan(item)">
-                          <mat-icon>delete</mat-icon>
-                        </button>
-                      </td>
-                    }
-                  </tr>
-                }
-              </tbody>
-            </table>
-            @if (!store.loadingPlans() && filteredPlans().length === 0) {
-              <div class="empty-state"><mat-icon>local_offer</mat-icon><span>Sin planes</span></div>
-            }
-          }
-
-          @case ('documentTypes') {
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Código</th>
-                  <th>Modificada</th>
-                  @if (canModifySection()) { <th></th> }
-                </tr>
-              </thead>
-              <tbody>
-                @for (item of filteredDocumentTypes(); track item.id) {
-                  <tr>
-                    <td>{{ item.name }}</td>
-                    <td><span class="code-badge">{{ item.code }}</span></td>
-                    <td>
-                      <div class="modified-cell">
-                        <span class="modified-time">{{ formatModified(item.updatedAt) }}</span>
-                        <span class="modified-by">{{ modifierName(item) }}</span>
-                      </div>
-                    </td>
-                    @if (canModifySection()) {
-                      <td class="actions-cell">
-                        <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="deleteDocumentType(item)">
-                          <mat-icon>delete</mat-icon>
-                        </button>
-                      </td>
-                    }
-                  </tr>
-                }
-              </tbody>
-            </table>
-            @if (!store.loadingDocumentTypes() && filteredDocumentTypes().length === 0) {
-              <div class="empty-state"><mat-icon>badge</mat-icon><span>Sin tipos de documento</span></div>
-            }
-          }
-
-          @case ('subscriptionStatuses') {
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Código</th>
-                  <th>Modificada</th>
-                  @if (canModifySection()) { <th></th> }
-                </tr>
-              </thead>
-              <tbody>
-                @for (item of filteredSubscriptionStatuses(); track item.id) {
-                  <tr>
-                    <td>{{ item.name }}</td>
-                    <td><span class="code-badge">{{ item.code }}</span></td>
-                    <td>
-                      <div class="modified-cell">
-                        <span class="modified-time">{{ formatModified(item.updatedAt) }}</span>
-                        <span class="modified-by">{{ modifierName(item) }}</span>
-                      </div>
-                    </td>
-                    @if (canModifySection()) {
-                      <td class="actions-cell">
-                        <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="deleteSubscriptionStatus(item)">
-                          <mat-icon>delete</mat-icon>
-                        </button>
-                      </td>
-                    }
-                  </tr>
-                }
-              </tbody>
-            </table>
-            @if (!store.loadingSubscriptionStatuses() && filteredSubscriptionStatuses().length === 0) {
-              <div class="empty-state"><mat-icon>subscriptions</mat-icon><span>Sin estados</span></div>
-            }
-          }
-
-          @case ('appointmentStatuses') {
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Código</th>
-                  <th>Modificada</th>
-                  @if (canModifySection()) { <th></th> }
-                </tr>
-              </thead>
-              <tbody>
-                @for (item of filteredAppointmentStatuses(); track item.id) {
-                  <tr>
-                    <td>{{ item.name }}</td>
-                    <td><span class="code-badge">{{ item.code }}</span></td>
-                    <td>
-                      <div class="modified-cell">
-                        <span class="modified-time">{{ formatModified(item.updatedAt) }}</span>
-                        <span class="modified-by">{{ modifierName(item) }}</span>
-                      </div>
-                    </td>
-                    @if (canModifySection()) {
-                      <td class="actions-cell">
-                        <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="deleteAppointmentStatus(item)">
-                          <mat-icon>delete</mat-icon>
-                        </button>
-                      </td>
-                    }
-                  </tr>
-                }
-              </tbody>
-            </table>
-            @if (!store.loadingAppointmentStatuses() && filteredAppointmentStatuses().length === 0) {
-              <div class="empty-state"><mat-icon>event_available</mat-icon><span>Sin estados</span></div>
-            }
-          }
-
-          @case ('appointmentTypes') {
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Código</th>
-                  <th>Estado</th>
-                  <th>Modificada</th>
-                  @if (canModifySection()) { <th></th> }
-                </tr>
-              </thead>
-              <tbody>
-                @for (item of filteredAppointmentTypes(); track item.id; let i = $index) {
-                  <tr>
-                    <td>
-                      <div class="name-cell">
-                        <span class="color-dot" [style.background-color]="dotColor(i)"></span>
-                        {{ item.name }}
-                      </div>
-                    </td>
-                    <td><span class="code-badge">{{ item.code }}</span></td>
-                    <td>
-                      <span class="status-badge status-badge--active">
-                        <span class="status-dot"></span>Activo
-                      </span>
-                    </td>
-                    <td>
-                      <div class="modified-cell">
-                        <span class="modified-time">{{ formatModified(item.updatedAt) }}</span>
-                        <span class="modified-by">{{ modifierName(item) }}</span>
-                      </div>
-                    </td>
-                    @if (canModifySection()) {
-                      <td class="actions-cell">
-                        <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="deleteAppointmentType(item)">
-                          <mat-icon>delete</mat-icon>
-                        </button>
-                      </td>
-                    }
-                  </tr>
-                }
-              </tbody>
-            </table>
-            @if (!store.loadingAppointmentTypes() && filteredAppointmentTypes().length === 0) {
-              <div class="empty-state"><mat-icon>calendar_today</mat-icon><span>Sin tipos de cita</span></div>
-            }
-          }
-
-        }
+        </span>
       </div>
     }
 
-  </div>
+  } @else {
+
+    <div class="info-banner">
+      <mat-icon>info</mat-icon>
+      <span>Este catálogo lo administra el Super Admin. Aquí solo se muestra para tu referencia.</span>
+    </div>
+
+    @switch (activeSection()) {
+
+      @case ('plans') {
+        <div class="items-grid">
+          @for (plan of readOnlyPlans(); track plan.id) {
+            <div class="item-card item-card--readonly">
+              <div class="item-card__top">
+                <div class="item-card__icon"><mat-icon>workspace_premium</mat-icon></div>
+                <span class="price-tag">{{ formatPrice(plan.price) }}</span>
+              </div>
+              <div class="item-card__body">
+                <h3 class="item-card__name">{{ plan.name }}</h3>
+                <span class="code-badge">{{ plan.code }}</span>
+                @if (plan.updatedAt) {
+                  <span
+                    class="meta-line meta-line--age"
+                    [matTooltip]="'Última modificación: ' + (plan.updatedAt | relativeTime: 'absolute')">
+                    <mat-icon>history</mat-icon>Actualizado {{ plan.updatedAt | relativeTime }}
+                  </span>
+                } @else if (plan.createdAt) {
+                  <span
+                    class="meta-line meta-line--age"
+                    [matTooltip]="'Fecha de creación: ' + (plan.createdAt | relativeTime: 'absolute')">
+                    <mat-icon>schedule</mat-icon>Agregado {{ plan.createdAt | relativeTime }}
+                  </span>
+                }
+              </div>
+              <div class="item-card__footer">
+                <span class="meta-line">
+                  <mat-icon>groups</mat-icon>{{ planLimits(plan) }}
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+        @if (!store.loading() && readOnlyPlans().length === 0) {
+          <div class="empty-state">
+            <mat-icon>workspace_premium</mat-icon><span>Sin planes registrados</span>
+          </div>
+        }
+      }
+
+      @case ('appointmentStatuses') {
+        <div class="items-grid items-grid--compact">
+          @for (status of readOnlyAppointmentStatuses(); track status.id) {
+            <div class="item-card item-card--readonly">
+              <div class="item-card__body">
+                <h3 class="item-card__name">{{ status.name }}</h3>
+                <span class="code-badge">{{ status.code }}</span>
+                @if (status.updatedAt) {
+                  <span
+                    class="meta-line meta-line--age"
+                    [matTooltip]="'Última modificación: ' + (status.updatedAt | relativeTime: 'absolute')">
+                    <mat-icon>history</mat-icon>Actualizado {{ status.updatedAt | relativeTime }}
+                  </span>
+                } @else if (status.createdAt) {
+                  <span
+                    class="meta-line meta-line--age"
+                    [matTooltip]="'Fecha de creación: ' + (status.createdAt | relativeTime: 'absolute')">
+                    <mat-icon>schedule</mat-icon>Agregado {{ status.createdAt | relativeTime }}
+                  </span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+        @if (!store.loading() && readOnlyAppointmentStatuses().length === 0) {
+          <div class="empty-state">
+            <mat-icon>event_available</mat-icon><span>Sin estados de cita</span>
+          </div>
+        }
+      }
+
+      @case ('subscriptionStatuses') {
+        <div class="items-grid items-grid--compact">
+          @for (status of readOnlySubscriptionStatuses(); track status.id) {
+            <div class="item-card item-card--readonly">
+              <div class="item-card__body">
+                <h3 class="item-card__name">{{ status.name }}</h3>
+                <span class="code-badge">{{ status.code }}</span>
+                @if (status.updatedAt) {
+                  <span
+                    class="meta-line meta-line--age"
+                    [matTooltip]="'Última modificación: ' + (status.updatedAt | relativeTime: 'absolute')">
+                    <mat-icon>history</mat-icon>Actualizado {{ status.updatedAt | relativeTime }}
+                  </span>
+                } @else if (status.createdAt) {
+                  <span
+                    class="meta-line meta-line--age"
+                    [matTooltip]="'Fecha de creación: ' + (status.createdAt | relativeTime: 'absolute')">
+                    <mat-icon>schedule</mat-icon>Agregado {{ status.createdAt | relativeTime }}
+                  </span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+        @if (!store.loading() && readOnlySubscriptionStatuses().length === 0) {
+          <div class="empty-state">
+            <mat-icon>subscriptions</mat-icon><span>Sin estados de suscripción</span>
+          </div>
+        }
+      }
+
+    }
+
+  }
 
 </div>

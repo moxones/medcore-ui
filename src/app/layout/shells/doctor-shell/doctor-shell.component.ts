@@ -1,4 +1,4 @@
-import { Component, ViewChild, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { MatIconModule } from '@angular/material/icon';
@@ -45,7 +45,7 @@ interface NavGroup {
   templateUrl: './doctor-shell.component.html',
   styleUrl: './doctor-shell.component.scss',
 })
-export class DoctorShellComponent {
+export class DoctorShellComponent implements OnInit {
   @ViewChild('sidenav') private readonly sidenav!: MatSidenav;
 
   private readonly breakpointObserver = inject(BreakpointObserver);
@@ -70,7 +70,9 @@ export class DoctorShellComponent {
   readonly initials = computed(() => {
     const user = this.authStore.user();
     if (!user) return '?';
-    return `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase();
+    const first = user.firstName?.[0] ?? '';
+    const last = user.lastName?.[0] ?? '';
+    return `${first}${last}`.toUpperCase() || '?';
   });
 
   readonly navGroups: NavGroup[] = [
@@ -89,6 +91,10 @@ export class DoctorShellComponent {
       ],
     },
   ];
+
+  ngOnInit(): void {
+    this.tenantStore.load();
+  }
 
   onMenuClick(): void {
     if (this.isHandset()) {

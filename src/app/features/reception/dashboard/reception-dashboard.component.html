@@ -1,75 +1,203 @@
-<div class="dash">
+<div class="page">
 
-  <div class="dash-header">
-    <div>
-      <h1 class="greeting">Recepción — {{ tenantStore.tenant().name }}</h1>
-      <p class="sub">{{ todayLabel }}</p>
+  <div class="hero">
+    <div class="hero-content">
+      <div class="hero-text">
+        <p class="hero-greeting">
+          {{ greeting }},
+          <strong>{{ authStore.fullName() || 'Recepcionista' }}</strong>
+        </p>
+        <h1 class="hero-title">{{ tenantStore.tenant().name }}</h1>
+        <p class="hero-sub">{{ tenantStore.tenant().subtitle }}</p>
+      </div>
+      <div class="hero-meta">
+        <div class="hero-date">
+          <mat-icon class="hero-date-icon">today</mat-icon>
+          <span>{{ todayLabel }}</span>
+        </div>
+        <button
+          mat-icon-button
+          class="refresh-btn"
+          matTooltip="Actualizar datos"
+          (click)="onRefresh()">
+          <mat-icon>refresh</mat-icon>
+        </button>
+      </div>
     </div>
+
+    @if (!store.loading() && store.totalToday() > 0) {
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" [style.width.%]="store.progressPercent()"></div>
+        </div>
+        <span class="progress-label">
+          {{ store.completed() }} de {{ store.totalToday() }} citas completadas
+          ({{ store.progressPercent() }}%)
+        </span>
+      </div>
+    }
   </div>
+
+  @if (store.loading()) {
+    <mat-progress-bar mode="indeterminate" class="top-progress" />
+  }
 
   <div class="kpi-grid">
     <app-kpi-card
       icon="calendar_today"
       label="Citas hoy"
-      [value]="dashboardStore.totalToday().toString()"
-      [loading]="dashboardStore.loading()"
+      [value]="store.totalToday().toString()"
+      [loading]="store.loading()"
       variant="blue" />
-
     <app-kpi-card
       icon="hourglass_top"
       label="En espera"
-      [value]="dashboardStore.waiting().toString()"
-      [loading]="dashboardStore.loading()"
+      [value]="store.waiting().toString()"
+      [loading]="store.loading()"
       variant="orange" />
-
     <app-kpi-card
       icon="medical_services"
       label="En consulta"
-      [value]="dashboardStore.inConsultation().toString()"
-      [loading]="dashboardStore.loading()"
+      [value]="store.inConsultation().toString()"
+      [loading]="store.loading()"
       variant="purple" />
-
     <app-kpi-card
       icon="check_circle"
       label="Completadas"
-      [value]="dashboardStore.completed().toString()"
-      [loading]="dashboardStore.loading()"
+      [value]="store.completed().toString()"
+      [loading]="store.loading()"
       variant="green" />
   </div>
 
-  <div class="section-row">
-    <div class="queue-card">
-      <div class="card-header">
-        <span class="card-title">Cola de atención</span>
-        <mat-icon class="card-icon">queue</mat-icon>
+  <div class="content-grid">
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-header-left">
+          <div class="panel-icon panel-icon--orange">
+            <mat-icon>queue</mat-icon>
+          </div>
+          <span class="panel-title">Cola activa</span>
+        </div>
+        @if (store.activeQueue().length > 0) {
+          <span class="panel-badge">{{ store.activeQueue().length }}</span>
+        }
       </div>
 
-      @if (dashboardStore.loading()) {
-        <mat-progress-bar mode="indeterminate" />
-      }
-
-      @if (!dashboardStore.loading() && dashboardStore.activeQueue().length === 0) {
-        <div class="empty-state">
-          <mat-icon>event_available</mat-icon>
-          <span>No hay pacientes en cola por atender</span>
+      @if (store.loading()) {
+        <div class="panel-skeleton">
+          @for (i of [1, 2, 3]; track i) {
+            <div class="skeleton-row">
+              <div class="sk sk-dot"></div>
+              <div class="sk-info">
+                <div class="sk sk-name"></div>
+                <div class="sk sk-detail"></div>
+              </div>
+              <div class="sk sk-badge"></div>
+            </div>
+          }
         </div>
-      }
-
-      @if (dashboardStore.activeQueue().length > 0) {
+      } @else if (store.activeQueue().length === 0) {
+        <div class="panel-empty">
+          <mat-icon>event_available</mat-icon>
+          <span>No hay pacientes en cola</span>
+        </div>
+      } @else {
         <div class="queue-list">
-          @for (appt of dashboardStore.activeQueue(); track appt.id) {
+          @for (appt of store.activeQueue(); track appt.id) {
             <div class="queue-row">
-              <div [class]="'queue-dot queue-dot--' + statusClass(appt.flowStatus)"></div>
+              <div [class]="'flow-dot flow-dot--' + flowClass(appt.flowStatus)"></div>
               <div class="queue-info">
                 <span class="queue-patient">{{ appt.patientName }}</span>
-                <span class="queue-detail">{{ appt.doctorName }} · {{ formatTime(appt.scheduledAt) }}</span>
+                <span class="queue-detail">
+                  <mat-icon class="detail-icon">person</mat-icon>{{ appt.doctorName }}
+                  &nbsp;·&nbsp;
+                  <mat-icon class="detail-icon">schedule</mat-icon>{{ formatTime(appt.scheduledAt) }}
+                </span>
               </div>
-              <span [class]="'queue-badge queue-badge--' + statusClass(appt.flowStatus)">
-                {{ statusLabel(appt.flowStatus) }}
+              <span [class]="'flow-badge flow-badge--' + flowClass(appt.flowStatus)">
+                {{ flowLabel(appt.flowStatus) }}
               </span>
             </div>
           }
         </div>
+      }
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-header-left">
+          <div class="panel-icon panel-icon--purple">
+            <mat-icon>stethoscope</mat-icon>
+          </div>
+          <span class="panel-title">Carga por médico</span>
+        </div>
+      </div>
+
+      @if (store.loading()) {
+        <div class="panel-skeleton">
+          @for (i of [1, 2, 3]; track i) {
+            <div class="skeleton-row">
+              <div class="sk sk-avatar"></div>
+              <div class="sk-info">
+                <div class="sk sk-name"></div>
+                <div class="sk sk-bar"></div>
+              </div>
+              <div class="sk sk-count"></div>
+            </div>
+          }
+        </div>
+      } @else if (store.doctorSummary().length === 0) {
+        <div class="panel-empty">
+          <mat-icon>analytics</mat-icon>
+          <span>Sin citas programadas hoy</span>
+        </div>
+      } @else {
+        <div class="doctor-list">
+          @for (doc of store.doctorSummary(); track doc.doctorId) {
+            <div class="doctor-row">
+              <div class="doctor-avatar">
+                {{ doc.doctorName.split(' ')[0][0] }}{{ doc.doctorName.split(' ')[1]?.[0] ?? '' }}
+              </div>
+              <div class="doctor-info">
+                <span class="doctor-name">{{ doc.doctorName }}</span>
+                <div class="doctor-pills">
+                  @if (doc.counts.WAITING > 0) {
+                    <span class="pill pill--waiting">{{ doc.counts.WAITING }} en espera</span>
+                  }
+                  @if (doc.counts.IN_PROCESS > 0) {
+                    <span class="pill pill--in-process">{{ doc.counts.IN_PROCESS }} en consulta</span>
+                  }
+                  @if (doc.counts.COMPLETED > 0) {
+                    <span class="pill pill--completed">{{ doc.counts.COMPLETED }} completadas</span>
+                  }
+                </div>
+              </div>
+              <span class="doctor-total">
+                {{ doc.counts.WAITING + doc.counts.IN_PROCESS + doc.counts.COMPLETED }}
+              </span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+  </div>
+
+  <div class="quick-section">
+    <div class="quick-section-header">
+      <mat-icon>grid_view</mat-icon>
+      <span>Acciones rápidas</span>
+    </div>
+    <div class="quick-grid">
+      @for (link of quickLinks; track link.route) {
+        <a [class]="'quick-card ' + link.accentClass" [routerLink]="link.route">
+          <div class="quick-icon">
+            <mat-icon>{{ link.icon }}</mat-icon>
+          </div>
+          <span class="quick-label">{{ link.label }}</span>
+          <span class="quick-desc">{{ link.description }}</span>
+        </a>
       }
     </div>
   </div>

@@ -1,0 +1,86 @@
+<div class="alert-header">
+  <div class="alert-badge">
+    <mat-icon>warning</mat-icon>
+    <span>ACCIÓN REQUERIDA</span>
+  </div>
+  <h2>Completa tu perfil para continuar</h2>
+  <p class="subtitle">Solo necesitamos tu nombre para identificarte. El resto lo puedes completar cuando quieras.</p>
+</div>
+
+<mat-dialog-content>
+  <app-alert-banner [message]="error()" />
+
+  <div class="email-strip">
+    <mat-icon class="email-icon">mail_outline</mat-icon>
+    <div class="email-info">
+      <span class="email-value">{{ authStore.user()?.email }}</span>
+      <span class="email-note">Correo de registro · no editable</span>
+    </div>
+    <span class="verified-chip">
+      <mat-icon>verified</mat-icon>
+      Verificado
+    </span>
+  </div>
+
+  <form [formGroup]="form" class="profile-form" autocomplete="off">
+
+    <div class="name-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Nombre</mat-label>
+        <input matInput formControlName="firstName" placeholder="Tu nombre" />
+        @if (form.controls.firstName.touched) {
+          @if (form.controls.firstName.hasError('required')) {
+            <mat-error>Campo requerido</mat-error>
+          } @else if (form.controls.firstName.hasError('minlength')) {
+            <mat-error>Mínimo 2 caracteres</mat-error>
+          }
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Apellido</mat-label>
+        <input matInput formControlName="lastName" placeholder="Tu apellido" />
+        @if (form.controls.lastName.touched) {
+          @if (form.controls.lastName.hasError('required')) {
+            <mat-error>Campo requerido</mat-error>
+          } @else if (form.controls.lastName.hasError('minlength')) {
+            <mat-error>Mínimo 2 caracteres</mat-error>
+          }
+        }
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="phone-field">
+      <mat-label>Teléfono <span class="optional-label">(opcional)</span></mat-label>
+      <div matPrefix class="phone-prefix">
+        <span class="country-code">PE +51</span>
+        <span class="prefix-sep"></span>
+      </div>
+      <input matInput formControlName="phone" type="tel" placeholder="999 999 999" />
+    </mat-form-field>
+    <p class="phone-note">
+      <mat-icon class="info-icon">info_outline</mat-icon>
+      Solo para avisos de cuenta. No se comparte con nadie.
+    </p>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions class="dialog-footer">
+  <button mat-button class="logout-btn" (click)="logout()">
+    <mat-icon>logout</mat-icon>
+    Cerrar sesión
+  </button>
+  <div class="footer-right">
+    <span class="field-counter" [class.complete]="filledCount() >= 2">
+      {{ filledCount() }} / 2 campos
+    </span>
+    <button mat-flat-button class="submit-btn" (click)="submit()" [disabled]="!canSubmit()">
+      @if (saving()) {
+        <mat-spinner diameter="18" />
+      } @else {
+        Activar mi cuenta
+      }
+    </button>
+  </div>
+</mat-dialog-actions>

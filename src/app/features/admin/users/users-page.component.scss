@@ -40,11 +40,11 @@
   background: var(--mat-sys-primary);
   color: #fff;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: var(--weight-action);
   letter-spacing: -0.2px;
   cursor: pointer;
-  box-shadow: 0 4px 14px color-mix(in srgb, var(--mat-sys-primary) 28%, transparent);
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  box-shadow: var(--elevation-1);
+  transition: filter 160ms ease, transform 160ms ease;
 
   mat-icon {
     font-size: 18px;
@@ -53,12 +53,11 @@
   }
 
   &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 20px color-mix(in srgb, var(--mat-sys-primary) 36%, transparent);
+    filter: brightness(1.06);
   }
 
   &:active {
-    transform: translateY(0);
+    transform: translateY(1px);
   }
 }
 
@@ -86,18 +85,17 @@ app-alert-banner {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(12px);
-  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 14px;
   padding: 0 14px;
   height: 44px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  transition: box-shadow 200ms ease, border-color 200ms ease;
+  box-shadow: var(--elevation-1);
+  transition: box-shadow 180ms ease, border-color 180ms ease;
 
   &:focus-within {
-    box-shadow: 0 2px 18px color-mix(in srgb, var(--mat-sys-primary) 14%, transparent);
-    border-color: color-mix(in srgb, var(--mat-sys-primary) 35%, transparent);
+    border-color: color-mix(in srgb, var(--mat-sys-primary) 45%, var(--color-border));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mat-sys-primary) 12%, transparent);
   }
 
   .search-icon {
@@ -154,31 +152,30 @@ app-alert-banner {
   gap: 6px;
   height: 38px;
   padding: 0 16px;
-  border: 1.5px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--color-border);
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.65);
+  background: var(--color-surface);
   color: var(--color-text-secondary);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: var(--weight-action);
   cursor: pointer;
-  transition: all 180ms ease;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
   white-space: nowrap;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.92);
-    border-color: rgba(0, 0, 0, 0.14);
+    background: var(--color-background);
+    border-color: color-mix(in srgb, var(--color-text-muted) 40%, var(--color-border));
     color: var(--color-text-primary);
   }
 
   &--active {
-    background: var(--mat-sys-primary);
-    border-color: var(--mat-sys-primary);
-    color: #fff;
-    font-weight: 600;
-    box-shadow: 0 3px 10px color-mix(in srgb, var(--mat-sys-primary) 30%, transparent);
+    background: color-mix(in srgb, var(--mat-sys-primary) 10%, var(--color-surface));
+    border-color: color-mix(in srgb, var(--mat-sys-primary) 40%, transparent);
+    color: var(--mat-sys-primary);
+    font-weight: var(--weight-emphasis);
 
     .dot {
-      background: rgba(255, 255, 255, 0.75) !important;
+      background: currentColor !important;
     }
   }
 }
@@ -257,18 +254,16 @@ app-alert-banner {
 .user-card {
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.92);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 20px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
-  transition: transform 220ms ease, box-shadow 220ms ease;
+  box-shadow: var(--elevation-2);
+  transition: transform 200ms ease, box-shadow 200ms ease;
   overflow: visible;
 
   &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 14px 44px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05);
+    transform: translateY(-2px);
+    box-shadow: var(--elevation-3);
   }
 
   &.user-card--inactive {
@@ -277,12 +272,12 @@ app-alert-banner {
   }
 
   &.user-card--superadmin {
-    background: linear-gradient(160deg, rgba(243, 232, 255, 0.92) 0%, rgba(237, 233, 254, 0.88) 100%);
-    border-color: rgba(139, 92, 246, 0.28);
-    box-shadow: 0 4px 24px rgba(109, 40, 217, 0.12), 0 1px 4px rgba(109, 40, 217, 0.08), inset 0 0 0 1px rgba(139, 92, 246, 0.15);
+    background: linear-gradient(160deg, #faf5ff 0%, #f5f3ff 100%);
+    border-color: rgba(139, 92, 246, 0.22);
+    box-shadow: var(--elevation-2);
 
     &:hover {
-      box-shadow: 0 14px 44px rgba(109, 40, 217, 0.18), 0 2px 8px rgba(109, 40, 217, 0.1), inset 0 0 0 1px rgba(139, 92, 246, 0.25);
+      box-shadow: var(--elevation-3);
     }
   }
 }
@@ -323,7 +318,7 @@ app-alert-banner {
   font-weight: 700;
   color: #fff;
   letter-spacing: -0.5px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  box-shadow: var(--elevation-2);
 
   &.avatar--superadmin   { background: linear-gradient(135deg, #3b0764, #6d28d9); }
   &.avatar--clinic-admin { background: linear-gradient(135deg, #1e3a8a, #2563eb); }
@@ -375,7 +370,7 @@ app-alert-banner {
   padding: 0 10px;
   border-radius: 11px;
   font-size: 10.5px;
-  font-weight: 700;
+  font-weight: var(--weight-emphasis);
   white-space: nowrap;
   letter-spacing: 0.3px;
   text-transform: uppercase;
@@ -465,7 +460,7 @@ app-alert-banner {
   border: none;
   cursor: pointer;
   padding: 0;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15);
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.1);
   transition: background 250ms ease;
   flex-shrink: 0;
 
@@ -477,7 +472,7 @@ app-alert-banner {
     height: 22px;
     border-radius: 50%;
     background: #fff;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    box-shadow: var(--elevation-1);
     transition: transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
     pointer-events: none;
   }
@@ -539,10 +534,10 @@ app-alert-banner {
   gap: 12px;
   padding: 80px 24px;
   margin: 0 20px 20px;
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 16px;
+  box-shadow: var(--elevation-1);
   color: var(--color-text-muted);
 
   mat-icon {

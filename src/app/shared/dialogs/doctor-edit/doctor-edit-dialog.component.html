@@ -1,0 +1,54 @@
+<div class="edit-dialog">
+
+  <div class="dialog-header">
+    <div class="header-icon">
+      <mat-icon>edit</mat-icon>
+    </div>
+    <div class="header-text">
+      <h2 class="dialog-title">Editar información</h2>
+      <p class="dialog-subtitle">{{ data.doctorName }}</p>
+    </div>
+    <button class="close-btn" (click)="cancel()" matTooltip="Cerrar" aria-label="Cerrar">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="dialog-alert">
+      <app-alert-banner type="error" [message]="error()!" (dismissed)="clearError()" />
+    </div>
+  }
+
+  <div class="dialog-body">
+    <div class="field-group">
+      <label class="field-label" for="licenseInput">Número de matrícula</label>
+      <input
+        id="licenseInput"
+        class="field-input"
+        type="text"
+        placeholder="Ej: 12345"
+        [formControl]="licenseControl"
+        [class.field-input--error]="licenseControl.invalid && licenseControl.touched"
+      />
+      @if (licenseControl.invalid && licenseControl.touched) {
+        <span class="field-error">La matrícula es obligatoria (mín. 3 caracteres).</span>
+      }
+    </div>
+  </div>
+
+  <div class="dialog-footer">
+    <button class="btn-secondary" (click)="cancel()" [disabled]="saving()">
+      Cancelar
+    </button>
+    <button class="btn-primary" (click)="save()" [disabled]="saving()">
+      @if (saving()) {
+        <mat-spinner diameter="16" />
+        Guardando...
+      } @else {
+        <mat-icon>check</mat-icon>
+        Guardar cambios
+      }
+    </button>
+  </div>
+
+</div>

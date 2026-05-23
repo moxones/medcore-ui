@@ -1,10 +1,18 @@
-﻿import { Component } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { TenantStore } from '@core/tenant/tenant.store';
 
 @Component({
   selector: 'app-forgot-password',
   standalone: true,
-  imports: [],
+  imports: [RouterLink],
   templateUrl: './forgot-password.component.html',
-  styleUrl: './forgot-password.component.scss'
+  styleUrl: './forgot-password.component.scss',
 })
-export class ForgotPasswordComponent {}
+export class ForgotPasswordComponent implements OnInit {
+  readonly tenantStore = inject(TenantStore);
+
+  ngOnInit(): void {
+    this.tenantStore.load();
+  }
+}

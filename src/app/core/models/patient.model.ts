@@ -1,6 +1,27 @@
 import { ApiResponse } from './api-response.model';
 import { PagedResponse } from './pagination.model';
 
+export interface PatientRegisterRequest {
+  email: string;
+  password: string;
+  documentTypeCode: string;
+  documentNumber: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+}
+
+export interface PatientRegisterResult {
+  id: number;
+  firstName: string;
+  lastName: string;
+  contactEmail: string;
+}
+
+export interface EmailAvailabilityResult {
+  available: boolean;
+}
+
 export interface CreatePatientRequest {
   firstName: string;
   lastName: string;
@@ -10,10 +31,12 @@ export interface CreatePatientRequest {
 }
 
 export interface UpdateProfileRequest {
-  phone: string;
-  gender: string;
-  birthDate: string;
-  contactEmail: string;
+  firstName: string;
+  lastName: string;
+  phone?: string | null;
+  gender?: string | null;
+  birthDate?: string | null;
+  contactEmail?: string | null;
 }
 
 export interface PatientResponse {
@@ -21,6 +44,17 @@ export interface PatientResponse {
   firstName: string;
   lastName: string;
   contactEmail: string | null;
+}
+
+export interface PatientProfileResponse {
+  id: number;
+  firstName: string;
+  lastName: string;
+  contactEmail: string | null;
+  phone: string | null;
+  gender: string | null;
+  birthDate: string | null;
+  profileCompleted: boolean;
 }
 
 export interface PatientSearchParams {
