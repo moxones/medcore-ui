@@ -3,67 +3,262 @@
   <div class="page-header">
     <div>
       <h1 class="page-title">Pacientes</h1>
-      <p class="page-subtitle">Directorio de pacientes registrados</p>
+      <p class="page-subtitle">Directorio y gestión de pacientes registrados</p>
     </div>
+    <button class="new-btn" (click)="openNewPatient()">
+      <mat-icon>person_add</mat-icon>
+      <span class="new-btn-label">Nuevo paciente</span>
+    </button>
   </div>
 
-  <div class="search-bar">
-    <mat-form-field appearance="outline" class="search-field">
-      <mat-label>Buscar paciente</mat-label>
-      <mat-icon matPrefix>search</mat-icon>
-      <input matInput [formControl]="searchControl" placeholder="Nombre o documento..." />
-    </mat-form-field>
+  @if (!store.loading() && totalElements() > 0) {
+    <div class="kpi-bar">
+      <div class="kpi-pill">
+        <div class="kpi-icon kpi-icon--primary">
+          <mat-icon>groups</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-value">{{ totalElements() }}</span>
+          <span class="kpi-label">Total pacientes</span>
+        </div>
+      </div>
+      <div class="kpi-pill">
+        <div class="kpi-icon kpi-icon--success">
+          <mat-icon>manage_accounts</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-value">{{ withAccountCount() }}</span>
+          <span class="kpi-label">Con cuenta</span>
+        </div>
+      </div>
+      <div class="kpi-pill">
+        <div class="kpi-icon kpi-icon--neutral">
+          <mat-icon>no_accounts</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-value">{{ withoutAccountCount() }}</span>
+          <span class="kpi-label">Sin cuenta</span>
+        </div>
+      </div>
+      @if (inactiveAccountCount() > 0) {
+        <div class="kpi-pill kpi-pill--warning">
+          <div class="kpi-icon kpi-icon--warning">
+            <mat-icon>block</mat-icon>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ inactiveAccountCount() }}</span>
+            <span class="kpi-label">Cuenta inactiva</span>
+          </div>
+        </div>
+      }
+      @if (incompleteProfileCount() > 0) {
+        <div class="kpi-pill kpi-pill--amber">
+          <div class="kpi-icon kpi-icon--amber">
+            <mat-icon>assignment_late</mat-icon>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ incompleteProfileCount() }}</span>
+            <span class="kpi-label">Perfil incompleto</span>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <div class="toolbar">
+    <div class="search-box">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input
+        class="search-input"
+        type="text"
+        placeholder="Buscar paciente por nombre..."
+        [formControl]="searchControl"
+        autocomplete="off"
+      />
+      @if (searchControl.value) {
+        <button class="search-clear" (click)="searchControl.setValue('')" aria-label="Limpiar búsqueda">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </div>
+
+    <div class="filter-pills">
+      <button
+        class="filter-pill"
+        [class.filter-pill--active]="accountFilter() === 'all'"
+        (click)="accountFilter.set('all')">
+        Todos
+      </button>
+      <button
+        class="filter-pill"
+        [class.filter-pill--active]="accountFilter() === 'with'"
+        (click)="accountFilter.set('with')">
+        <span class="dot dot--green"></span>
+        Con cuenta
+      </button>
+      <button
+        class="filter-pill"
+        [class.filter-pill--active]="accountFilter() === 'without'"
+        (click)="accountFilter.set('without')">
+        <span class="dot dot--gray"></span>
+        Sin cuenta
+      </button>
+    </div>
   </div>
 
   @if (store.loading()) {
     <mat-progress-bar mode="indeterminate" class="progress" />
   }
 
-  <div class="table-card">
-    <table mat-table [dataSource]="rows()">
+  @if (!store.loading()) {
+    <div class="results-bar">
+      <span class="results-count">
+        @if (searchControl.value) {
+          {{ filteredPatients().length }} resultado{{ filteredPatients().length !== 1 ? 's' : '' }} para
+          <strong>"{{ searchControl.value }}"</strong>
+        } @else {
+          {{ filteredPatients().length }} paciente{{ filteredPatients().length !== 1 ? 's' : '' }}
+          @if (accountFilter() !== 'all') { en esta vista }
+        }
+      </span>
+    </div>
+  }
 
-      <ng-container matColumnDef="name">
-        <th mat-header-cell *matHeaderCellDef>Nombre</th>
-        <td mat-cell *matCellDef="let row">
-          <div class="patient-name-cell">
-            <div class="patient-avatar">{{ row.firstName[0] }}</div>
-            <span>{{ fullName(row) }}</span>
+  @if (!store.loading() && filteredPatients().length === 0) {
+    <div class="empty-state">
+      <mat-icon>person_search</mat-icon>
+      <p class="empty-title">
+        @if (searchControl.value) {
+          Sin resultados para "{{ searchControl.value }}"
+        } @else if (accountFilter() !== 'all') {
+          No hay pacientes con este filtro
+        } @else {
+          Aún no hay pacientes registrados
+        }
+      </p>
+      <p class="empty-sub">
+        @if (searchControl.value) {
+          Intenta con otro nombre o registra un paciente nuevo.
+        } @else if (accountFilter() !== 'all') {
+          Prueba cambiando el filtro de cuenta.
+        } @else {
+          Registra el primer paciente para comenzar.
+        }
+      </p>
+      @if (!searchControl.value && accountFilter() === 'all') {
+        <button class="new-btn" (click)="openNewPatient()">
+          <mat-icon>person_add</mat-icon>
+          Registrar paciente
+        </button>
+      }
+    </div>
+  }
+
+  <div class="patient-list">
+    @for (patient of filteredPatients(); track patient.id) {
+      <div class="patient-row">
+
+        <div class="patient-avatar" [class.patient-avatar--no-account]="!patient.hasAccount">
+          {{ initials(patient) }}
+        </div>
+
+        <div class="patient-info">
+          <div class="patient-name-row">
+            <span class="patient-name">{{ patient.firstName }} {{ patient.lastName }}</span>
+            @if (patient.profileCompleted) {
+              <span class="profile-chip profile-chip--ok" matTooltip="Perfil completo">
+                <mat-icon>verified</mat-icon>
+              </span>
+            } @else {
+              <span class="profile-chip profile-chip--warn" matTooltip="Perfil incompleto">
+                <mat-icon>pending</mat-icon>
+              </span>
+            }
           </div>
-        </td>
-      </ng-container>
+          <div class="patient-meta">
+            @if (patient.contactEmail) {
+              <mat-icon class="meta-icon">mail</mat-icon>
+              <span>{{ patient.contactEmail }}</span>
+            } @else {
+              <mat-icon class="meta-icon meta-icon--warn">mail_outline</mat-icon>
+              <span class="meta-warn">Sin correo</span>
+            }
+            @if (patient.birthDate) {
+              <span class="meta-sep">·</span>
+              <mat-icon class="meta-icon">cake</mat-icon>
+              <span>{{ ageDisplay(patient.birthDate) }}</span>
+            }
+            @if (patient.phone) {
+              <span class="meta-sep">·</span>
+              <mat-icon class="meta-icon">phone</mat-icon>
+              <span>{{ patient.phone }}</span>
+            }
+            @if (patient.gender) {
+              <span class="meta-sep">·</span>
+              <span>{{ genderLabel(patient.gender) }}</span>
+            }
+          </div>
+        </div>
 
-      <ng-container matColumnDef="email">
-        <th mat-header-cell *matHeaderCellDef>Email de contacto</th>
-        <td mat-cell *matCellDef="let row">
-          <span class="muted">{{ row.contactEmail ?? '—' }}</span>
-        </td>
-      </ng-container>
+        <div class="account-status">
+          @if (patient.hasAccount) {
+            @if (patient.accountActive) {
+              <span class="account-badge account-badge--active">
+                <span class="badge-dot"></span>
+                Cuenta activa
+              </span>
+            } @else {
+              <span class="account-badge account-badge--inactive">
+                <span class="badge-dot"></span>
+                Cuenta inactiva
+              </span>
+            }
+            @if (patient.userEmail && patient.userEmail !== patient.contactEmail) {
+              <span class="account-email">{{ patient.userEmail }}</span>
+            }
+          } @else {
+            <span class="account-badge account-badge--none">
+              Sin cuenta
+            </span>
+          }
+        </div>
 
-      <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef></th>
-        <td mat-cell *matCellDef="let row" class="actions-cell">
-        </td>
-      </ng-container>
+        <span class="patient-id-badge">#{{ patient.id }}</span>
 
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="data-row"></tr>
+        <div class="row-actions">
+          <button
+            class="btn-icon"
+            (click)="openEditPatient(patient)"
+            matTooltip="Editar paciente"
+            aria-label="Editar paciente">
+            <mat-icon>edit</mat-icon>
+          </button>
+        </div>
 
-    </table>
-
-    @if (!store.loading() && rows().length === 0) {
-      <div class="empty-state">
-        <mat-icon>people</mat-icon>
-        <span>No se encontraron pacientes</span>
       </div>
     }
-
-    <mat-paginator
-      [length]="totalElements()"
-      [pageSize]="pageSize()"
-      [pageIndex]="pageIndex()"
-      [pageSizeOptions]="[10, 15, 25, 50]"
-      (page)="onPage($event)"
-      showFirstLastButtons />
   </div>
+
+  @if ((store.page()?.totalPages ?? 0) > 1) {
+    <div class="pagination">
+      <button
+        mat-icon-button
+        [disabled]="pageNumber() === 0"
+        (click)="onPage('prev')"
+        matTooltip="Página anterior"
+        aria-label="Página anterior">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <span class="page-info">Pág. {{ pageNumber() + 1 }} de {{ store.page()?.totalPages }}</span>
+      <button
+        mat-icon-button
+        [disabled]="isLast()"
+        (click)="onPage('next')"
+        matTooltip="Página siguiente"
+        aria-label="Página siguiente">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+  }
 
 </div>

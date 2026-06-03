@@ -4,7 +4,7 @@ export const ROLE_REDIRECTS: Record<Role, string> = {
   SUPER_ADMIN:   '/admin/dashboard',
   CLINIC_ADMIN:  '/admin/dashboard',
   DOCTOR:        '/doctor/dashboard',
-  ASSISTANT:     '/reception/dashboard',
+  ASSISTANT:     '/assistant/dashboard',
   RECEPTIONIST:  '/reception/dashboard',
   PATIENT:       '/patient/dashboard',
 };

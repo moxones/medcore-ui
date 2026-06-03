@@ -1,6 +1,7 @@
 ﻿import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { TenantService } from '../tenant/tenant.service';
+import { environment } from '../../../environments/environment';
 
 export const tenantInterceptor: HttpInterceptorFn = (req, next) => {
   const subdomain = inject(TenantService).getSubdomain();
@@ -9,6 +10,7 @@ export const tenantInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req);
   }
 
-  const updatedUrl = req.url.replace('localhost:8080', `${subdomain}.localhost:8080`);
+  const apiHost = new URL(environment.apiUrl).host;
+  const updatedUrl = req.url.replace(apiHost, `${subdomain}.${apiHost}`);
   return next(req.clone({ url: updatedUrl }));
 };

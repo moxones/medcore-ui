@@ -13,6 +13,8 @@ import {
   AssignRolesRequest,
   UserApiResponse,
   UserListApiResponse,
+  UserBranchApiResponse,
+  UserBranchListApiResponse,
   UserResponse,
   SuperAdminUserResponse,
   SuperAdminUserListApiResponse,
@@ -106,5 +108,17 @@ export class UserService {
 
   setUserPassword(id: number, body: SetPasswordRequest): Observable<void> {
     return this.http.put<void>(API_ROUTES.superAdmin.userPassword(id), body);
+  }
+
+  getBranches(userId: number): Observable<UserBranchListApiResponse> {
+    return this.http.get<UserBranchListApiResponse>(API_ROUTES.users.branches(userId));
+  }
+
+  assignBranch(userId: number, branchId: number): Observable<UserBranchApiResponse> {
+    return this.http.post<UserBranchApiResponse>(API_ROUTES.users.branchLink(userId, branchId), null);
+  }
+
+  removeBranch(userId: number, branchId: number): Observable<void> {
+    return this.http.delete<void>(API_ROUTES.users.branchLink(userId, branchId));
   }
 }

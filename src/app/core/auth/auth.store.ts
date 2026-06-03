@@ -63,6 +63,8 @@ export const AuthStore = signalStore(
       return [u.firstName, u.lastName].filter(Boolean).map(cap).join(' ');
     }),
     tenantId: computed(() => user()?.tenantId ?? null),
+    branchIds: computed(() => user()?.branchIds ?? []),
+    isReceptionStaff: computed(() => roles().includes('ASSISTANT') || roles().includes('RECEPTIONIST')),
   })),
   withMethods(
     (store, auth = inject(AuthService), router = inject(Router), tokens = inject(TokenService)) => {
@@ -77,6 +79,17 @@ export const AuthStore = signalStore(
 
             const me = await firstValueFrom(auth.me());
             const roles = me.roles.map(normalizeRole).filter((r): r is Role => r !== null);
+
+            const isStaff = roles.includes('ASSISTANT') || roles.includes('RECEPTIONIST');
+            if (isStaff && (!me.branchIds || me.branchIds.length === 0)) {
+              tokens.clear();
+              patchState(store, {
+                loading: false,
+                error: 'Tu cuenta no tiene sucursales asignadas. Solicita al administrador que te asigne al menos una sucursal para poder acceder.',
+              });
+              return;
+            }
+
             tokens.setSession(roles, me);
 
             patchState(store, {

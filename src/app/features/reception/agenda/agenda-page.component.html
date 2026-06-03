@@ -8,19 +8,19 @@
 
     <div class="toolbar-center">
       <div class="date-nav">
-        <button class="nav-btn" (click)="prevDay()" aria-label="Día anterior">
+        <button class="nav-btn" (click)="prevPeriod()" aria-label="Periodo anterior">
           <mat-icon>chevron_left</mat-icon>
         </button>
         <button class="today-btn" (click)="goToday()">Hoy</button>
-        <button class="nav-btn" (click)="nextDay()" aria-label="Día siguiente">
+        <button class="nav-btn" (click)="nextPeriod()" aria-label="Periodo siguiente">
           <mat-icon>chevron_right</mat-icon>
         </button>
       </div>
       <span class="date-label">{{ formattedDate() }}</span>
       <div class="view-toggle">
-        <button class="view-btn view-btn--active">Día</button>
-        <button class="view-btn" disabled matTooltip="Próximamente">Semana</button>
-        <button class="view-btn" disabled matTooltip="Próximamente">Mes</button>
+        <button class="view-btn" [class.view-btn--active]="store.view() === 'day'" (click)="setView('day')">Día</button>
+        <button class="view-btn" [class.view-btn--active]="store.view() === 'week'" (click)="setView('week')">Semana</button>
+        <button class="view-btn" [class.view-btn--active]="store.view() === 'month'" (click)="setView('month')">Mes</button>
       </div>
     </div>
 
@@ -134,113 +134,231 @@
   <div class="agenda-body">
 
     <div class="grid-section">
-      @if (!store.loading() && visibleColumns().length === 0) {
+      @if (!store.loading() && viewEmpty()) {
         <div class="empty-grid">
           <mat-icon>event_busy</mat-icon>
           <span>
             @if (searchQuery()) {
               Sin resultados para "{{ searchQuery() }}"
+            } @else if (store.view() === 'week') {
+              No hay citas registradas para esta semana
             } @else {
               No hay citas registradas para este día
             }
           </span>
         </div>
       } @else {
-        <div class="grid-scroll">
+        @switch (store.view()) {
 
-          <div class="grid-header-row">
-            <div class="grid-corner"></div>
-            @for (col of visibleColumns(); track col.doctorId; let i = $index) {
-              <div class="doc-header">
-                <div class="doc-avatar" [class]="doctorAvatarColor(i)">
-                  {{ initials(col.doctorName) }}
-                </div>
-                <div class="doc-info">
-                  <span class="doc-name">{{ col.doctorName }}</span>
-                  <span class="doc-meta">
-                    {{ selectedBranchName() }}
-                    @if (col.specialties.length > 0) { · {{ col.specialties[0] }} }
-                  </span>
-                </div>
-                <span class="doc-status" [class.doc-status--active]="isConsultationActive(col)">
-                  {{ isConsultationActive(col) ? 'en consulta' : 'disponible' }}
-                </span>
-              </div>
-            }
-          </div>
-
-          <div class="grid-body-row">
-            <div class="time-col" [style.height.px]="store.gridHeightPx()">
-              @for (h of store.gridHours(); track h) {
-                <span class="hour-label" [style.top.px]="hourTop(h)">{{ hourLabel(h) }}</span>
-              }
-            </div>
-
-            @for (col of visibleColumns(); track col.doctorId) {
-              <div class="doc-col" [style.height.px]="store.gridHeightPx()">
-                @for (h of store.gridHours(); track h) {
-                  <div class="hour-line" [style.top.px]="hourTop(h)"></div>
+          @case ('day') {
+            <div class="grid-scroll">
+              <div class="grid-header-row">
+                <div class="grid-corner"></div>
+                @for (col of store.doctorColumns(); track col.doctorId; let i = $index) {
+                  <div class="doc-header">
+                    <div class="doc-avatar" [class]="doctorAvatarColor(i)">
+                      {{ initials(col.doctorName) }}
+                    </div>
+                    <div class="doc-info">
+                      <span class="doc-name">{{ col.doctorName }}</span>
+                      <span class="doc-meta">
+                        {{ selectedBranchName() }}
+                        @if (col.specialties.length > 0) { · {{ col.specialties[0] }} }
+                      </span>
+                    </div>
+                    <span class="doc-status" [class.doc-status--active]="isConsultationActive(col)">
+                      {{ isConsultationActive(col) ? 'en consulta' : 'disponible' }}
+                    </span>
+                  </div>
                 }
+              </div>
 
-                @for (appt of col.appointments; track appt.id) {
-                  <div
-                    class="appt-card"
-                    [class]="'appt-card--' + appt.visualState"
-                    [style.top.px]="appt.topPx"
-                    [style.height.px]="appt.heightPx"
-                    [matTooltip]="appt.patientName + ' · ' + appt.typeName"
-                    (click)="onCardClick(appt)"
-                    [attr.aria-label]="appt.patientName + ', ' + fmtIso(appt.scheduledAt)">
+              <div class="grid-body-row">
+                <div class="time-col" [style.height.px]="store.gridHeightPx()">
+                  @for (h of store.gridHours(); track h) {
+                    <span class="hour-label" [style.top.px]="hourTop(h)">{{ hourLabel(h) }}</span>
+                  }
+                  @if (store.nowTopPx() >= 0) {
+                    <span class="now-gutter" [style.top.px]="store.nowTopPx()">{{ currentTimeLabel() }}</span>
+                  }
+                </div>
 
-                    <div class="appt-inner">
-                      @if (appt.visualState !== 'scheduled' && appt.visualState !== 'completed') {
-                        <span class="appt-badge">{{ statusBadgeLabel(appt) }}</span>
-                      }
-                      <div class="appt-time">
-                        {{ fmtIso(appt.scheduledAt) }}
-                        @if (appt.visualState === 'scheduled') {
-                          <mat-icon class="appt-check">check</mat-icon>
+                @for (col of store.doctorColumns(); track col.doctorId) {
+                  <div class="doc-col" [style.height.px]="store.gridHeightPx()">
+                    @for (h of store.gridHours(); track h) {
+                      <div class="hour-line" [style.top.px]="hourTop(h)"></div>
+                    }
+
+                    @for (appt of col.appointments; track appt.id) {
+                      <div
+                        class="appt-card"
+                        [class]="'appt-card--' + appt.visualState"
+                        [style.top.px]="appt.topPx"
+                        [style.height.px]="appt.heightPx"
+                        [class.appt-card--selected]="store.selectedId() === appt.id"
+                        [matTooltip]="appt.patientName + ' · ' + appt.typeName"
+                        (click)="openDetail(appt)"
+                        [attr.aria-label]="appt.patientName + ', ' + fmtIso(appt.scheduledAt)">
+
+                        <div class="appt-inner">
+                          @if (appt.visualState !== 'scheduled' && appt.visualState !== 'completed') {
+                            <span class="appt-badge">{{ statusBadgeLabel(appt) }}</span>
+                          }
+                          <div class="appt-time">
+                            {{ fmtIso(appt.scheduledAt) }}
+                            @if (appt.visualState === 'scheduled') {
+                              <mat-icon class="appt-check">check</mat-icon>
+                            }
+                          </div>
+                          <div class="appt-patient">{{ appt.patientName }}</div>
+                          <div class="appt-type">{{ appt.typeName }}</div>
+                        </div>
+
+                        @if (cardAction(appt); as action) {
+                          <div class="appt-action-overlay">
+                            <button
+                              class="appt-action-btn"
+                              [attr.aria-label]="action"
+                              (click)="quickAction(appt); $event.stopPropagation()">
+                              {{ action }}
+                            </button>
+                          </div>
                         }
                       </div>
-                      <div class="appt-patient">{{ appt.patientName }}</div>
-                      <div class="appt-type">{{ appt.typeName }}</div>
-                    </div>
+                    }
 
-                    @if (cardAction(appt); as action) {
-                      <div class="appt-action-overlay">
-                        <button
-                          class="appt-action-btn"
-                          [attr.aria-label]="action"
-                          (click)="onCardClick(appt); $event.stopPropagation()">
-                          {{ action }}
-                        </button>
-                      </div>
+                    @if (store.nowTopPx() >= 0) {
+                      <div class="now-line" [style.top.px]="store.nowTopPx()"></div>
                     }
                   </div>
                 }
+              </div>
+            </div>
+          }
 
-                @if (store.nowTopPx() >= 0) {
-                  <div class="now-line" [style.top.px]="store.nowTopPx()">
-                    <span class="now-time">{{ currentTimeLabel() }}</span>
+          @case ('week') {
+            <div class="grid-scroll">
+              <div class="grid-header-row">
+                <div class="grid-corner"></div>
+                @for (day of store.weekDays(); track day.date) {
+                  <button
+                    class="week-header"
+                    [class.week-header--today]="day.isToday"
+                    (click)="openDay(day.date)"
+                    matTooltip="Ver día">
+                    <span class="week-weekday">{{ day.weekdayLabel }}</span>
+                    <span class="week-daynum">{{ day.dayNumber }}</span>
+                    @if (day.appointments.length > 0) {
+                      <span class="week-count">{{ day.appointments.length }}</span>
+                    }
+                  </button>
+                }
+              </div>
+
+              <div class="grid-body-row">
+                <div class="time-col" [style.height.px]="store.gridHeightPx()">
+                  @for (h of store.gridHours(); track h) {
+                    <span class="hour-label" [style.top.px]="hourTop(h)">{{ hourLabel(h) }}</span>
+                  }
+                  @if (store.nowTopPx() >= 0) {
+                    <span class="now-gutter" [style.top.px]="store.nowTopPx()">{{ currentTimeLabel() }}</span>
+                  }
+                </div>
+
+                @for (day of store.weekDays(); track day.date) {
+                  <div class="week-col" [class.week-col--today]="day.isToday" [style.height.px]="store.gridHeightPx()">
+                    @for (h of store.gridHours(); track h) {
+                      <div class="hour-line" [style.top.px]="hourTop(h)"></div>
+                    }
+
+                    @for (appt of day.appointments; track appt.id) {
+                      <div
+                        class="appt-card appt-card--week"
+                        [class]="'appt-card--' + appt.visualState"
+                        [style.top.px]="appt.topPx"
+                        [style.height.px]="appt.heightPx"
+                        [style.left.%]="laneLeft(appt)"
+                        [style.width.%]="laneWidth(appt)"
+                        [class.appt-card--selected]="store.selectedId() === appt.id"
+                        [matTooltip]="fmtIso(appt.scheduledAt) + ' · ' + appt.patientName + ' · ' + appt.doctorName"
+                        (click)="openDetail(appt)">
+                        <div class="appt-inner">
+                          <div class="appt-time">{{ fmtIso(appt.scheduledAt) }}</div>
+                          <div class="appt-patient">{{ appt.patientName }}</div>
+                        </div>
+                      </div>
+                    }
+
+                    @if (day.isToday && store.nowTopPx() >= 0) {
+                      <div class="now-line" [style.top.px]="store.nowTopPx()"></div>
+                    }
                   </div>
                 }
               </div>
-            }
-          </div>
+            </div>
+          }
 
-        </div>
+          @case ('month') {
+            <div class="month-grid">
+              <div class="month-weekdays">
+                @for (wd of monthWeekdayLabels; track wd) {
+                  <span class="month-weekday">{{ wd }}</span>
+                }
+              </div>
+              <div class="month-body">
+                @for (week of store.monthWeeks(); track $index) {
+                  <div class="month-week">
+                    @for (cell of week; track cell.date) {
+                      <button
+                        class="month-cell"
+                        [class.month-cell--out]="!cell.inCurrentMonth"
+                        [class.month-cell--today]="cell.isToday"
+                        (click)="openDay(cell.date)"
+                        [attr.aria-label]="'Ver ' + cell.dayNumber">
+                        <div class="month-cell-head">
+                          <span class="month-daynum">{{ cell.dayNumber }}</span>
+                          @if (cell.appointments.length > 0) {
+                            <span class="month-cell-count">{{ cell.appointments.length }}</span>
+                          }
+                        </div>
+                        <div class="month-cell-events">
+                          @for (appt of cell.appointments.slice(0, 3); track appt.id) {
+                            <span
+                              class="month-event"
+                              [class]="'month-event--' + appt.visualState"
+                              (click)="openDetail(appt); $event.stopPropagation()"
+                              [matTooltip]="fmtIso(appt.scheduledAt) + ' · ' + appt.doctorName">
+                              <span class="month-event-time">{{ fmtIso(appt.scheduledAt) }}</span>
+                              <span class="month-event-name">{{ appt.patientName }}</span>
+                            </span>
+                          }
+                          @if (cell.appointments.length > 3) {
+                            <span class="month-more">+{{ cell.appointments.length - 3 }} más</span>
+                          }
+                        </div>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        }
       }
 
-      <div class="grid-legend">
-        <span class="legend-item legend-item--completed">Terminada</span>
-        <span class="legend-item legend-item--scheduled">Confirmada</span>
-        <span class="legend-item legend-item--waiting">En sala</span>
-        <span class="legend-item legend-item--in-process">En curso</span>
-        <span class="legend-item legend-item--no-show">No-show</span>
-        <span class="legend-hint">click para acciones · drag para reprogramar</span>
-      </div>
+      @if (store.view() !== 'month') {
+        <div class="grid-legend">
+          <span class="legend-item legend-item--completed">Terminada</span>
+          <span class="legend-item legend-item--scheduled">Confirmada</span>
+          <span class="legend-item legend-item--waiting">En sala</span>
+          <span class="legend-item legend-item--in-process">En curso</span>
+          <span class="legend-item legend-item--no-show">No-show</span>
+          <span class="legend-hint">click en una cita para gestionarla</span>
+        </div>
+      }
     </div>
 
+    @if (showRightPanel()) {
     <div class="right-panel">
 
       <div class="panel-section panel-section--waiting">
@@ -320,6 +438,211 @@
       </div>
 
     </div>
+    }
   </div>
+
+  @if (store.selected(); as appt) {
+    <div class="detail-backdrop" (click)="closeDetail()"></div>
+    <aside class="detail-drawer" role="dialog" aria-label="Detalle de la cita">
+
+      <header class="detail-head" [class]="'detail-head--' + appt.visualState">
+        <div class="detail-head-top">
+          <span class="detail-state-chip">{{ visualStateLabel(appt.visualState) }}</span>
+          <button class="detail-close" (click)="closeDetail()" aria-label="Cerrar detalle">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        <div class="detail-patient">
+          <div class="detail-avatar">{{ initials(appt.patientName) }}</div>
+          <div class="detail-patient-info">
+            <span class="detail-patient-name">{{ appt.patientName }}</span>
+            @if (appt.patientPhone) {
+              <a class="detail-patient-phone" [href]="'tel:' + appt.patientPhone">
+                <mat-icon>call</mat-icon>{{ appt.patientPhone }}
+              </a>
+            }
+          </div>
+        </div>
+      </header>
+
+      <div class="detail-body">
+        @if (store.error()) {
+          <app-alert-banner [message]="store.error()" />
+        }
+
+        @switch (detailMode()) {
+
+          @case ('cancel') {
+            <div class="detail-form">
+              <h3 class="detail-form-title">Cancelar cita</h3>
+              <p class="detail-form-desc">Indicá el motivo. El paciente quedará liberado de este turno.</p>
+              <label class="detail-label" for="cancelReason">Motivo de cancelación</label>
+              <textarea
+                id="cancelReason"
+                class="detail-textarea"
+                rows="3"
+                placeholder="Ej. el paciente solicitó reprogramar"
+                [value]="cancelReason()"
+                (input)="onCancelReason($event)"></textarea>
+              <div class="detail-form-actions">
+                <button class="detail-btn detail-btn--ghost" (click)="backToView()" [disabled]="store.actionPending()">
+                  Volver
+                </button>
+                <button
+                  class="detail-btn detail-btn--danger"
+                  (click)="confirmCancel(appt)"
+                  [disabled]="!cancelReason().trim() || store.actionPending()">
+                  Confirmar cancelación
+                </button>
+              </div>
+            </div>
+          }
+
+          @case ('reschedule') {
+            <div class="detail-form">
+              <h3 class="detail-form-title">Reprogramar cita</h3>
+              <p class="detail-form-desc">Elegí la nueva fecha y hora para {{ shortName(appt.doctorName) }}.</p>
+              <div class="detail-field-row">
+                <div class="detail-field">
+                  <label class="detail-label" for="reschedDate">Fecha</label>
+                  <input
+                    id="reschedDate"
+                    type="date"
+                    class="detail-input"
+                    [value]="reschedDate()"
+                    (input)="onReschedDate($event)" />
+                </div>
+                <div class="detail-field">
+                  <label class="detail-label" for="reschedTime">Hora</label>
+                  <input
+                    id="reschedTime"
+                    type="time"
+                    class="detail-input"
+                    [value]="reschedTime()"
+                    (input)="onReschedTime($event)" />
+                </div>
+              </div>
+              <div class="detail-form-actions">
+                <button class="detail-btn detail-btn--ghost" (click)="backToView()" [disabled]="store.actionPending()">
+                  Volver
+                </button>
+                <button
+                  class="detail-btn detail-btn--primary"
+                  (click)="confirmReschedule(appt)"
+                  [disabled]="!reschedDate() || !reschedTime() || store.actionPending()">
+                  Confirmar nuevo horario
+                </button>
+              </div>
+            </div>
+          }
+
+          @default {
+            <dl class="detail-meta">
+              <div class="detail-row">
+                <mat-icon>schedule</mat-icon>
+                <div class="detail-row-text">
+                  <dt>Horario</dt>
+                  <dd>{{ fmtIso(appt.scheduledAt) }} – {{ endTimeLabel(appt) }} · {{ appt.durationMinutes }} min</dd>
+                </div>
+              </div>
+              <div class="detail-row">
+                <mat-icon>medical_services</mat-icon>
+                <div class="detail-row-text">
+                  <dt>Tipo de consulta</dt>
+                  <dd>{{ appt.typeName }}</dd>
+                </div>
+              </div>
+              <div class="detail-row">
+                <mat-icon>person</mat-icon>
+                <div class="detail-row-text">
+                  <dt>Médico</dt>
+                  <dd>{{ appt.doctorName }}</dd>
+                </div>
+              </div>
+              <div class="detail-row">
+                <mat-icon>business</mat-icon>
+                <div class="detail-row-text">
+                  <dt>Sede</dt>
+                  <dd>{{ appt.branchName }}</dd>
+                </div>
+              </div>
+              <div class="detail-row">
+                <mat-icon>how_to_reg</mat-icon>
+                <div class="detail-row-text">
+                  <dt>Origen</dt>
+                  <dd>{{ sourceLabel(appt) }}</dd>
+                </div>
+              </div>
+              @if (appt.reason) {
+                <div class="detail-row">
+                  <mat-icon>notes</mat-icon>
+                  <div class="detail-row-text">
+                    <dt>Motivo</dt>
+                    <dd>{{ appt.reason }}</dd>
+                  </div>
+                </div>
+              }
+              @if (appt.visualState === 'waiting') {
+                <div class="detail-row detail-row--accent">
+                  <mat-icon>hourglass_top</mat-icon>
+                  <div class="detail-row-text">
+                    <dt>Tiempo en sala</dt>
+                    <dd>{{ appt.waitMinutes }} min esperando</dd>
+                  </div>
+                </div>
+              }
+            </dl>
+
+            <div class="detail-actions">
+              @switch (appt.visualState) {
+                @case ('scheduled') {
+                  <button class="detail-btn detail-btn--primary" (click)="checkIn(appt)" [disabled]="store.actionPending()">
+                    <mat-icon>login</mat-icon> Registrar llegada
+                  </button>
+                  <button class="detail-btn detail-btn--ghost" (click)="beginReschedule(appt)" [disabled]="store.actionPending()">
+                    <mat-icon>event_repeat</mat-icon> Reprogramar
+                  </button>
+                  <button class="detail-btn detail-btn--danger-ghost" (click)="beginCancel()" [disabled]="store.actionPending()">
+                    <mat-icon>cancel</mat-icon> Cancelar cita
+                  </button>
+                }
+                @case ('waiting') {
+                  <button class="detail-btn detail-btn--success" (click)="startConsult(appt)" [disabled]="store.actionPending()">
+                    <mat-icon>play_arrow</mat-icon> Iniciar consulta
+                  </button>
+                  <button class="detail-btn detail-btn--ghost" (click)="beginReschedule(appt)" [disabled]="store.actionPending()">
+                    <mat-icon>event_repeat</mat-icon> Reprogramar
+                  </button>
+                  <button class="detail-btn detail-btn--danger-ghost" (click)="beginCancel()" [disabled]="store.actionPending()">
+                    <mat-icon>cancel</mat-icon> Cancelar cita
+                  </button>
+                }
+                @case ('in-process') {
+                  <button class="detail-btn detail-btn--success" (click)="completeConsult(appt)" [disabled]="store.actionPending()">
+                    <mat-icon>task_alt</mat-icon> Completar consulta
+                  </button>
+                }
+                @case ('completed') {
+                  <p class="detail-note">
+                    <mat-icon>verified</mat-icon> Consulta finalizada.
+                  </p>
+                }
+                @case ('no-show') {
+                  <button class="detail-btn detail-btn--ghost" (click)="beginReschedule(appt)" [disabled]="store.actionPending()">
+                    <mat-icon>event_repeat</mat-icon> Reprogramar
+                  </button>
+                }
+                @case ('cancelled') {
+                  <p class="detail-note">
+                    <mat-icon>block</mat-icon> Esta cita fue cancelada.
+                  </p>
+                }
+              }
+            </div>
+          }
+        }
+      </div>
+    </aside>
+  }
 
 </div>

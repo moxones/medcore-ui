@@ -105,3 +105,18 @@ export interface SuperAdminUserResponse {
 }
 
 export type SuperAdminUserListApiResponse = ApiResponse<SuperAdminUserResponse[]>;
+
+export interface UserBranchResponse {
+  id: number;
+  userId: number;
+  userFullName: string;
+  userEmail: string;
+  branchId: number;
+  branchName: string;
+  branchAddress: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export type UserBranchApiResponse = ApiResponse<UserBranchResponse>;
+export type UserBranchListApiResponse = ApiResponse<UserBranchResponse[]>;

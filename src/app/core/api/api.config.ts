@@ -15,6 +15,7 @@ export const API_ROUTES = {
     base: `${API_BASE}/patients`,
     profile: `${API_BASE}/patients/profile`,
     search: `${API_BASE}/patients/search`,
+    myAppointments: `${API_BASE}/patients/me/appointments`,
     byId: (id: number) => `${API_BASE}/patients/${id}`,
   },
   users: {
@@ -22,6 +23,8 @@ export const API_ROUTES = {
     byId: (id: number) => `${API_BASE}/users/${id}`,
     status: (id: number) => `${API_BASE}/users/${id}/status`,
     roles: (id: number) => `${API_BASE}/users/${id}/roles`,
+    branches: (userId: number) => `${API_BASE}/users/${userId}/branches`,
+    branchLink: (userId: number, branchId: number) => `${API_BASE}/users/${userId}/branches/${branchId}`,
   },
   profile: {
     password: `${API_BASE}/profile/password`,
@@ -41,11 +44,15 @@ export const API_ROUTES = {
   appointments: {
     base: `${API_BASE}/appointments`,
     calendar: `${API_BASE}/appointments/calendar`,
+    queue: `${API_BASE}/appointments/queue`,
     availableSlots: `${API_BASE}/appointments/available-slots`,
+    availability: `${API_BASE}/appointments/availability`,
+    specialtiesSummary: `${API_BASE}/appointments/specialties-summary`,
     byId: (id: number) => `${API_BASE}/appointments/${id}`,
     reschedule: (id: number) => `${API_BASE}/appointments/${id}/reschedule`,
     flowStatus: (id: number) => `${API_BASE}/appointments/${id}/flow-status`,
     cancel: (id: number) => `${API_BASE}/appointments/${id}/cancel`,
+    payments: (id: number) => `${API_BASE}/appointments/${id}/payments`,
   },
   dashboard: {
     summary: `${API_BASE}/dashboard/summary`,
@@ -85,6 +92,7 @@ export const API_ROUTES = {
   },
   doctors: {
     base: `${API_BASE}/doctors`,
+    me: `${API_BASE}/doctors/me`,
     byId: (id: number) => `${API_BASE}/doctors/${id}`,
     specialties: (doctorId: number) => `${API_BASE}/doctors/${doctorId}/specialties`,
     specialtiesAvailable: (doctorId: number) =>
@@ -121,6 +129,12 @@ export const API_ROUTES = {
   },
   medicalRecords: {
     base: `${API_BASE}/medical-records`,
+    me: `${API_BASE}/medical-records/me`,
+    entries: `${API_BASE}/medical-records/entries`,
     byPatient: (patientId: number) => `${API_BASE}/medical-records/patient/${patientId}`,
+    clinical: (patientId: number) => `${API_BASE}/medical-records/patient/${patientId}/clinical`,
+    entryById: (entryId: number) => `${API_BASE}/medical-records/entries/${entryId}`,
+    byAppointment: (appointmentId: number) =>
+      `${API_BASE}/medical-records/appointment/${appointmentId}/entries`,
   },
 } as const;

@@ -1,7 +1,484 @@
-<div class="page-placeholder">
-  <div class="placeholder-inner">
-    <mat-icon class="placeholder-icon">add_circle</mat-icon>
-    <h2 class="placeholder-title">Nueva Cita</h2>
-    <p class="placeholder-sub">Agendar citas por teléfono o presencialmente — próximamente</p>
+@if (store.createdAppointment(); as appt) {
+  <div class="success-wrapper">
+    <div class="success-card animate-appear">
+      <div class="success-icon-wrap">
+        <mat-icon class="success-icon">check_circle</mat-icon>
+      </div>
+      <h2 class="success-title">¡Cita confirmada!</h2>
+      <p class="success-sub">Te esperamos puntualmente</p>
+      <div class="success-summary">
+        <div class="summary-row">
+          <mat-icon>person</mat-icon>
+          <span>{{ appt.patientName }}</span>
+        </div>
+        <div class="summary-row">
+          <mat-icon>medical_information</mat-icon>
+          <span>{{ appt.doctorName }}</span>
+        </div>
+        <div class="summary-row">
+          <mat-icon>location_on</mat-icon>
+          <span>{{ appt.branchName }}</span>
+        </div>
+        <div class="summary-row">
+          <mat-icon>event</mat-icon>
+          <span>{{ formatScheduledAt(appt.scheduledAt) }}</span>
+        </div>
+      </div>
+      <div class="success-actions">
+        <button mat-flat-button color="primary" (click)="onCreatedNavigate()">
+          <mat-icon>calendar_today</mat-icon>
+          {{ selfBooking() ? 'Ver mis citas' : 'Ver agenda' }}
+        </button>
+        <button mat-stroked-button (click)="store.resetForNext()">
+          <mat-icon>add</mat-icon>
+          Agendar otra
+        </button>
+      </div>
+    </div>
   </div>
-</div>
+} @else {
+  <div class="booking">
+
+    <header class="topbar">
+      <div class="topbar-lead">
+        <p class="crumb">{{ crumbText() }}</p>
+        <h1 class="page-title">{{ selfBooking() ? 'Reservar mi cita' : 'Elegir horario' }}</h1>
+      </div>
+      @if (store.patient(); as p) {
+        <div class="patient-chip animate-appear">
+          <span class="chip-avatar">{{ store.patientInitials() }}</span>
+          <span class="chip-body">
+            <span class="chip-name">{{ p.firstName }} {{ p.lastName }}</span>
+            <span class="chip-doc">{{ p.contactEmail }}</span>
+          </span>
+          @if (!selfBooking()) {
+            <button class="change-link" (click)="store.clearPatient()">cambiar</button>
+          }
+        </div>
+      } @else if (selfBooking() && selfLoading()) {
+        <div class="patient-chip patient-chip--loading">
+          <mat-spinner diameter="18" />
+          <span class="chip-name">Cargando tu perfil…</span>
+        </div>
+      } @else if (selfBooking() && selfError()) {
+        <div class="patient-chip patient-chip--error">
+          <mat-icon class="chip-error-icon">error_outline</mat-icon>
+          <span class="chip-body">
+            <span class="chip-name">No pudimos cargar tu perfil</span>
+          </span>
+          <button class="change-link" (click)="loadSelfPatient()">reintentar</button>
+        </div>
+      }
+    </header>
+
+    <div class="layout">
+
+      <aside class="criteria">
+
+        @if (!selfBooking() && !store.patient()) {
+          <section class="block">
+            <label class="field-label">Paciente <span class="required-mark">*</span></label>
+            <div class="search-input-wrap">
+              <mat-icon class="search-icon">search</mat-icon>
+              @if (store.patientSearchLoading()) {
+                <mat-spinner diameter="16" class="search-spinner" />
+              }
+              <input
+                class="search-input"
+                type="text"
+                placeholder="Nombre, CI o correo..."
+                [ngModel]="store.patientQuery()"
+                (ngModelChange)="store.onPatientQueryChange($event)" />
+            </div>
+            @if (store.patientResults().length > 0) {
+              <div class="dropdown animate-appear">
+                @for (p of store.patientResults(); track p.id) {
+                  <button class="dropdown-row" (click)="store.selectPatient(p)">
+                    <span class="row-avatar">{{ p.firstName[0] }}{{ p.lastName[0] }}</span>
+                    <span class="row-name">{{ p.firstName }} {{ p.lastName }}</span>
+                    <span class="row-meta">{{ p.contactEmail }}</span>
+                  </button>
+                }
+                <button class="dropdown-action" (click)="requestNewPatient()">
+                  <mat-icon>person_add</mat-icon> Registrar nuevo paciente
+                </button>
+              </div>
+            }
+            @if (store.patientQuery().length >= 2 && !store.patientSearchLoading() && store.patientResults().length === 0) {
+              <div class="inline-empty animate-appear">
+                <mat-icon>search_off</mat-icon>
+                <span>Sin resultados.</span>
+                <button class="inline-link" (click)="requestNewPatient()">Registrar nuevo</button>
+              </div>
+            }
+          </section>
+        }
+
+        <section class="block">
+          <label class="field-label">¿Cómo querés buscar?</label>
+          <div class="segmented">
+            @for (m of modes; track m.value) {
+              <button
+                class="seg-btn"
+                [class.seg-btn--active]="store.mode() === m.value"
+                (click)="store.setMode(m.value)">
+                <mat-icon>{{ m.icon }}</mat-icon>
+                {{ m.label }}
+              </button>
+            }
+          </div>
+        </section>
+
+        <section class="block">
+          <label class="field-label">Sucursal y fecha</label>
+          <div class="select-wrap">
+            <mat-icon class="select-lead">location_on</mat-icon>
+            <select
+              class="form-select form-select--lead"
+              [ngModel]="store.selectedBranchId()"
+              (ngModelChange)="store.selectBranch(+$event)">
+              @for (b of store.branches(); track b.id) {
+                <option [ngValue]="b.id">{{ b.name }}</option>
+              }
+            </select>
+            <mat-icon class="select-arrow">expand_more</mat-icon>
+          </div>
+          <div class="select-wrap">
+            <mat-icon class="select-lead">calendar_month</mat-icon>
+            <select
+              class="form-select form-select--lead"
+              [ngModel]="store.dateRange()"
+              (ngModelChange)="store.setDateRange($event)">
+              @for (r of ranges; track r.value) {
+                <option [ngValue]="r.value">{{ r.label }}</option>
+              }
+            </select>
+            <mat-icon class="select-arrow">expand_more</mat-icon>
+          </div>
+        </section>
+
+        @if (store.mode() === 'specialty') {
+          <section class="block">
+            <label class="field-label">
+              <span class="step-num">1</span> Especialidad
+            </label>
+            @if (store.specialtiesLoading()) {
+              <div class="card-skeleton-list">
+                @for (i of [1, 2, 3, 4]; track i) { <div class="card-skeleton"></div> }
+              </div>
+            } @else if (store.specialties().length === 0) {
+              <div class="inline-empty">
+                <mat-icon>info</mat-icon>
+                <span>Sin especialidades en esta sede.</span>
+              </div>
+            } @else {
+              <div class="spec-list">
+                @for (s of store.specialties(); track s.id) {
+                  <button
+                    class="spec-card"
+                    [class.spec-card--sel]="store.selectedSpecialtyId() === s.id"
+                    (click)="store.selectSpecialty(s.id)">
+                    <span class="spec-icon" [class]="accentForName(s.name)">
+                      <mat-icon>medical_services</mat-icon>
+                    </span>
+                    <span class="spec-body">
+                      <span class="spec-name">{{ s.name }}</span>
+                      <span class="spec-meta">
+                        {{ s.doctorCount }} médico{{ s.doctorCount === 1 ? '' : 's' }}
+                        · {{ formatNextAvailable(s.nextAvailableDate) }}
+                      </span>
+                    </span>
+                    @if (store.selectedSpecialtyId() === s.id) {
+                      <mat-icon class="spec-check">check</mat-icon>
+                    } @else {
+                      <mat-icon class="spec-chevron">chevron_right</mat-icon>
+                    }
+                  </button>
+                }
+              </div>
+            }
+          </section>
+
+          @if (store.selectedSpecialtyId() && store.specialtyDoctors().length > 0) {
+            <section class="block animate-appear">
+              <div class="strip-head">
+                <span class="field-label strip-label">Médicos de {{ store.selectedSpecialty()?.name }}</span>
+                <button
+                  class="any-pill"
+                  [class.any-pill--active]="store.doctorFilterId() === null"
+                  (click)="store.setDoctorFilter(null)">
+                  <mat-icon>done_all</mat-icon> Cualquiera
+                </button>
+              </div>
+              <div class="doc-strip">
+                @for (d of store.specialtyDoctors(); track d.id) {
+                  <button
+                    class="doc-pill"
+                    [class.doc-pill--active]="store.doctorFilterId() === d.id"
+                    (click)="store.setDoctorFilter(d.id)">
+                    <span class="pill-avatar" [class]="accentForName(d.specialties[0] || d.fullName)">
+                      {{ d.initials }}
+                    </span>
+                    {{ d.fullName }}
+                  </button>
+                }
+              </div>
+              <p class="strip-hint">
+                Estás viendo los horarios de todos a la vez. Tocá un médico para filtrar solo sus turnos.
+              </p>
+            </section>
+          }
+        } @else {
+          <section class="block">
+            <label class="field-label">
+              <span class="step-num">1</span> Médico
+            </label>
+            <div class="search-input-wrap">
+              <mat-icon class="search-icon">search</mat-icon>
+              <input
+                class="search-input"
+                type="text"
+                placeholder="Buscar médico o especialidad..."
+                [ngModel]="store.doctorQuery()"
+                (ngModelChange)="store.setDoctorQuery($event)" />
+            </div>
+            @if (store.doctorsLoading()) {
+              <div class="card-skeleton-list">
+                @for (i of [1, 2, 3]; track i) { <div class="card-skeleton card-skeleton--row"></div> }
+              </div>
+            } @else if (store.filteredDoctors().length === 0) {
+              <div class="inline-empty">
+                <mat-icon>person_off</mat-icon>
+                <span>Sin médicos disponibles.</span>
+              </div>
+            } @else {
+              <div class="spec-list">
+                @for (d of store.filteredDoctors(); track d.id) {
+                  <button
+                    class="spec-card"
+                    [class.spec-card--sel]="store.selectedDoctor()?.id === d.id"
+                    (click)="store.selectDoctor(d)">
+                    <span class="pill-avatar pill-avatar--lg" [class]="accentForName(d.specialties[0] || d.fullName)">
+                      {{ d.initials }}
+                    </span>
+                    <span class="spec-body">
+                      <span class="spec-name">{{ d.fullName }}</span>
+                      <span class="spec-meta">{{ d.specialties.slice(0, 2).join(', ') }}</span>
+                    </span>
+                    @if (d.availableToday) {
+                      <span class="avail-dot" matTooltip="Disponible hoy"></span>
+                    }
+                  </button>
+                }
+              </div>
+            }
+          </section>
+        }
+
+      </aside>
+
+      <main class="results">
+
+        @if ((store.mode() === 'specialty' && !store.selectedSpecialtyId()) ||
+             (store.mode() === 'doctor' && !store.selectedDoctor())) {
+          <div class="big-empty">
+            <div class="empty-circle"><mat-icon>event_available</mat-icon></div>
+            <p class="empty-title">
+              {{ store.mode() === 'specialty' ? 'Elegí una especialidad' : 'Elegí un médico' }}
+            </p>
+            <p class="empty-sub">Los horarios disponibles aparecerán aquí.</p>
+          </div>
+        } @else {
+
+          <div class="res-head">
+            <div class="res-title-wrap">
+              <h2 class="res-title">
+                Turnos de <span class="res-accent">{{ resultsTitle() }}</span>
+                @if (store.mode() === 'specialty') {
+                  <span class="res-sub-inline">· {{ activeDoctorLabel() }}</span>
+                }
+              </h2>
+              <p class="res-count">
+                {{ store.selectedBranch()?.name }} ·
+                {{ store.totalSlots() }} horario{{ store.totalSlots() === 1 ? '' : 's' }} libre{{ store.totalSlots() === 1 ? '' : 's' }}
+              </p>
+            </div>
+            <div class="daynav">
+              @for (n of dayNavs; track n.value) {
+                <button
+                  class="daynav-btn"
+                  [class.daynav-btn--active]="store.dayNav() === n.value"
+                  (click)="store.setDayNav(n.value)">
+                  {{ n.label }}
+                </button>
+              }
+            </div>
+          </div>
+
+          @if (store.availabilityLoading()) {
+            <div class="slot-grid">
+              @for (i of [1,2,3,4,5,6,7,8]; track i) { <div class="slot-skeleton"></div> }
+            </div>
+          } @else if (store.totalSlots() === 0) {
+            <div class="big-empty animate-appear">
+              <div class="empty-circle empty-circle--muted"><mat-icon>event_busy</mat-icon></div>
+              <p class="empty-title">Sin horarios para estos criterios</p>
+              <p class="empty-sub">Probá ampliar el rango de fechas, otra sede o quitar filtros.</p>
+            </div>
+          } @else {
+
+            @if (store.firstSlot(); as first) {
+              <button
+                class="hero"
+                [class.hero--sel]="isSlotSelected(first.date, first.slot)"
+                (click)="store.selectSlot(first.date, first.slot)">
+                <span class="hero-bolt"><mat-icon>bolt</mat-icon></span>
+                <span class="hero-body">
+                  <span class="hero-tag">Primer turno disponible</span>
+                  <span class="hero-head">
+                    {{ heroHeadline(first.date, first.slot) }}
+                    <span class="hero-rel">— {{ heroRelative(first.date, first.slot) }}</span>
+                  </span>
+                  <span class="hero-doc">
+                    <span class="pill-avatar pill-avatar--sm" [class]="accentForName(first.slot.specialtyName)">
+                      {{ first.slot.doctorInitials }}
+                    </span>
+                    {{ first.slot.doctorName }} · {{ first.slot.specialtyName }} ({{ first.slot.durationMinutes }} min)
+                  </span>
+                </span>
+                <span class="hero-cta">
+                  {{ isSlotSelected(first.date, first.slot) ? 'Seleccionado' : 'Reservar este' }}
+                  <mat-icon>{{ isSlotSelected(first.date, first.slot) ? 'check' : 'arrow_forward' }}</mat-icon>
+                </span>
+              </button>
+            }
+
+            @for (day of store.visibleDays(); track day.date) {
+              <section class="slotsec animate-appear">
+                <div class="sec-head">
+                  <span class="sec-day">{{ dayHeading(day.date) }}</span>
+                  <span class="sec-count">{{ day.slots.length }} turno{{ day.slots.length === 1 ? '' : 's' }}</span>
+                </div>
+                <div class="slot-grid">
+                  @for (slot of day.slots; track slot.startTime + '-' + slot.doctorId) {
+                    <button
+                      class="slot"
+                      [class.slot--sel]="isSlotSelected(day.date, slot)"
+                      (click)="store.selectSlot(day.date, slot)"
+                      [attr.aria-label]="'Reservar ' + slot.startTime + ' con ' + slot.doctorName">
+                      <span class="slot-time">{{ slot.startTime }}</span>
+                      <span class="slot-doc">
+                        <span class="pill-avatar pill-avatar--xs" [class]="accentForName(slot.specialtyName)">
+                          {{ slot.doctorInitials }}
+                        </span>
+                        {{ slot.doctorName }}
+                      </span>
+                    </button>
+                  }
+                </div>
+              </section>
+            }
+
+            <div class="res-foot">
+              <div class="foot-filters">
+                @for (t of timeFilters; track t.value) {
+                  <button
+                    class="foot-pill"
+                    [class.foot-pill--active]="store.timeOfDay() === t.value"
+                    (click)="store.setTimeOfDay(t.value)">
+                    {{ t.label }}
+                  </button>
+                }
+              </div>
+              @if (store.appointmentTypes().length > 0) {
+                <div class="select-wrap select-wrap--compact">
+                  <select
+                    class="form-select"
+                    [ngModel]="store.selectedTypeId()"
+                    (ngModelChange)="store.setType($event ? +$event : null)">
+                    <option [ngValue]="null">Tipo: consulta estándar</option>
+                    @for (ty of store.appointmentTypes(); track ty.id) {
+                      <option [ngValue]="ty.id">
+                        {{ ty.name }}@if (ty.durationMinutes) { ({{ ty.durationMinutes }} min) }
+                      </option>
+                    }
+                  </select>
+                  <mat-icon class="select-arrow">expand_more</mat-icon>
+                </div>
+              }
+              <span class="foot-legend">color del avatar = especialidad · iniciales = médico</span>
+            </div>
+          }
+        }
+      </main>
+    </div>
+
+    @if (store.selectedSlot(); as sel) {
+      <div class="confirm-bar animate-appear">
+        <div class="confirm-info">
+          <mat-icon class="confirm-check">event_available</mat-icon>
+          <div class="confirm-text">
+            <span class="confirm-line">
+              {{ heroHeadline(sel.date, sel.slot) }} · {{ sel.slot.doctorName }}
+            </span>
+            <span class="confirm-sub">{{ store.selectedBranch()?.name }} · {{ sel.slot.specialtyName }}</span>
+          </div>
+        </div>
+
+        <div class="confirm-fields">
+          <input
+            class="search-input confirm-reason"
+            type="text"
+            maxlength="255"
+            placeholder="Motivo / notas (opcional)"
+            [ngModel]="store.reason()"
+            (ngModelChange)="store.setReason($event)" />
+          @if (!selfBooking()) {
+            <div class="source-pills">
+              @for (s of sources; track s.value) {
+                <button
+                  class="source-pill"
+                  [class.source-pill--active]="store.bookingSource() === s.value"
+                  (click)="store.setBookingSource(s.value)">
+                  {{ s.label }}
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="confirm-actions">
+          @if (!selfBooking() && !store.patient()) {
+            <span class="confirm-warn">Seleccioná un paciente</span>
+          }
+          @if (selfBooking() && !store.patient()) {
+            <span class="confirm-warn">Cargá tu perfil para continuar</span>
+          }
+          @if (store.submitError()) {
+            <span class="confirm-warn">{{ store.submitError() }}</span>
+          }
+          <button mat-stroked-button class="confirm-btn" (click)="cancel()">Cancelar</button>
+          <button
+            mat-flat-button
+            color="primary"
+            class="confirm-btn"
+            [disabled]="!store.canSubmit() || store.submitting()"
+            (click)="store.submit()">
+            @if (store.submitting()) {
+              <ng-container>
+                <mat-spinner diameter="18" />
+                <span>Confirmando...</span>
+              </ng-container>
+            } @else {
+              <ng-container>
+                <mat-icon>check_circle</mat-icon>
+                <span>Confirmar cita</span>
+              </ng-container>
+            }
+          </button>
+        </div>
+      </div>
+    }
+
+  </div>
+}

@@ -1,92 +1,61 @@
 <div class="page">
 
-  <div class="hero">
-    <div class="hero-content">
-      <div class="hero-text">
-        <p class="hero-greeting">
-          {{ greeting }},
-          <strong>{{ authStore.fullName() || 'Admin' }}</strong>
-        </p>
-        <h1 class="hero-title">{{ tenantStore.tenant().name }}</h1>
-        <p class="hero-sub">{{ tenantStore.tenant().subtitle }}</p>
-      </div>
-      <div class="hero-date">
-        <mat-icon class="hero-date-icon">today</mat-icon>
-        <span>{{ todayLabel }}</span>
-      </div>
+  <header class="hero">
+    <div class="hero-text">
+      <p class="hero-greeting">{{ greeting }}, <strong>{{ authStore.fullName() || 'Admin' }}</strong></p>
+      <h1 class="hero-title">{{ tenantStore.tenant().name }}</h1>
     </div>
-  </div>
+    <div class="hero-date">
+      <mat-icon>today</mat-icon>
+      <span>{{ todayLabel }}</span>
+    </div>
+  </header>
 
   @if (dashboardStore.loading()) {
-    <mat-progress-bar mode="indeterminate" class="kpi-progress" />
+    <mat-progress-bar mode="indeterminate" class="top-progress" />
   }
 
-  <div class="kpi-grid">
+  <section class="kpi-grid">
     <app-kpi-card
       icon="calendar_today"
       label="Citas hoy"
       [value]="dashboardStore.summary()?.totalAppointmentsToday?.toString() ?? '—'"
       [loading]="dashboardStore.loading()"
       variant="blue" />
-
     <app-kpi-card
       icon="check_circle"
       label="Completadas"
       [value]="dashboardStore.summary()?.completedAppointmentsToday?.toString() ?? '—'"
       [loading]="dashboardStore.loading()"
       variant="green" />
-
     <app-kpi-card
       icon="pending_actions"
       label="Pendientes"
       [value]="dashboardStore.loading() ? '—' : waitingCount().toString()"
       [loading]="dashboardStore.loading()"
       variant="blue" />
-
-    <app-kpi-card
-      icon="cancel"
-      label="Canceladas"
-      [value]="dashboardStore.summary()?.cancelledAppointmentsToday?.toString() ?? '—'"
-      [loading]="dashboardStore.loading()"
-      variant="orange" />
-
     <app-kpi-card
       icon="payments"
       label="Ingresos del mes"
       [value]="formattedRevenue()"
       [loading]="dashboardStore.loading()"
-      variant="purple" />
-
-    <app-kpi-card
-      icon="person_off"
-      label="Tasa de no-show"
-      [value]="noShowRate()"
-      [loading]="dashboardStore.loading()"
-      variant="red" />
-  </div>
+      variant="blue" />
+  </section>
 
   <div class="content-grid">
 
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-header-left">
-          <div class="panel-icon panel-icon--blue">
-            <mat-icon>donut_large</mat-icon>
-          </div>
-          <span class="panel-title">Distribución de hoy</span>
-        </div>
-      </div>
+    <section class="panel">
+      <header class="panel-header">
+        <span class="panel-title">Distribución de hoy</span>
+      </header>
 
       @if (dashboardStore.loading()) {
         <div class="panel-loading">
-          <mat-progress-bar mode="indeterminate" />
-          <div class="loading-placeholder">
-            <div class="skeleton-circle"></div>
-            <div class="skeleton-lines">
-              <div class="skeleton-line"></div>
-              <div class="skeleton-line skeleton-line--sm"></div>
-              <div class="skeleton-line skeleton-line--xs"></div>
-            </div>
+          <div class="skeleton-circle"></div>
+          <div class="skeleton-lines">
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line skeleton-line--sm"></div>
+            <div class="skeleton-line skeleton-line--xs"></div>
           </div>
         </div>
       } @else if (!dashboardStore.summary() || dashboardStore.summary()!.totalAppointmentsToday === 0) {
@@ -96,82 +65,51 @@
         </div>
       } @else {
         <div class="distribution-body">
-          <div class="donut-wrap">
-            <div class="donut" [style.background]="donutBackground()">
-              <div class="donut-hole">
-                <span class="donut-num">{{ dashboardStore.summary()!.totalAppointmentsToday }}</span>
-                <span class="donut-sub">citas</span>
-              </div>
+          <div class="donut" [style.background]="donutBackground()">
+            <div class="donut-hole">
+              <span class="donut-num">{{ dashboardStore.summary()!.totalAppointmentsToday }}</span>
+              <span class="donut-sub">citas</span>
             </div>
           </div>
 
           <div class="dist-legend">
             <div class="dist-row">
-              <span class="dist-dot dist-dot--green"></span>
+              <span class="dist-dot dist-dot--completed"></span>
               <span class="dist-label">Completadas</span>
-              <span class="dist-count">{{ dashboardStore.summary()!.completedAppointmentsToday }}</span>
-              <div class="dist-bar-wrap">
-                <div class="dist-bar dist-bar--green" [style.width.%]="completedPct()"></div>
-              </div>
               <span class="dist-pct">{{ completedPct() }}%</span>
             </div>
-
             <div class="dist-row">
-              <span class="dist-dot dist-dot--blue"></span>
+              <span class="dist-dot dist-dot--pending"></span>
               <span class="dist-label">Pendientes</span>
-              <span class="dist-count">{{ waitingCount() }}</span>
-              <div class="dist-bar-wrap">
-                <div class="dist-bar dist-bar--blue" [style.width.%]="waitingPct()"></div>
-              </div>
               <span class="dist-pct">{{ waitingPct() }}%</span>
             </div>
-
             <div class="dist-row">
-              <span class="dist-dot dist-dot--orange"></span>
+              <span class="dist-dot dist-dot--cancelled"></span>
               <span class="dist-label">Canceladas</span>
-              <span class="dist-count">{{ dashboardStore.summary()!.cancelledAppointmentsToday }}</span>
-              <div class="dist-bar-wrap">
-                <div class="dist-bar dist-bar--orange" [style.width.%]="cancelledPct()"></div>
-              </div>
               <span class="dist-pct">{{ cancelledPct() }}%</span>
             </div>
           </div>
         </div>
       }
-    </div>
+    </section>
 
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-header-left">
-          <div class="panel-icon panel-icon--purple">
-            <mat-icon>bar_chart</mat-icon>
-          </div>
-          <span class="panel-title">Productividad por médico</span>
-        </div>
-      </div>
+    <section class="panel">
+      <header class="panel-header">
+        <span class="panel-title">Productividad por médico</span>
+      </header>
 
       @if (dashboardStore.loadingProductivity()) {
         <mat-progress-bar mode="indeterminate" />
-      }
-
-      @if (!dashboardStore.loadingProductivity() && dashboardStore.productivity().length === 0) {
+      } @else if (dashboardStore.productivity().length === 0) {
         <div class="panel-empty">
           <mat-icon>analytics</mat-icon>
           <span>Sin datos de productividad disponibles</span>
         </div>
-      }
-
-      @if (dashboardStore.productivity().length > 0) {
+      } @else {
         <div class="prod-list">
           @for (item of dashboardStore.productivity(); track item.doctorId; let i = $index) {
             <div class="prod-row">
-              <div
-                class="prod-rank"
-                [class.prod-rank--gold]="i === 0"
-                [class.prod-rank--silver]="i === 1"
-                [class.prod-rank--bronze]="i === 2">
-                {{ i + 1 }}
-              </div>
+              <span class="prod-rank" [class.prod-rank--top]="i === 0">{{ i + 1 }}</span>
               <div class="prod-info">
                 <span class="prod-name">{{ item.doctorName }}</span>
                 <div class="prod-bar-wrap">
@@ -186,26 +124,22 @@
           }
         </div>
       }
-    </div>
+    </section>
 
   </div>
 
-  <div class="quick-section">
-    <div class="quick-section-header">
-      <mat-icon>grid_view</mat-icon>
-      <span>Accesos rápidos</span>
-    </div>
-    <div class="quick-grid">
+  <section class="quick-section">
+    <span class="quick-section-title">Accesos rápidos</span>
+    <nav class="quick-grid">
       @for (link of quickLinks; track link.route) {
-        <a [class]="'quick-card ' + link.accentClass" [routerLink]="link.route">
+        <a class="quick-card" [routerLink]="link.route">
           <div class="quick-icon">
             <mat-icon>{{ link.icon }}</mat-icon>
           </div>
           <span class="quick-label">{{ link.label }}</span>
-          <span class="quick-desc">{{ link.description }}</span>
         </a>
       }
-    </div>
-  </div>
+    </nav>
+  </section>
 
 </div>

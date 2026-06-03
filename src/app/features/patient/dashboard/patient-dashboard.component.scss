@@ -228,9 +228,9 @@
   white-space: nowrap;
   flex-shrink: 0;
 
-  &--waiting {
-    background: color-mix(in srgb, var(--color-warning) 15%, transparent);
-    color: var(--color-warning);
+  &--scheduled {
+    background: color-mix(in srgb, var(--mat-sys-primary) 12%, transparent);
+    color: var(--mat-sys-primary);
   }
 
   &--in-process {

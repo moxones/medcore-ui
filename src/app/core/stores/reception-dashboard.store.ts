@@ -51,16 +51,14 @@ export const ReceptionDashboardStore = signalStore(
           map.set(a.doctorId, {
             doctorId: a.doctorId,
             doctorName: a.doctorName,
-            counts: { WAITING: 0, IN_PROCESS: 0, COMPLETED: 0 },
+            counts: { SCHEDULED: 0, WAITING: 0, CALLED: 0, IN_PROCESS: 0, PENDING_PAYMENT: 0, COMPLETED: 0 },
           });
         }
         map.get(a.doctorId)!.counts[a.flowStatus]++;
       }
-      return [...map.values()].sort(
-        (a, b) =>
-          b.counts.WAITING + b.counts.IN_PROCESS + b.counts.COMPLETED -
-          (a.counts.WAITING + a.counts.IN_PROCESS + a.counts.COMPLETED),
-      );
+      const total = (c: Record<AppointmentFlowStatus, number>): number =>
+        Object.values(c).reduce((sum, n) => sum + n, 0);
+      return [...map.values()].sort((a, b) => total(b.counts) - total(a.counts));
     }),
   })),
   withMethods((store, service = inject(AppointmentService)) => ({

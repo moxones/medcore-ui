@@ -17,6 +17,8 @@ const MIN_CARD_H = 30;
 
 export type VisualState = 'scheduled' | 'waiting' | 'in-process' | 'completed' | 'no-show' | 'cancelled';
 
+export type AgendaView = 'day' | 'week' | 'month';
+
 export interface EnrichedAppointment extends AppointmentResponse {
   typeName: string;
   statusLabel: string;
@@ -24,6 +26,11 @@ export interface EnrichedAppointment extends AppointmentResponse {
   heightPx: number;
   visualState: VisualState;
   waitMinutes: number;
+}
+
+export interface PackedAppointment extends EnrichedAppointment {
+  laneIndex: number;
+  laneCount: number;
 }
 
 export interface DoctorColumn {
@@ -34,8 +41,26 @@ export interface DoctorColumn {
   appointments: EnrichedAppointment[];
 }
 
+export interface WeekDayColumn {
+  date: string;
+  weekdayLabel: string;
+  dayNumber: number;
+  isToday: boolean;
+  appointments: PackedAppointment[];
+}
+
+export interface MonthCell {
+  date: string;
+  dayNumber: number;
+  inCurrentMonth: boolean;
+  isToday: boolean;
+  appointments: EnrichedAppointment[];
+}
+
 interface AgendaState {
   date: string;
+  view: AgendaView;
+  searchTerm: string;
   branchId: number | null;
   filterDoctorId: number | null;
   filterVisualState: VisualState | null;
@@ -46,12 +71,87 @@ interface AgendaState {
   appointmentStatuses: MasterCatalogItem[];
   loading: boolean;
   refreshing: boolean;
+  actionPending: boolean;
   error: string | null;
   currentTime: number;
+  selectedId: number | null;
 }
 
+const WEEKDAY_LABELS = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
+
 function todayIso(): string {
-  return new Date().toISOString().split('T')[0];
+  return localIso(new Date());
+}
+
+function localIso(d: Date): string {
+  const y = d.getFullYear();
+  const m = (d.getMonth() + 1).toString().padStart(2, '0');
+  const day = d.getDate().toString().padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function parseIso(iso: string): Date {
+  return new Date(iso + 'T12:00:00');
+}
+
+function addDays(iso: string, n: number): string {
+  const d = parseIso(iso);
+  d.setDate(d.getDate() + n);
+  return localIso(d);
+}
+
+function startOfWeekIso(iso: string): string {
+  const d = parseIso(iso);
+  const offsetToMonday = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - offsetToMonday);
+  return localIso(d);
+}
+
+function startMinutes(isoAt: string): number {
+  const d = new Date(isoAt);
+  return d.getHours() * 60 + d.getMinutes() - GRID_START_H * 60;
+}
+
+function packAppointments(appts: EnrichedAppointment[]): PackedAppointment[] {
+  const sorted = [...appts].sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
+  const result: PackedAppointment[] = [];
+  let cluster: EnrichedAppointment[] = [];
+  let clusterEnd = -1;
+
+  const flush = (): void => {
+    const laneEnds: number[] = [];
+    const laneOf = new Map<EnrichedAppointment, number>();
+    for (const a of cluster) {
+      const start = startMinutes(a.scheduledAt);
+      const end = start + (a.durationMinutes ?? 30);
+      let lane = laneEnds.findIndex((e) => e <= start);
+      if (lane === -1) {
+        laneEnds.push(end);
+        lane = laneEnds.length - 1;
+      } else {
+        laneEnds[lane] = end;
+      }
+      laneOf.set(a, lane);
+    }
+    const laneCount = laneEnds.length;
+    for (const a of cluster) {
+      result.push({ ...a, laneIndex: laneOf.get(a) ?? 0, laneCount });
+    }
+  };
+
+  for (const a of sorted) {
+    const start = startMinutes(a.scheduledAt);
+    const end = start + (a.durationMinutes ?? 30);
+    if (cluster.length && start >= clusterEnd) {
+      flush();
+      cluster = [];
+      clusterEnd = -1;
+    }
+    cluster.push(a);
+    clusterEnd = Math.max(clusterEnd, end);
+  }
+  if (cluster.length) flush();
+  return result;
 }
 
 function toTopPx(isoAt: string): number {
@@ -82,6 +182,8 @@ export const AgendaStore = signalStore(
   { providedIn: 'root' },
   withState<AgendaState>({
     date: todayIso(),
+    view: 'day',
+    searchTerm: '',
     branchId: null,
     filterDoctorId: null,
     filterVisualState: null,
@@ -92,8 +194,10 @@ export const AgendaStore = signalStore(
     appointmentStatuses: [],
     loading: false,
     refreshing: false,
+    actionPending: false,
     error: null,
     currentTime: Date.now(),
+    selectedId: null,
   }),
   withComputed((store) => {
     const typeNameById = computed(() =>
@@ -131,9 +235,14 @@ export const AgendaStore = signalStore(
     const filtered = computed(() => {
       const docId = store.filterDoctorId();
       const vs = store.filterVisualState();
+      const term = store.searchTerm().toLowerCase().trim();
       return allEnriched().filter((a) => {
         if (docId !== null && a.doctorId !== docId) return false;
         if (vs !== null && a.visualState !== vs) return false;
+        if (term) {
+          const haystack = `${a.patientName} ${a.typeName} ${a.doctorName}`.toLowerCase();
+          if (!haystack.includes(term)) return false;
+        }
         return true;
       });
     });
@@ -205,7 +314,84 @@ export const AgendaStore = signalStore(
       Array.from({ length: GRID_END_H - GRID_START_H + 1 }, (_, i) => GRID_START_H + i)
     );
 
-    return { allEnriched, doctorColumns, waitingRoom, next60Min, stats, gridHeightPx, nowTopPx, gridHours };
+    const selected = computed((): EnrichedAppointment | null => {
+      const id = store.selectedId();
+      if (id === null) return null;
+      return allEnriched().find((a) => a.id === id) ?? null;
+    });
+
+    const range = computed((): { start: string; end: string } => {
+      const v = store.view();
+      const dateIso = store.date();
+      if (v === 'day') return { start: dateIso, end: dateIso };
+      if (v === 'week') {
+        const start = startOfWeekIso(dateIso);
+        return { start, end: addDays(start, 6) };
+      }
+      const d = parseIso(dateIso);
+      const first = localIso(new Date(d.getFullYear(), d.getMonth(), 1));
+      const last = localIso(new Date(d.getFullYear(), d.getMonth() + 1, 0));
+      return { start: startOfWeekIso(first), end: addDays(startOfWeekIso(last), 6) };
+    });
+
+    const byLocalDate = computed((): Map<string, EnrichedAppointment[]> => {
+      const map = new Map<string, EnrichedAppointment[]>();
+      for (const a of filtered()) {
+        const key = localIso(new Date(a.scheduledAt));
+        const list = map.get(key) ?? [];
+        list.push(a);
+        map.set(key, list);
+      }
+      return map;
+    });
+
+    const weekDays = computed((): WeekDayColumn[] => {
+      if (store.view() !== 'week') return [];
+      const start = startOfWeekIso(store.date());
+      const today = todayIso();
+      const map = byLocalDate();
+      return Array.from({ length: 7 }, (_, i) => {
+        const iso = addDays(start, i);
+        return {
+          date: iso,
+          weekdayLabel: WEEKDAY_LABELS[i],
+          dayNumber: parseIso(iso).getDate(),
+          isToday: iso === today,
+          appointments: packAppointments(map.get(iso) ?? []),
+        };
+      });
+    });
+
+    const monthWeeks = computed((): MonthCell[][] => {
+      if (store.view() !== 'month') return [];
+      const { start, end } = range();
+      const today = todayIso();
+      const currentMonth = parseIso(store.date()).getMonth();
+      const map = byLocalDate();
+      const weeks: MonthCell[][] = [];
+      let cursor = start;
+      while (cursor <= end) {
+        const week: MonthCell[] = [];
+        for (let i = 0; i < 7; i++) {
+          const d = parseIso(cursor);
+          week.push({
+            date: cursor,
+            dayNumber: d.getDate(),
+            inCurrentMonth: d.getMonth() === currentMonth,
+            isToday: cursor === today,
+            appointments: (map.get(cursor) ?? []).sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt)),
+          });
+          cursor = addDays(cursor, 1);
+        }
+        weeks.push(week);
+      }
+      return weeks;
+    });
+
+    return {
+      allEnriched, doctorColumns, waitingRoom, next60Min, stats,
+      gridHeightPx, nowTopPx, gridHours, selected, range, weekDays, monthWeeks,
+    };
   }),
   withMethods((
     store,
@@ -217,10 +403,11 @@ export const AgendaStore = signalStore(
     async function loadCalendar(): Promise<void> {
       patchState(store, { refreshing: true });
       try {
+        const { start, end } = store.range();
         const res = await firstValueFrom(
           apptSvc.getCalendar({
-            startDate: store.date(),
-            endDate: store.date(),
+            startDate: start,
+            endDate: end,
             branchId: store.branchId() ?? undefined,
           })
         );
@@ -287,6 +474,45 @@ export const AgendaStore = signalStore(
         void loadCalendar();
       },
 
+      setView(view: AgendaView): void {
+        if (store.view() === view) return;
+        patchState(store, { view });
+        void loadCalendar();
+      },
+
+      setSearch(term: string): void {
+        patchState(store, { searchTerm: term });
+      },
+
+      goPrev(): void {
+        const v = store.view();
+        const step = v === 'day' ? -1 : v === 'week' ? -7 : 0;
+        if (v === 'month') {
+          const d = parseIso(store.date());
+          patchState(store, { date: localIso(new Date(d.getFullYear(), d.getMonth() - 1, 1)) });
+        } else {
+          patchState(store, { date: addDays(store.date(), step) });
+        }
+        void loadCalendar();
+      },
+
+      goNext(): void {
+        const v = store.view();
+        const step = v === 'day' ? 1 : v === 'week' ? 7 : 0;
+        if (v === 'month') {
+          const d = parseIso(store.date());
+          patchState(store, { date: localIso(new Date(d.getFullYear(), d.getMonth() + 1, 1)) });
+        } else {
+          patchState(store, { date: addDays(store.date(), step) });
+        }
+        void loadCalendar();
+      },
+
+      goToday(): void {
+        patchState(store, { date: todayIso() });
+        void loadCalendar();
+      },
+
       setFilterDoctor(doctorId: number | null): void {
         patchState(store, { filterDoctorId: doctorId });
       },
@@ -295,15 +521,53 @@ export const AgendaStore = signalStore(
         patchState(store, { filterVisualState: state });
       },
 
+      select(id: number): void {
+        patchState(store, { selectedId: id, error: null });
+      },
+
+      clearSelection(): void {
+        patchState(store, { selectedId: null, error: null });
+      },
+
       async updateFlowStatus(id: number, flowStatus: AppointmentFlowStatus): Promise<void> {
         const updated = store.appointments().map((a) =>
           a.id === id ? { ...a, flowStatus } : a
         );
-        patchState(store, { appointments: updated });
+        patchState(store, { appointments: updated, actionPending: true });
         try {
           await firstValueFrom(apptSvc.updateFlowStatus(id, { flowStatus }));
         } catch {
           await loadCalendar();
+        } finally {
+          patchState(store, { actionPending: false });
+        }
+      },
+
+      async cancelAppointment(id: number, reason: string): Promise<boolean> {
+        patchState(store, { actionPending: true, error: null });
+        try {
+          await firstValueFrom(apptSvc.cancel(id, { reason }));
+          await loadCalendar();
+          return true;
+        } catch {
+          patchState(store, { error: 'No se pudo cancelar la cita' });
+          return false;
+        } finally {
+          patchState(store, { actionPending: false });
+        }
+      },
+
+      async reschedule(id: number, newScheduledAt: string): Promise<boolean> {
+        patchState(store, { actionPending: true, error: null });
+        try {
+          await firstValueFrom(apptSvc.reschedule(id, { newScheduledAt }));
+          await loadCalendar();
+          return true;
+        } catch {
+          patchState(store, { error: 'No se pudo reprogramar la cita' });
+          return false;
+        } finally {
+          patchState(store, { actionPending: false });
         }
       },
     };

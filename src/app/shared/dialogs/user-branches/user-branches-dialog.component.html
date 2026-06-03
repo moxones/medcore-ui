@@ -1,0 +1,118 @@
+<div class="branches-dialog">
+
+  <div class="dialog-header">
+    <div class="header-icon">
+      <mat-icon>location_on</mat-icon>
+    </div>
+    <div class="header-text">
+      <h2 class="dialog-title">Gestión de sucursales</h2>
+      <p class="dialog-subtitle">{{ data.userName }}</p>
+    </div>
+    <button class="close-btn" (click)="close()" matTooltip="Cerrar" aria-label="Cerrar">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" class="progress" />
+  }
+
+  @if (error()) {
+    <div class="dialog-alert">
+      <app-alert-banner type="error" [message]="error()!" (dismissed)="clearError()" />
+    </div>
+  }
+
+  <div class="dialog-body">
+
+    <div class="section">
+      <h3 class="section-title">
+        <mat-icon>check_circle</mat-icon>
+        Sucursales asignadas
+        <span class="section-count">{{ assignedBranches().length }}</span>
+      </h3>
+
+      @if (assignedBranches().length === 0 && !loading()) {
+        <div class="empty-section">
+          <mat-icon>location_off</mat-icon>
+          <span>Sin sucursales asignadas</span>
+        </div>
+      }
+
+      <div class="branch-list">
+        @for (branch of assignedBranches(); track branch.id) {
+          <div class="branch-item branch-item--assigned">
+            <div class="branch-item-info">
+              <mat-icon class="branch-icon">storefront</mat-icon>
+              <div class="branch-details">
+                <span class="branch-name">{{ branch.branchName }}</span>
+                @if (branch.branchAddress) {
+                  <span class="branch-address">{{ branch.branchAddress }}</span>
+                }
+              </div>
+            </div>
+            <button
+              class="action-btn action-btn--remove"
+              (click)="remove(branch)"
+              [disabled]="busyBranchId() !== null"
+              matTooltip="Quitar sucursal"
+              aria-label="Quitar sucursal">
+              @if (isBusy(branch.branchId)) {
+                <mat-icon class="spin">autorenew</mat-icon>
+              } @else {
+                <mat-icon>remove_circle_outline</mat-icon>
+              }
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+
+    @if (availableBranches().length > 0) {
+      <div class="section">
+        <h3 class="section-title">
+          <mat-icon>add_location</mat-icon>
+          Sucursales disponibles
+          <span class="section-count">{{ availableBranches().length }}</span>
+        </h3>
+
+        <div class="branch-list">
+          @for (branch of availableBranches(); track branch.id) {
+            <div class="branch-item branch-item--available">
+              <div class="branch-item-info">
+                <mat-icon class="branch-icon">storefront</mat-icon>
+                <div class="branch-details">
+                  <span class="branch-name">{{ branch.name }}</span>
+                  @if (branch.address) {
+                    <span class="branch-address">{{ branch.address }}</span>
+                  }
+                </div>
+              </div>
+              <button
+                class="action-btn action-btn--add"
+                (click)="assign(branch)"
+                [disabled]="busyBranchId() !== null"
+                matTooltip="Asignar sucursal"
+                aria-label="Asignar sucursal">
+                @if (isBusy(branch.id)) {
+                  <mat-icon class="spin">autorenew</mat-icon>
+                } @else {
+                  <mat-icon>add_circle_outline</mat-icon>
+                }
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+  </div>
+
+  <div class="dialog-footer">
+    <button class="btn-close" (click)="close()">
+      <mat-icon>check</mat-icon>
+      Listo
+    </button>
+  </div>
+
+</div>

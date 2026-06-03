@@ -7,6 +7,7 @@ const ACCESS_TOKEN_KEY = 'access_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
 const ROLES_KEY = 'roles';
 const USER_KEY = 'user';
+const EXPIRY_THRESHOLD_SECONDS = 60;
 
 @Injectable({ providedIn: 'root' })
 export class TokenService {
@@ -14,6 +15,27 @@ export class TokenService {
 
   getAccessToken(): string | null {
     return this.read(ACCESS_TOKEN_KEY);
+  }
+
+  isAccessTokenExpiringSoon(thresholdSeconds = EXPIRY_THRESHOLD_SECONDS): boolean {
+    const expiresAt = this.getAccessTokenExpiry();
+    if (expiresAt === null) return false;
+    return expiresAt - Date.now() / 1000 <= thresholdSeconds;
+  }
+
+  private getAccessTokenExpiry(): number | null {
+    const token = this.getAccessToken();
+    if (!token) return null;
+    const segment = token.split('.')[1];
+    if (!segment) return null;
+    try {
+      const payload = JSON.parse(
+        atob(segment.replace(/-/g, '+').replace(/_/g, '/')),
+      ) as { exp?: number };
+      return typeof payload.exp === 'number' ? payload.exp : null;
+    } catch {
+      return null;
+    }
   }
 
   getRefreshToken(): string | null {

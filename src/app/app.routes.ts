@@ -128,7 +128,7 @@ export const routes: Routes = [
   {
     path: 'reception',
     canActivate: [authGuard, roleGuard],
-    data: { roles: ['ASSISTANT', 'RECEPTIONIST'] },
+    data: { roles: ['RECEPTIONIST'] },
     loadComponent: () =>
       import('./layout/shells/reception-shell/reception-shell.component').then(
         (m) => m.ReceptionShellComponent,
@@ -173,6 +173,58 @@ export const routes: Routes = [
     ],
   },
   {
+    path: 'assistant',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ASSISTANT'] },
+    loadComponent: () =>
+      import('./layout/shells/assistant-shell/assistant-shell.component').then(
+        (m) => m.AssistantShellComponent,
+      ),
+    children: [
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./features/assistant/dashboard/assistant-dashboard.component').then(
+            (m) => m.AssistantDashboardComponent,
+          ),
+      },
+      {
+        path: 'triage',
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/assistant/triage-queue/triage-queue.component').then(
+                (m) => m.TriageQueueComponent,
+              ),
+          },
+          {
+            path: ':id',
+            loadComponent: () =>
+              import('./features/assistant/triage-detail/triage-detail.component').then(
+                (m) => m.TriageDetailComponent,
+              ),
+          },
+        ],
+      },
+      {
+        path: 'history',
+        loadComponent: () =>
+          import('./features/assistant/history/triage-history.component').then(
+            (m) => m.TriageHistoryComponent,
+          ),
+      },
+      {
+        path: 'patients',
+        loadComponent: () =>
+          import('./features/assistant/patients/assistant-patients.component').then(
+            (m) => m.AssistantPatientsComponent,
+          ),
+      },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+    ],
+  },
+  {
     path: 'doctor',
     canActivate: [authGuard, roleGuard],
     data: { roles: ['DOCTOR'] },
@@ -189,10 +241,73 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'today',
+        loadComponent: () =>
+          import('./features/doctor/today/doctor-today.component').then(
+            (m) => m.DoctorTodayComponent,
+          ),
+      },
+      {
+        path: 'schedule',
+        loadComponent: () =>
+          import('./features/doctor/schedule/doctor-schedule.component').then(
+            (m) => m.DoctorScheduleComponent,
+          ),
+      },
+      {
+        path: 'consultation',
+        loadComponent: () =>
+          import('./features/doctor/consultation/doctor-consultation.component').then(
+            (m) => m.DoctorConsultationComponent,
+          ),
+      },
+      {
+        path: 'medical-records',
+        loadComponent: () =>
+          import('./features/doctor/medical-records/doctor-medical-records.component').then(
+            (m) => m.DoctorMedicalRecordsComponent,
+          ),
+      },
+      {
+        path: 'patients',
+        loadComponent: () =>
+          import('./features/doctor/patients/doctor-patients.component').then(
+            (m) => m.DoctorPatientsComponent,
+          ),
+      },
+      {
+        path: 'availability',
+        loadComponent: () =>
+          import('./features/doctor/availability/doctor-availability.component').then(
+            (m) => m.DoctorAvailabilityComponent,
+          ),
+      },
+      {
+        path: 'prescriptions',
+        loadComponent: () =>
+          import('./features/doctor/prescriptions/doctor-prescriptions.component').then(
+            (m) => m.DoctorPrescriptionsComponent,
+          ),
+      },
+      {
+        path: 'orders',
+        loadComponent: () =>
+          import('./features/doctor/orders/doctor-orders.component').then(
+            (m) => m.DoctorOrdersComponent,
+          ),
+      },
+      {
+        path: 'templates',
+        loadComponent: () =>
+          import('./features/doctor/templates/doctor-templates.component').then(
+            (m) => m.DoctorTemplatesComponent,
+          ),
+      },
+      {
         path: 'profile',
         loadComponent: () =>
-          import('./features/admin/doctors/doctors-page.component').then(
-            (m) => m.DoctorsPageComponent,
+          import('./features/doctor/profile/doctor-profile.component').then(
+            (m) => m.DoctorProfileComponent,
           ),
       },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -216,10 +331,22 @@ export const routes: Routes = [
       },
       {
         path: 'appointments',
-        loadComponent: () =>
-          import('./features/patient/appointments/patient-appointments.component').then(
-            (m) => m.PatientAppointmentsComponent,
-          ),
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/patient/appointments/patient-appointments.component').then(
+                (m) => m.PatientAppointmentsComponent,
+              ),
+          },
+          {
+            path: 'new',
+            loadComponent: () =>
+              import('./features/patient/appointments/patient-new-appointment.component').then(
+                (m) => m.PatientNewAppointmentComponent,
+              ),
+          },
+        ],
       },
       {
         path: 'profile',

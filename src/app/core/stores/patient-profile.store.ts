@@ -25,8 +25,8 @@ export const PatientProfileStore = signalStore(
       if (store.loading()) return;
       patchState(store, { loading: true, error: null });
       try {
-        const res = await firstValueFrom(service.getProfile());
-        patchState(store, { profile: res.data, loading: false });
+        const profile = await firstValueFrom(service.getProfile());
+        patchState(store, { profile, loading: false });
       } catch {
         patchState(store, { loading: false, error: 'No se pudo cargar el perfil.' });
       }
@@ -35,8 +35,9 @@ export const PatientProfileStore = signalStore(
     async saveProfile(data: UpdateProfileRequest): Promise<string | null> {
       patchState(store, { saving: true, error: null });
       try {
-        const res = await firstValueFrom(service.updateProfile(data));
-        patchState(store, { profile: res.data, saving: false });
+        await firstValueFrom(service.updateProfile(data));
+        const profile = await firstValueFrom(service.getProfile());
+        patchState(store, { profile, saving: false });
         authStore.markProfileCompleted(data.firstName, data.lastName);
         return null;
       } catch {

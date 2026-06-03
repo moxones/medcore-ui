@@ -1,4 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -11,49 +12,47 @@ import { ConfirmDialogComponent } from '@shared/dialogs/confirm/confirm-dialog.c
 interface FilterOption {
   label: string;
   value: AppointmentFlowStatus | '';
-  statusId?: number;
 }
 
 @Component({
   selector: 'app-patient-appointments',
   standalone: true,
-  imports: [
-    MatIconModule,
-    MatButtonModule,
-    MatProgressBarModule,
-    MatTooltipModule,
-    MatDialogModule,
-  ],
+  imports: [MatIconModule, MatButtonModule, MatProgressBarModule, MatTooltipModule, MatDialogModule],
   templateUrl: './patient-appointments.component.html',
   styleUrl: './patient-appointments.component.scss',
 })
 export class PatientAppointmentsComponent implements OnInit {
   readonly store = inject(PatientAppointmentsStore);
   private readonly dialog = inject(MatDialog);
+  private readonly router = inject(Router);
 
   readonly cancelError = signal<string | null>(null);
   readonly Math = Math;
 
   readonly filters: FilterOption[] = [
     { label: 'Todas', value: '' },
-    { label: 'En espera', value: 'WAITING', statusId: 1 },
-    { label: 'En consulta', value: 'IN_PROCESS', statusId: 2 },
-    { label: 'Completadas', value: 'COMPLETED', statusId: 3 },
+    { label: 'En espera', value: 'WAITING' },
+    { label: 'En consulta', value: 'IN_PROCESS' },
+    { label: 'Completadas', value: 'COMPLETED' },
   ];
 
   ngOnInit(): void {
     void this.store.load();
   }
 
+  navigateToNew(): void {
+    void this.router.navigate(['/patient/appointments/new']);
+  }
+
   applyFilter(filter: FilterOption): void {
     this.store.setFilter(filter.value);
-    void this.store.load({ statusId: filter.statusId });
+    void this.store.load();
   }
 
   onPage(direction: 'prev' | 'next'): void {
     const current = this.store.pageNumber();
     const next = direction === 'next' ? current + 1 : current - 1;
-    void this.store.load({ page: next, statusId: this.activeStatusId() });
+    void this.store.load({ page: next });
   }
 
   confirmCancel(appt: AppointmentResponse): void {
@@ -67,7 +66,7 @@ export class PatientAppointmentsComponent implements OnInit {
         confirmLabel: 'Sí, cancelar',
       },
     });
-    ref.afterClosed().subscribe((confirmed) => {
+    ref.afterClosed().subscribe((confirmed: boolean) => {
       if (confirmed) void this.doCancel(appt.id);
     });
   }
@@ -98,8 +97,11 @@ export class PatientAppointmentsComponent implements OnInit {
 
   statusLabel(status: AppointmentFlowStatus): string {
     const map: Record<AppointmentFlowStatus, string> = {
+      SCHEDULED: 'Programada',
       WAITING: 'En espera',
+      CALLED: 'Llamado',
       IN_PROCESS: 'En consulta',
+      PENDING_PAYMENT: 'Por cobrar',
       COMPLETED: 'Completada',
     };
     return map[status];
@@ -107,16 +109,14 @@ export class PatientAppointmentsComponent implements OnInit {
 
   statusClass(status: AppointmentFlowStatus): string {
     const map: Record<AppointmentFlowStatus, string> = {
+      SCHEDULED: 'scheduled',
       WAITING: 'waiting',
+      CALLED: 'called',
       IN_PROCESS: 'in-process',
+      PENDING_PAYMENT: 'pending-payment',
       COMPLETED: 'completed',
     };
     return map[status];
-  }
-
-  private activeStatusId(): number | undefined {
-    const f = this.filters.find((x) => x.value === this.store.activeFilter());
-    return f?.statusId;
   }
 
   private async doCancel(id: number): Promise<void> {
@@ -124,7 +124,7 @@ export class PatientAppointmentsComponent implements OnInit {
     if (err) {
       this.cancelError.set(err);
     } else {
-      void this.store.load({ statusId: this.activeStatusId() });
+      void this.store.load();
     }
   }
 }

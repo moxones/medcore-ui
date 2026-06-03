@@ -27,10 +27,10 @@ export const PatientDashboardStore = signalStore(
       if (store.loading()) return;
       patchState(store, { loading: true });
       try {
-        const res = await firstValueFrom(service.getList({ size: 50, page: 0 }));
+        const res = await firstValueFrom(service.getMyAppointments({ size: 50, page: 0 }));
         const all = res.data.content;
         patchState(store, {
-          upcoming: all.filter((a) => a.flowStatus === 'WAITING' || a.flowStatus === 'IN_PROCESS'),
+          upcoming: all.filter((a) => a.status.toLowerCase() === 'scheduled'),
           completed: all.filter((a) => a.flowStatus === 'COMPLETED'),
           loading: false,
         });

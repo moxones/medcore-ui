@@ -1,0 +1,115 @@
+<div class="dialog-header">
+  <div class="dialog-title-group">
+    <div class="dialog-icon" [class.dialog-icon--edit]="isEditMode">
+      <mat-icon>{{ isEditMode ? 'edit' : 'person_add' }}</mat-icon>
+    </div>
+    <div>
+      <h2 mat-dialog-title>{{ isEditMode ? 'Editar paciente' : 'Nuevo paciente' }}</h2>
+      <p class="dialog-subtitle">
+        {{ isEditMode ? 'Actualiza los datos del paciente' : 'Completa los datos para registrar al paciente' }}
+      </p>
+    </div>
+  </div>
+  <button mat-icon-button (click)="cancel()" aria-label="Cerrar">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content>
+  <app-alert-banner [message]="error()" />
+
+  <form [formGroup]="form" class="form-grid" autocomplete="off">
+
+    <div class="form-section-label">Datos personales</div>
+
+    <div class="two-col">
+      <mat-form-field appearance="outline">
+        <mat-label>Nombre</mat-label>
+        <input matInput formControlName="firstName" />
+        @if (form.controls.firstName.hasError('required') && form.controls.firstName.touched) {
+          <mat-error>Requerido</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Apellido</mat-label>
+        <input matInput formControlName="lastName" />
+        @if (form.controls.lastName.hasError('required') && form.controls.lastName.touched) {
+          <mat-error>Requerido</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <div class="two-col">
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha de nacimiento</mat-label>
+        <mat-icon matPrefix>cake</mat-icon>
+        <input matInput type="date" formControlName="birthDate" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Género</mat-label>
+        <mat-select formControlName="gender">
+          <mat-option value="">Sin especificar</mat-option>
+          <mat-option value="MALE">Masculino</mat-option>
+          <mat-option value="FEMALE">Femenino</mat-option>
+          <mat-option value="OTHER">Otro</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    @if (!isEditMode) {
+      <div class="form-section-label">Documento de identidad</div>
+
+      <div class="two-col">
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo</mat-label>
+          <mat-select formControlName="documentTypeCode">
+            @for (dt of documentTypes(); track dt.code) {
+              <mat-option [value]="dt.code">{{ dt.name }}</mat-option>
+            }
+          </mat-select>
+          @if (form.controls.documentTypeCode.hasError('required') && form.controls.documentTypeCode.touched) {
+            <mat-error>Requerido</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Número</mat-label>
+          <input matInput formControlName="documentNumber" />
+          @if (form.controls.documentNumber.hasError('required') && form.controls.documentNumber.touched) {
+            <mat-error>Requerido</mat-error>
+          }
+        </mat-form-field>
+      </div>
+    }
+
+    <div class="form-section-label">Contacto</div>
+
+    <div class="two-col">
+      <mat-form-field appearance="outline">
+        <mat-label>Correo electrónico</mat-label>
+        <mat-icon matPrefix>mail</mat-icon>
+        <input matInput type="email" formControlName="contactEmail" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Teléfono</mat-label>
+        <mat-icon matPrefix>phone</mat-icon>
+        <input matInput type="tel" formControlName="phone" />
+      </mat-form-field>
+    </div>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="submit()" [disabled]="store.saving()">
+    @if (store.saving()) {
+      <mat-spinner diameter="18" />
+    } @else {
+      {{ isEditMode ? 'Guardar cambios' : 'Registrar paciente' }}
+    }
+  </button>
+</mat-dialog-actions>

@@ -1,7 +1,184 @@
-<div class="page-placeholder">
-  <div class="placeholder-inner">
-    <mat-icon class="placeholder-icon">people</mat-icon>
-    <h2 class="placeholder-title">Pacientes</h2>
-    <p class="placeholder-sub">Buscar y registrar pacientes — próximamente</p>
+<div class="page">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Pacientes</h1>
+      <p class="page-subtitle">Registra y selecciona pacientes para sus citas</p>
+    </div>
+    <button class="new-btn" (click)="openNewPatient()">
+      <mat-icon>person_add</mat-icon>
+      <span class="new-btn-label">Nuevo paciente</span>
+    </button>
   </div>
+
+  @if (!store.loading() && totalElements() > 0) {
+    <div class="kpi-bar">
+      <div class="kpi-pill">
+        <div class="kpi-icon kpi-icon--primary">
+          <mat-icon>groups</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-value">{{ totalElements() }}</span>
+          <span class="kpi-label">Total pacientes</span>
+        </div>
+      </div>
+      <div class="kpi-pill">
+        <div class="kpi-icon kpi-icon--success">
+          <mat-icon>mark_email_read</mat-icon>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-value">{{ withEmailCount() }}</span>
+          <span class="kpi-label">Con correo</span>
+        </div>
+      </div>
+      @if (withoutEmailCount() > 0) {
+        <div class="kpi-pill kpi-pill--warning">
+          <div class="kpi-icon kpi-icon--warning">
+            <mat-icon>mail_outline</mat-icon>
+          </div>
+          <div class="kpi-info">
+            <span class="kpi-value">{{ withoutEmailCount() }}</span>
+            <span class="kpi-label">Sin correo</span>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <div class="search-section">
+    <div class="search-box">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input
+        class="search-input"
+        type="text"
+        placeholder="Buscar paciente por nombre..."
+        [formControl]="searchControl"
+        autocomplete="off"
+      />
+      @if (searchControl.value) {
+        <button class="search-clear" (click)="searchControl.setValue('')" aria-label="Limpiar búsqueda">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (store.loading()) {
+    <mat-progress-bar mode="indeterminate" class="progress" />
+  }
+
+  @if (!store.loading()) {
+    <div class="results-bar">
+      <span class="results-count">
+        @if (searchControl.value) {
+          {{ patients().length }} resultado{{ patients().length !== 1 ? 's' : '' }} para
+          <strong>"{{ searchControl.value }}"</strong>
+        } @else {
+          {{ totalElements() }} paciente{{ totalElements() !== 1 ? 's' : '' }} registrados
+        }
+      </span>
+    </div>
+  }
+
+  @if (!store.loading() && patients().length === 0) {
+    <div class="empty-state">
+      <mat-icon>person_search</mat-icon>
+      <p class="empty-title">
+        @if (searchControl.value) {
+          Sin resultados para "{{ searchControl.value }}"
+        } @else {
+          Aún no hay pacientes registrados
+        }
+      </p>
+      <p class="empty-sub">
+        @if (searchControl.value) {
+          Intenta con otro nombre o registra un paciente nuevo.
+        } @else {
+          Registra el primer paciente para comenzar a agendar citas.
+        }
+      </p>
+      @if (!searchControl.value) {
+        <button class="new-btn" (click)="openNewPatient()">
+          <mat-icon>person_add</mat-icon>
+          Registrar paciente
+        </button>
+      }
+    </div>
+  }
+
+  <div class="patient-list">
+    @for (patient of patients(); track patient.id) {
+      <div class="patient-row">
+
+        <div class="patient-avatar">{{ initials(patient) }}</div>
+
+        <div class="patient-info">
+          <span class="patient-name">{{ patient.firstName }} {{ patient.lastName }}</span>
+          <div class="patient-meta">
+            @if (patient.contactEmail) {
+              <mat-icon class="meta-icon">mail</mat-icon>
+              <span>{{ patient.contactEmail }}</span>
+            } @else {
+              <mat-icon class="meta-icon meta-icon--warn">mail_outline</mat-icon>
+              <span class="meta-warn">Sin correo</span>
+            }
+            @if (patient.birthDate) {
+              <span class="meta-sep">·</span>
+              <mat-icon class="meta-icon">cake</mat-icon>
+              <span>{{ ageDisplay(patient.birthDate) }}</span>
+            }
+            @if (patient.phone) {
+              <span class="meta-sep">·</span>
+              <mat-icon class="meta-icon">phone</mat-icon>
+              <span>{{ patient.phone }}</span>
+            }
+          </div>
+        </div>
+
+        <span class="patient-id-badge">#{{ patient.id }}</span>
+
+        <div class="row-actions">
+          <button
+            class="btn-appointment"
+            (click)="openNewAppointment(patient)"
+            matTooltip="Agendar nueva cita"
+            aria-label="Agendar nueva cita">
+            <mat-icon>calendar_month</mat-icon>
+            <span class="btn-appointment-label">Nueva cita</span>
+          </button>
+          <button
+            class="btn-icon"
+            (click)="openEditPatient(patient)"
+            matTooltip="Editar paciente"
+            aria-label="Editar paciente">
+            <mat-icon>edit</mat-icon>
+          </button>
+        </div>
+
+      </div>
+    }
+  </div>
+
+  @if ((store.page()?.totalPages ?? 0) > 1) {
+    <div class="pagination">
+      <button
+        mat-icon-button
+        [disabled]="pageNumber() === 0"
+        (click)="onPage('prev')"
+        matTooltip="Página anterior"
+        aria-label="Página anterior">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <span class="page-info">Pág. {{ pageNumber() + 1 }} de {{ store.page()?.totalPages }}</span>
+      <button
+        mat-icon-button
+        [disabled]="isLast()"
+        (click)="onPage('next')"
+        matTooltip="Página siguiente"
+        aria-label="Página siguiente">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+  }
+
 </div>

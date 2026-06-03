@@ -1,7 +1,449 @@
-<div class="page-placeholder">
-  <div class="placeholder-inner">
-    <mat-icon class="placeholder-icon">queue</mat-icon>
-    <h2 class="placeholder-title">Cola de Espera</h2>
-    <p class="placeholder-sub">Check-in de pacientes y gestión de cola en tiempo real — próximamente</p>
+<div class="queue-page">
+
+  <div class="queue-toolbar">
+    <div class="toolbar-left">
+      <span class="breadcrumb">recepción / sala de espera</span>
+      <div class="title-row">
+        <h1 class="page-title">Sala de espera</h1>
+        <span class="live-pill" [class.live-pill--paused]="store.refreshing()">
+          <span class="live-dot"></span>
+          EN VIVO
+        </span>
+      </div>
+    </div>
+
+    <div class="toolbar-center">
+      <div class="clock-block">
+        <span class="clock-time">{{ clock() }}</span>
+        <span class="clock-date">{{ todayLabel() }}</span>
+      </div>
+      <span class="refresh-hint">
+        <mat-icon>sync</mat-icon>
+        {{ lastRefreshLabel() }}
+      </span>
+    </div>
+
+    <div class="toolbar-right">
+      <div class="search-box">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input
+          class="search-input"
+          type="text"
+          placeholder="Buscar paciente, médico..."
+          [value]="searchQuery()"
+          (input)="onSearch($event)"
+          aria-label="Buscar en la sala de espera"
+        />
+        @if (searchQuery()) {
+          <button class="search-clear" (click)="clearSearch()" aria-label="Limpiar búsqueda">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </div>
+      <button class="primary-btn" (click)="openWalkIn()">
+        <mat-icon>bolt</mat-icon>
+        Walk-in
+      </button>
+    </div>
   </div>
+
+  <div class="queue-filters-bar">
+    <div class="filter-group">
+      @for (branch of store.branches(); track branch.id) {
+        <button
+          class="filter-chip"
+          [class.filter-chip--active]="store.branchId() === branch.id"
+          (click)="selectBranch(branch.id)">
+          <mat-icon>business</mat-icon>
+          {{ branch.name }}
+        </button>
+      }
+    </div>
+
+    <div class="stats-bar">
+      <span class="stat-item">
+        <strong>{{ store.stats().total }}</strong>
+        <span class="stat-label">hoy</span>
+      </span>
+      <span class="stat-sep"></span>
+      <span class="stat-item">
+        <span class="stat-dot stat-dot--gray"></span>
+        <strong>{{ store.stats().toArrive }}</strong>
+        <span class="stat-label">por llegar</span>
+      </span>
+      <span class="stat-sep"></span>
+      <span class="stat-item">
+        <span class="stat-dot stat-dot--amber"></span>
+        <strong>{{ store.stats().waiting }}</strong>
+        <span class="stat-label">en espera</span>
+      </span>
+      <span class="stat-sep"></span>
+      <span class="stat-item">
+        <span class="stat-dot stat-dot--sky"></span>
+        <strong>{{ store.stats().called }}</strong>
+        <span class="stat-label">llamados</span>
+      </span>
+      <span class="stat-sep"></span>
+      <span class="stat-item">
+        <span class="stat-dot stat-dot--green"></span>
+        <strong>{{ store.stats().inConsult }}</strong>
+        <span class="stat-label">en consulta</span>
+      </span>
+      <span class="stat-sep"></span>
+      <span class="stat-item">
+        <span class="stat-dot stat-dot--violet"></span>
+        <strong>{{ store.stats().toBill }}</strong>
+        <span class="stat-label">por cobrar</span>
+      </span>
+      <span class="stat-sep"></span>
+      <span class="stat-item" matTooltip="Tiempo de espera promedio / máximo">
+        <mat-icon class="stat-clock">schedule</mat-icon>
+        <strong [class.stat-warn]="store.stats().longestWait > 15">{{ store.stats().avgWait }}</strong>
+        <span class="stat-label">min prom · máx {{ store.stats().longestWait }}</span>
+      </span>
+    </div>
+  </div>
+
+  @if (store.loading()) {
+    <mat-progress-bar mode="indeterminate" class="top-progress" />
+  }
+
+  @if (store.error()) {
+    <div class="queue-alert">
+      <app-alert-banner [message]="store.error()" />
+    </div>
+  }
+
+  @if (store.doctorStatuses().length > 0) {
+    <div class="doctor-strip" role="list" aria-label="Estado de médicos">
+      @for (doc of store.doctorStatuses(); track doc.doctorId) {
+        <div class="doc-pill" [class.doc-pill--busy]="doc.inConsultation" role="listitem">
+          <div class="doc-pill-avatar">{{ doc.initials }}</div>
+          <div class="doc-pill-info">
+            <span class="doc-pill-name">{{ doc.doctorName }}</span>
+            @if (doc.inConsultation) {
+              <span class="doc-pill-state doc-pill-state--busy">
+                <span class="doc-state-dot"></span>
+                Con {{ doc.currentPatient }} · {{ doc.consultingMinutes }} min
+              </span>
+            } @else {
+              <span class="doc-pill-state">
+                <span class="doc-state-dot doc-state-dot--free"></span>
+                Disponible
+              </span>
+            }
+          </div>
+          @if (doc.waitingCount > 0) {
+            <span class="doc-pill-waiting" matTooltip="En espera para este médico">
+              {{ doc.waitingCount }}
+              <mat-icon>airline_seat_recline_normal</mat-icon>
+            </span>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  @if (!store.loading() && store.isEmpty()) {
+    <div class="board-empty">
+      <mat-icon>weekend</mat-icon>
+      <h3>La sala de espera está vacía</h3>
+      <p>No hay pacientes en {{ selectedBranchName() }} por ahora. Aparecerán acá apenas tengan cita hoy.</p>
+      <button class="primary-btn" (click)="openNewAppointment()">
+        <mat-icon>add</mat-icon>
+        Nueva cita
+      </button>
+    </div>
+  } @else {
+    <div class="board" cdkDropListGroup>
+      @for (col of store.columns(); track col.id) {
+        <section class="board-col" [class]="'board-col--' + col.id">
+          <header class="col-head">
+            <div class="col-head-title">
+              <mat-icon>{{ col.icon }}</mat-icon>
+              <span>{{ col.label }}</span>
+            </div>
+            <span class="col-count">{{ col.patients.length }}</span>
+          </header>
+
+          <div
+            class="col-list"
+            [id]="col.id"
+            cdkDropList
+            [cdkDropListData]="col.patients"
+            [cdkDropListEnterPredicate]="enterPredicate"
+            (cdkDropListDropped)="onDrop($event, col.id)">
+
+            @for (p of col.patients; track p.id) {
+              <article
+                class="q-card"
+                [class]="'q-card--' + col.id"
+                [class.q-card--overdue]="p.overdue"
+                cdkDrag
+                [cdkDragData]="p"
+                (click)="openDetail(p)"
+                [attr.aria-label]="p.patientName + ', ' + visualStateLabel(p.visualState)">
+
+                <div class="q-card-placeholder" *cdkDragPlaceholder></div>
+
+                <div class="q-card-top">
+                  <div class="q-avatar">{{ initials(p.patientName) }}</div>
+                  <div class="q-card-id">
+                    <span class="q-name">{{ p.patientName }}</span>
+                    <span class="q-type">{{ p.typeName }}</span>
+                  </div>
+                  <mat-icon class="q-grip" matTooltip="Arrastrar para mover">drag_indicator</mat-icon>
+                </div>
+
+                <div class="q-card-meta">
+                  <span class="q-meta-item">
+                    <mat-icon>schedule</mat-icon>
+                    {{ fmtIso(p.scheduledAt) }}
+                  </span>
+                  <span class="q-meta-item">
+                    <mat-icon>person</mat-icon>
+                    {{ shortDoctor(p.doctorName) }}
+                  </span>
+                </div>
+
+                @switch (col.id) {
+                  @case ('waiting') {
+                    <div class="q-wait" [class.q-wait--urgent]="p.overdue">
+                      <mat-icon>hourglass_top</mat-icon>
+                      <span class="q-wait-num">{{ p.elapsedMinutes }}</span>
+                      <span class="q-wait-unit">{{ elapsedLabel(p) }}</span>
+                    </div>
+                  }
+                  @case ('called') {
+                    <div class="q-wait q-wait--called">
+                      <mat-icon>campaign</mat-icon>
+                      <span class="q-wait-num">{{ p.elapsedMinutes }}</span>
+                      <span class="q-wait-unit">{{ elapsedLabel(p) }}</span>
+                    </div>
+                  }
+                  @case ('inConsult') {
+                    <div class="q-consulting">
+                      <span class="q-pulse"></span>
+                      En curso · {{ p.elapsedMinutes }} min
+                    </div>
+                  }
+                  @case ('toBill') {
+                    <div class="q-bill">
+                      <span class="q-bill-amount">{{ amountLabel(p) ?? 'Pendiente de cobro' }}</span>
+                      <span class="q-bill-wait">{{ p.elapsedMinutes }} {{ elapsedLabel(p) }}</span>
+                    </div>
+                  }
+                }
+
+                @if (advanceLabel(col.id); as label) {
+                  <button
+                    class="q-action"
+                    [class]="'q-action--' + col.id"
+                    (click)="advance(p, $event)"
+                    [disabled]="store.actionPending()">
+                    <mat-icon>{{ advanceIcon(col.id) }}</mat-icon>
+                    {{ label }}
+                  </button>
+                } @else {
+                  <div class="q-done">
+                    <mat-icon>verified</mat-icon>
+                    Atendido {{ fmtIso(p.scheduledAt) }}
+                  </div>
+                }
+              </article>
+            } @empty {
+              <div class="col-empty">
+                <mat-icon>{{ col.icon }}</mat-icon>
+                <span>
+                  @switch (col.id) {
+                    @case ('toArrive') { Nadie por llegar }
+                    @case ('waiting') { Sala de espera libre }
+                    @case ('inConsult') { Sin consultas activas }
+                    @default { Aún nadie terminó }
+                  }
+                </span>
+              </div>
+            }
+          </div>
+        </section>
+      }
+    </div>
+  }
+
+  @if (store.selected(); as p) {
+    <div class="detail-backdrop" (click)="closeDetail()"></div>
+    <aside class="detail-drawer" role="dialog" aria-label="Detalle del paciente">
+
+      <header class="detail-head" [class]="'detail-head--' + p.visualState">
+        <div class="detail-head-top">
+          <span class="detail-state-chip">{{ visualStateLabel(p.visualState) }}</span>
+          <button class="detail-close" (click)="closeDetail()" aria-label="Cerrar detalle">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        <div class="detail-patient">
+          <div class="detail-avatar">{{ initials(p.patientName) }}</div>
+          <div class="detail-patient-info">
+            <span class="detail-patient-name">{{ p.patientName }}</span>
+            @if (p.patientPhone) {
+              <a class="detail-patient-phone" [href]="'tel:' + p.patientPhone">
+                <mat-icon>call</mat-icon>{{ p.patientPhone }}
+              </a>
+            }
+          </div>
+        </div>
+      </header>
+
+      <div class="detail-body">
+        @if (store.error()) {
+          <app-alert-banner [message]="store.error()" />
+        }
+
+        @switch (detailMode()) {
+
+          @case ('cancel') {
+            <div class="detail-form">
+              <h3 class="detail-form-title">Cancelar cita</h3>
+              <p class="detail-form-desc">Indicá el motivo. El paciente saldrá de la sala de espera.</p>
+              <label class="detail-label" for="cancelReason">Motivo de cancelación</label>
+              <textarea
+                id="cancelReason"
+                class="detail-textarea"
+                rows="3"
+                placeholder="Ej. el paciente se retiró"
+                [value]="cancelReason()"
+                (input)="onCancelReason($event)"></textarea>
+              <div class="detail-form-actions">
+                <button class="detail-btn detail-btn--ghost" (click)="backToView()" [disabled]="store.actionPending()">
+                  Volver
+                </button>
+                <button
+                  class="detail-btn detail-btn--danger"
+                  (click)="confirmCancel(p)"
+                  [disabled]="!cancelReason().trim() || store.actionPending()">
+                  Confirmar
+                </button>
+              </div>
+            </div>
+          }
+
+          @case ('reschedule') {
+            <div class="detail-form">
+              <h3 class="detail-form-title">Reprogramar cita</h3>
+              <p class="detail-form-desc">Elegí la nueva fecha y hora para {{ shortDoctor(p.doctorName) }}.</p>
+              <div class="detail-field-row">
+                <div class="detail-field">
+                  <label class="detail-label" for="reschedDate">Fecha</label>
+                  <input id="reschedDate" type="date" class="detail-input" [value]="reschedDate()" (input)="onReschedDate($event)" />
+                </div>
+                <div class="detail-field">
+                  <label class="detail-label" for="reschedTime">Hora</label>
+                  <input id="reschedTime" type="time" class="detail-input" [value]="reschedTime()" (input)="onReschedTime($event)" />
+                </div>
+              </div>
+              <div class="detail-form-actions">
+                <button class="detail-btn detail-btn--ghost" (click)="backToView()" [disabled]="store.actionPending()">
+                  Volver
+                </button>
+                <button
+                  class="detail-btn detail-btn--primary"
+                  (click)="confirmReschedule(p)"
+                  [disabled]="!reschedDate() || !reschedTime() || store.actionPending()">
+                  Confirmar
+                </button>
+              </div>
+            </div>
+          }
+
+          @default {
+            <dl class="detail-meta">
+              <div class="detail-row">
+                <mat-icon>schedule</mat-icon>
+                <div class="detail-row-text">
+                  <dt>Horario</dt>
+                  <dd>{{ fmtIso(p.scheduledAt) }} – {{ endTimeLabel(p) }} · {{ p.durationMinutes }} min</dd>
+                </div>
+              </div>
+              <div class="detail-row">
+                <mat-icon>medical_services</mat-icon>
+                <div class="detail-row-text">
+                  <dt>Tipo de consulta</dt>
+                  <dd>{{ p.typeName }}</dd>
+                </div>
+              </div>
+              <div class="detail-row">
+                <mat-icon>person</mat-icon>
+                <div class="detail-row-text">
+                  <dt>Médico</dt>
+                  <dd>{{ p.doctorName }}</dd>
+                </div>
+              </div>
+              <div class="detail-row">
+                <mat-icon>business</mat-icon>
+                <div class="detail-row-text">
+                  <dt>Sede</dt>
+                  <dd>{{ p.branchName }}</dd>
+                </div>
+              </div>
+              <div class="detail-row">
+                <mat-icon>how_to_reg</mat-icon>
+                <div class="detail-row-text">
+                  <dt>Origen</dt>
+                  <dd>{{ sourceLabel(p) }}</dd>
+                </div>
+              </div>
+              @if (p.reason) {
+                <div class="detail-row">
+                  <mat-icon>notes</mat-icon>
+                  <div class="detail-row-text">
+                    <dt>Motivo</dt>
+                    <dd>{{ p.reason }}</dd>
+                  </div>
+                </div>
+              }
+              @if (p.column === 'waiting' || p.column === 'called' || p.column === 'inConsult' || p.column === 'toBill') {
+                <div class="detail-row detail-row--accent">
+                  <mat-icon>hourglass_top</mat-icon>
+                  <div class="detail-row-text">
+                    <dt>Tiempo</dt>
+                    <dd>{{ p.elapsedMinutes }} {{ elapsedLabel(p) }}</dd>
+                  </div>
+                </div>
+              }
+              @if (p.column === 'toBill' && amountLabel(p); as amount) {
+                <div class="detail-row">
+                  <mat-icon>payments</mat-icon>
+                  <div class="detail-row-text">
+                    <dt>Monto a cobrar</dt>
+                    <dd>{{ amount }}</dd>
+                  </div>
+                </div>
+              }
+            </dl>
+
+            <div class="detail-actions">
+              @if (advanceLabel(p.column); as label) {
+                <button class="detail-btn detail-btn--success" (click)="advance(p)" [disabled]="store.actionPending()">
+                  <mat-icon>{{ advanceIcon(p.column) }}</mat-icon> {{ label }}
+                </button>
+              }
+              @if (p.visualState !== 'completed') {
+                <button class="detail-btn detail-btn--ghost" (click)="beginReschedule(p)" [disabled]="store.actionPending()">
+                  <mat-icon>event_repeat</mat-icon> Reprogramar
+                </button>
+                <button class="detail-btn detail-btn--danger-ghost" (click)="beginCancel()" [disabled]="store.actionPending()">
+                  <mat-icon>cancel</mat-icon> Cancelar cita
+                </button>
+              } @else {
+                <p class="detail-note">
+                  <mat-icon>verified</mat-icon> Consulta finalizada.
+                </p>
+              }
+            </div>
+          }
+        }
+      </div>
+    </aside>
+  }
+
 </div>

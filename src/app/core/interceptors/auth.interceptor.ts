@@ -1,7 +1,7 @@
-import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
+import { HttpInterceptorFn } from '@angular/common/http';
 import { inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { catchError, from, switchMap, throwError } from 'rxjs';
+import { from, switchMap } from 'rxjs';
 import { TokenService } from '@core/auth/token.service';
 import { AuthStore } from '@core/auth/auth.store';
 
@@ -19,26 +19,15 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   const tokens = inject(TokenService);
-  const authStore = inject(AuthStore);
-
   const accessToken = tokens.getAccessToken();
-  const authorizedReq = accessToken ? withBearer(req, accessToken) : req;
+  if (!accessToken) return next(req);
 
-  return next(authorizedReq).pipe(
-    catchError((error: unknown) => {
-      if (!(error instanceof HttpErrorResponse) || error.status !== 401) {
-        return throwError(() => error);
-      }
+  if (!tokens.isAccessTokenExpiringSoon()) {
+    return next(withBearer(req, accessToken));
+  }
 
-      return from(authStore.refreshAccessToken()).pipe(
-        switchMap((newToken) => {
-          if (!newToken) {
-            authStore.resetSession();
-            return throwError(() => error);
-          }
-          return next(withBearer(req, newToken));
-        }),
-      );
-    }),
+  const authStore = inject(AuthStore);
+  return from(authStore.refreshAccessToken()).pipe(
+    switchMap((refreshedToken) => next(withBearer(req, refreshedToken ?? accessToken))),
   );
 };

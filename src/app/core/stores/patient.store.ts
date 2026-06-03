@@ -2,13 +2,14 @@ import { signalStore, withState, withMethods, patchState } from '@ngrx/signals';
 import { inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { PatientService } from '../services/patient.service';
-import { PatientResponse, PatientSearchParams } from '../models/patient.model';
+import { PatientResponse, PatientSearchParams, CreatePatientRequest, UpdatePatientRequest } from '../models/patient.model';
 import { PagedResponse } from '../models/pagination.model';
 
 interface PatientState {
   page: PagedResponse<PatientResponse> | null;
   params: PatientSearchParams;
   loading: boolean;
+  saving: boolean;
 }
 
 export const PatientStore = signalStore(
@@ -17,6 +18,7 @@ export const PatientStore = signalStore(
     page: null,
     params: { page: 0, size: 15 },
     loading: false,
+    saving: false,
   }),
   withMethods((store, service = inject(PatientService)) => ({
     async load(params?: PatientSearchParams): Promise<void> {
@@ -34,9 +36,46 @@ export const PatientStore = signalStore(
       patchState(store, { loading: true });
       try {
         const res = await firstValueFrom(service.search(query));
-        patchState(store, { page: res.data, loading: false });
+        const content = res.data;
+        patchState(store, {
+          page: {
+            content,
+            totalElements: content.length,
+            totalPages: 1,
+            pageNumber: 0,
+            pageSize: content.length,
+            last: true,
+          },
+          loading: false,
+        });
       } catch {
         patchState(store, { loading: false });
+      }
+    },
+
+    async update(id: number, data: UpdatePatientRequest): Promise<string | null> {
+      patchState(store, { saving: true });
+      try {
+        await firstValueFrom(service.update(id, data));
+        patchState(store, { saving: false });
+        return null;
+      } catch (err: unknown) {
+        patchState(store, { saving: false });
+        const message = (err as { error?: { message?: string } })?.error?.message;
+        return message ?? 'Error al actualizar paciente';
+      }
+    },
+
+    async create(data: CreatePatientRequest): Promise<string | null> {
+      patchState(store, { saving: true });
+      try {
+        await firstValueFrom(service.create(data));
+        patchState(store, { saving: false });
+        return null;
+      } catch (err: unknown) {
+        patchState(store, { saving: false });
+        const message = (err as { error?: { message?: string } })?.error?.message;
+        return message ?? 'Error al registrar paciente';
       }
     },
   })),

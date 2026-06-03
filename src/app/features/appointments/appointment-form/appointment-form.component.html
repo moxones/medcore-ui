@@ -1,1 +1,436 @@
-﻿
+@if (createdAppointment(); as appt) {
+  <div class="success-wrapper">
+    <div class="success-card">
+      <div class="success-icon-wrap">
+        <mat-icon class="success-icon">check_circle</mat-icon>
+      </div>
+      <h2 class="success-title">¡Cita confirmada!</h2>
+      <p class="success-sub">Te esperamos puntualmente</p>
+      <div class="success-summary">
+        <div class="summary-row">
+          <mat-icon>person</mat-icon>
+          <span>{{ appt.doctorName }}</span>
+        </div>
+        <div class="summary-row">
+          <mat-icon>location_on</mat-icon>
+          <span>{{ appt.branchName }}</span>
+        </div>
+        <div class="summary-row">
+          <mat-icon>event</mat-icon>
+          <span>{{ formatScheduledAt(appt.scheduledAt) }}</span>
+        </div>
+        @if (appt.durationMinutes) {
+          <div class="summary-row">
+            <mat-icon>schedule</mat-icon>
+            <span>{{ appt.durationMinutes }} minutos de duración</span>
+          </div>
+        }
+        @if (appt.reason) {
+          <div class="summary-row">
+            <mat-icon>notes</mat-icon>
+            <span>{{ appt.reason }}</span>
+          </div>
+        }
+      </div>
+      <div class="success-actions">
+        <button mat-flat-button color="primary" (click)="cancelRequested.emit()">
+          <mat-icon>calendar_today</mat-icon>
+          Ver mis citas
+        </button>
+        @if (mode() === 'reception') {
+          <button mat-stroked-button (click)="resetForm()">
+            <mat-icon>add</mat-icon>
+            Agendar otra
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+} @else {
+  <div class="form-layout">
+
+    <aside class="panel-left">
+      <div class="panel-left-inner">
+
+        <h2 class="panel-title">La atención</h2>
+
+        @if (mode() === 'reception') {
+          <div class="section">
+            @if (selectedPatient(); as p) {
+              <div class="patient-card patient-card--selected animate-appear">
+                <div class="patient-avatar">{{ patientInitials() }}</div>
+                <div class="patient-info">
+                  <p class="patient-name">{{ p.firstName }} {{ p.lastName }}</p>
+                  <p class="patient-meta">{{ p.contactEmail }}</p>
+                </div>
+                <button class="change-link" (click)="clearPatient()">cambiar</button>
+              </div>
+            } @else {
+              <div class="field-wrap">
+                <label class="field-label">
+                  Paciente
+                  <span class="required-mark">*</span>
+                </label>
+                <div class="search-input-wrap">
+                  <mat-icon class="search-icon">search</mat-icon>
+                  @if (patientSearchLoading()) {
+                    <mat-spinner diameter="16" class="search-spinner" />
+                  }
+                  <input
+                    class="search-input"
+                    type="text"
+                    placeholder="Nombre, CI o correo..."
+                    [ngModel]="patientQuery()"
+                    (ngModelChange)="onPatientQueryChange($event)"
+                  />
+                </div>
+                @if (patientResults().length > 0) {
+                  <div class="patient-results animate-appear">
+                    @for (p of patientResults(); track p.id) {
+                      <button class="patient-result-row" (click)="selectPatient(p)">
+                        <span class="result-avatar">{{ p.firstName[0] }}{{ p.lastName[0] }}</span>
+                        <span class="result-name">{{ p.firstName }} {{ p.lastName }}</span>
+                        <span class="result-email">{{ p.contactEmail }}</span>
+                      </button>
+                    }
+                    <button class="result-create-btn" (click)="requestNewPatient.emit()">
+                      <mat-icon>person_add</mat-icon>
+                      Registrar nuevo paciente
+                    </button>
+                  </div>
+                }
+                @if (patientQuery().length >= 2 && !patientSearchLoading() && patientResults().length === 0) {
+                  <div class="no-results animate-appear">
+                    <mat-icon>search_off</mat-icon>
+                    <span>Sin resultados.</span>
+                    <button class="inline-link" (click)="requestNewPatient.emit()">Registrar nuevo</button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <div class="section">
+          @if (selectedDoctor(); as doc) {
+            <div class="selected-doctor animate-appear">
+              <div class="sel-doc-avatar">{{ doc.initials }}</div>
+              <div class="sel-doc-info">
+                <p class="sel-doc-name">{{ doc.fullName }}</p>
+                <p class="sel-doc-specialties">
+                  @for (s of doc.specialties.slice(0, 2); track s) {
+                    <span class="specialty-tag">{{ s }}</span>
+                  }
+                </p>
+              </div>
+              <button class="change-link" (click)="clearDoctor()">cambiar</button>
+            </div>
+          } @else {
+            <div class="field-wrap">
+              <label class="field-label">
+                Doctor
+                <span class="required-mark">*</span>
+              </label>
+
+              @if (specialties().length > 0) {
+                <div class="specialty-chips">
+                  <button
+                    class="spec-chip"
+                    [class.spec-chip--active]="specialtyFilter() === null"
+                    (click)="setSpecialtyFilter(null)">
+                    Todos
+                  </button>
+                  @for (s of specialties(); track s.id) {
+                    <button
+                      class="spec-chip"
+                      [class.spec-chip--active]="specialtyFilter() === s.id"
+                      (click)="setSpecialtyFilter(s.id)">
+                      {{ s.name }}
+                    </button>
+                  }
+                </div>
+              }
+
+              <div class="search-input-wrap">
+                <mat-icon class="search-icon">search</mat-icon>
+                <input
+                  class="search-input"
+                  type="text"
+                  placeholder="Buscar doctor o especialidad..."
+                  [ngModel]="doctorQuery()"
+                  (ngModelChange)="doctorQuery.set($event)"
+                />
+              </div>
+
+              @if (doctorsLoading()) {
+                <div class="doctor-skeleton-list">
+                  @for (i of [1, 2, 3]; track i) {
+                    <div class="doctor-skeleton-row">
+                      <div class="skeleton-avatar"></div>
+                      <div class="skeleton-lines">
+                        <div class="skeleton-line skeleton-line--wide"></div>
+                        <div class="skeleton-line skeleton-line--narrow"></div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              } @else if (filteredDoctors().length === 0) {
+                <div class="no-results">
+                  <mat-icon>person_search</mat-icon>
+                  <span>Sin doctores disponibles</span>
+                </div>
+              } @else {
+                <div class="doctor-list">
+                  @for (d of filteredDoctors(); track d.id) {
+                    <button class="doctor-row" (click)="selectDoctor(d)">
+                      <span class="doc-avatar">{{ d.initials }}</span>
+                      <span class="doc-body">
+                        <span class="doc-name">{{ d.fullName }}</span>
+                        <span class="doc-spec">{{ d.specialties.slice(0, 2).join(', ') }}</span>
+                      </span>
+                      @if (d.availableToday) {
+                        <span class="availability-dot" matTooltip="Disponible hoy"></span>
+                      }
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        @if (selectedDoctor()) {
+          <div class="section animate-appear">
+            <label class="field-label">
+              Sucursal
+              <span class="required-mark">*</span>
+            </label>
+            @if (branchesLoading()) {
+              <div class="branch-skeleton">
+                <div class="skeleton-line skeleton-line--wide"></div>
+              </div>
+            } @else {
+              <div class="branch-list">
+                @for (b of branches(); track b.id) {
+                  <button
+                    class="branch-row"
+                    [class.branch-row--selected]="selectedBranch()?.id === b.id"
+                    (click)="selectBranch(b)">
+                    <mat-icon class="branch-icon">location_on</mat-icon>
+                    <span class="branch-body">
+                      <span class="branch-name">{{ b.branchName }}</span>
+                      <span class="branch-address">{{ b.branchAddress }}</span>
+                    </span>
+                    @if (selectedBranch()?.id === b.id) {
+                      <mat-icon class="branch-check">check_circle</mat-icon>
+                    }
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        @if (selectedBranch()) {
+          <div class="section animate-appear">
+            <label class="field-label">
+              Fecha
+              <span class="required-mark">*</span>
+            </label>
+            <div class="week-nav">
+              <button
+                mat-icon-button
+                class="week-nav-btn"
+                [disabled]="isCurrentWeek()"
+                (click)="prevWeek()"
+                aria-label="Semana anterior">
+                <mat-icon>chevron_left</mat-icon>
+              </button>
+              <div class="week-days">
+                @for (day of weekDays(); track day.iso) {
+                  <button
+                    class="day-pill"
+                    [class.day-pill--selected]="selectedDate() === day.iso"
+                    [class.day-pill--today]="day.isToday"
+                    [class.day-pill--past]="day.isPast"
+                    [disabled]="day.isPast"
+                    (click)="selectDate(day.iso)">
+                    <span class="day-abbr">{{ day.abbr }}</span>
+                    <span class="day-num">{{ day.num }}</span>
+                  </button>
+                }
+              </div>
+              <button
+                mat-icon-button
+                class="week-nav-btn"
+                (click)="nextWeek()"
+                aria-label="Semana siguiente">
+                <mat-icon>chevron_right</mat-icon>
+              </button>
+            </div>
+            <p class="month-label">{{ monthLabel() }}</p>
+          </div>
+        }
+
+      </div>
+    </aside>
+
+    <main class="panel-right">
+      <div class="panel-right-inner">
+
+        <div class="slots-header">
+          <h2 class="panel-title">Horarios disponibles</h2>
+          @if (contextLabel()) {
+            <p class="context-label">{{ contextLabel() }}</p>
+          }
+        </div>
+
+        @if (!selectedBranch() || !selectedDate()) {
+          <div class="slots-empty-state">
+            <div class="empty-icon-circle">
+              <mat-icon>calendar_month</mat-icon>
+            </div>
+            <p class="empty-title">Selecciona médico, sucursal y fecha</p>
+            <p class="empty-sub">Los horarios disponibles aparecerán aquí</p>
+          </div>
+        }
+
+        @if (slotsLoading()) {
+          <div class="slot-grid">
+            @for (i of [1,2,3,4,5,6,7,8,9,10,11,12]; track i) {
+              <div class="slot-skeleton"></div>
+            }
+          </div>
+        }
+
+        @if (!slotsLoading() && selectedDate()) {
+          @if (slots().length === 0) {
+            <div class="slots-empty-state animate-appear">
+              <div class="empty-icon-circle empty-icon-circle--muted">
+                <mat-icon>event_busy</mat-icon>
+              </div>
+              <p class="empty-title">Sin horarios este día</p>
+              <p class="empty-sub">Prueba con otra fecha o sucursal</p>
+            </div>
+          } @else {
+            <div class="slot-grid animate-appear">
+              @for (slot of slots(); track slot.startTime) {
+                <button
+                  class="slot-btn"
+                  [class.slot-btn--available]="slot.isAvailable && selectedSlot()?.startTime !== slot.startTime"
+                  [class.slot-btn--selected]="selectedSlot()?.startTime === slot.startTime"
+                  [class.slot-btn--occupied]="!slot.isAvailable"
+                  [disabled]="!slot.isAvailable"
+                  [attr.aria-label]="slot.isAvailable ? 'Seleccionar ' + slot.startTime : slot.startTime + ' ocupado'"
+                  (click)="selectSlot(slot)">
+                  {{ slot.startTime }}
+                </button>
+              }
+            </div>
+          }
+        }
+
+        @if (selectedSlot()) {
+          <div class="optionals-section animate-appear">
+            <div class="optionals-divider">
+              <span class="divider-label">opcionales</span>
+            </div>
+
+            <div class="optionals-grid">
+
+              @if (appointmentTypes().length > 0) {
+                <div class="field-wrap">
+                  <label class="field-label">
+                    Tipo de cita
+                    <span class="optional-tag">opcional</span>
+                  </label>
+                  <div class="select-wrap">
+                    <select
+                      class="form-select"
+                      [ngModel]="selectedTypeId()"
+                      (ngModelChange)="selectedTypeId.set($event ? +$event : null)">
+                      <option [ngValue]="null">Sin especificar</option>
+                      @for (t of appointmentTypes(); track t.id) {
+                        <option [ngValue]="t.id">
+                          {{ t.name }}
+                          @if (t.durationMinutes) { ({{ t.durationMinutes }} min) }
+                        </option>
+                      }
+                    </select>
+                    <mat-icon class="select-arrow">expand_more</mat-icon>
+                  </div>
+                </div>
+              }
+
+              @if (mode() === 'reception') {
+                <div class="field-wrap">
+                  <label class="field-label">
+                    Origen
+                    <span class="optional-tag">opcional</span>
+                  </label>
+                  <div class="source-pills">
+                    @for (src of bookingSources; track src.value) {
+                      <button
+                        class="source-pill"
+                        [class.source-pill--active]="bookingSource() === src.value"
+                        (click)="bookingSource.set(src.value)">
+                        {{ src.label }}
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+
+            </div>
+
+            <div class="field-wrap">
+              <label class="field-label">
+                Motivo / Notas
+                <span class="optional-tag">opcional · máx 255</span>
+              </label>
+              <textarea
+                class="form-textarea"
+                rows="3"
+                maxlength="255"
+                placeholder="Control anual, trae estudios previos..."
+                [ngModel]="reason()"
+                (ngModelChange)="reason.set($event)">
+              </textarea>
+            </div>
+
+            @if (submitError()) {
+              <div class="error-banner animate-appear">
+                <mat-icon>error_outline</mat-icon>
+                <span>{{ submitError() }}</span>
+              </div>
+            }
+
+            <div class="submit-row">
+              <button mat-stroked-button class="cancel-btn" (click)="cancelRequested.emit()">
+                Cancelar
+              </button>
+              <button
+                mat-flat-button
+                color="primary"
+                class="confirm-btn"
+                [disabled]="!canSubmit() || submitting()"
+                (click)="submit()">
+                @if (submitting()) {
+                  <mat-spinner diameter="18" color="accent" />
+                  Confirmando...
+                } @else {
+                  <ng-container>
+                    <mat-icon>check_circle</mat-icon>
+                    Confirmar cita
+                  </ng-container>
+                }
+              </button>
+            </div>
+          </div>
+        }
+
+      </div>
+    </main>
+
+  </div>
+}

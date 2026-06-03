@@ -6,12 +6,15 @@ import { ApiResponse } from '@core/models/api-response.model';
 import {
   PatientApiResponse,
   PatientListApiResponse,
+  PatientSearchApiResponse,
   PatientSearchParams,
   PatientRegisterRequest,
   PatientRegisterResult,
   EmailAvailabilityResult,
   UpdateProfileRequest,
+  UpdatePatientRequest,
   PatientProfileResponse,
+  CreatePatientRequest,
 } from '@core/models/patient.model';
 
 @Injectable({ providedIn: 'root' })
@@ -23,13 +26,21 @@ export class PatientService {
     return this.http.get<PatientListApiResponse>(API_ROUTES.patients.base, { params: httpParams });
   }
 
-  search(query: string): Observable<PatientListApiResponse> {
+  search(query: string): Observable<PatientSearchApiResponse> {
     const params = new HttpParams().set('query', query);
-    return this.http.get<PatientListApiResponse>(API_ROUTES.patients.search, { params });
+    return this.http.get<PatientSearchApiResponse>(API_ROUTES.patients.search, { params });
+  }
+
+  create(data: CreatePatientRequest): Observable<PatientApiResponse> {
+    return this.http.post<PatientApiResponse>(API_ROUTES.patients.base, data);
   }
 
   getById(id: number): Observable<PatientApiResponse> {
     return this.http.get<PatientApiResponse>(API_ROUTES.patients.byId(id));
+  }
+
+  update(id: number, data: UpdatePatientRequest): Observable<PatientApiResponse> {
+    return this.http.put<PatientApiResponse>(API_ROUTES.patients.byId(id), data);
   }
 
   checkEmail(email: string): Observable<ApiResponse<EmailAvailabilityResult>> {
@@ -41,12 +52,12 @@ export class PatientService {
     return this.http.post<ApiResponse<PatientRegisterResult>>(API_ROUTES.public.registerPatient, data);
   }
 
-  getProfile(): Observable<ApiResponse<PatientProfileResponse>> {
-    return this.http.get<ApiResponse<PatientProfileResponse>>(API_ROUTES.patients.profile);
+  getProfile(): Observable<PatientProfileResponse> {
+    return this.http.get<PatientProfileResponse>(API_ROUTES.patients.profile);
   }
 
-  updateProfile(data: UpdateProfileRequest): Observable<ApiResponse<PatientProfileResponse>> {
-    return this.http.put<ApiResponse<PatientProfileResponse>>(API_ROUTES.patients.profile, data);
+  updateProfile(data: UpdateProfileRequest): Observable<void> {
+    return this.http.put<void>(API_ROUTES.patients.profile, data);
   }
 
   private buildParams(filters: object): HttpParams {

@@ -25,9 +25,9 @@ export interface EmailAvailabilityResult {
 export interface CreatePatientRequest {
   firstName: string;
   lastName: string;
-  birthDate: string;
   documentTypeCode: string;
   documentNumber: string;
+  birthDate?: string;
 }
 
 export interface UpdateProfileRequest {
@@ -41,13 +41,31 @@ export interface UpdateProfileRequest {
 
 export interface PatientResponse {
   id: number;
+  patientId: number;
   firstName: string;
   lastName: string;
   contactEmail: string | null;
+  phone?: string | null;
+  birthDate?: string | null;
+  gender?: string | null;
+  profileCompleted?: boolean;
+  hasAccount: boolean;
+  userEmail: string | null;
+  accountActive: boolean | null;
+}
+
+export interface UpdatePatientRequest {
+  firstName: string;
+  lastName: string;
+  birthDate?: string | null;
+  contactEmail?: string | null;
+  phone?: string | null;
+  gender?: string | null;
 }
 
 export interface PatientProfileResponse {
   id: number;
+  patientId: number;
   firstName: string;
   lastName: string;
   contactEmail: string | null;
@@ -55,6 +73,8 @@ export interface PatientProfileResponse {
   gender: string | null;
   birthDate: string | null;
   profileCompleted: boolean;
+  hasAccount: boolean;
+  accountActive: boolean;
 }
 
 export interface PatientSearchParams {
@@ -65,3 +85,4 @@ export interface PatientSearchParams {
 
 export type PatientApiResponse = ApiResponse<PatientResponse>;
 export type PatientListApiResponse = ApiResponse<PagedResponse<PatientResponse>>;
+export type PatientSearchApiResponse = ApiResponse<PatientResponse[]>;

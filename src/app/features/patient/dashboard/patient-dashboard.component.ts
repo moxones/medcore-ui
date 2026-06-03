@@ -9,7 +9,7 @@ import { AuthStore } from '@core/auth/auth.store';
 import { PatientDashboardStore } from '@core/stores/patient-dashboard.store';
 import { KpiCardComponent } from '@shared/widgets/kpi-card/kpi-card.component';
 import { CompleteProfileDialogComponent } from '@shared/dialogs/complete-profile/complete-profile-dialog.component';
-import { AppointmentFlowStatus } from '@core/models/appointment.model';
+import { AppointmentResponse } from '@core/models/appointment.model';
 
 @Component({
   selector: 'app-patient-dashboard',
@@ -46,21 +46,15 @@ export class PatientDashboardComponent implements OnInit {
     }).format(new Date(scheduledAt));
   }
 
-  statusLabel(status: AppointmentFlowStatus): string {
-    const labels: Record<AppointmentFlowStatus, string> = {
-      WAITING: 'En espera',
-      IN_PROCESS: 'En consulta',
-      COMPLETED: 'Completada',
-    };
-    return labels[status];
+  badgeLabel(appt: AppointmentResponse): string {
+    if (appt.flowStatus === 'IN_PROCESS') return 'En consulta';
+    if (appt.flowStatus === 'COMPLETED') return 'Completada';
+    return 'Programada';
   }
 
-  statusClass(status: AppointmentFlowStatus): string {
-    const map: Record<AppointmentFlowStatus, string> = {
-      WAITING: 'waiting',
-      IN_PROCESS: 'in-process',
-      COMPLETED: 'completed',
-    };
-    return map[status];
+  badgeClass(appt: AppointmentResponse): string {
+    if (appt.flowStatus === 'IN_PROCESS') return 'in-process';
+    if (appt.flowStatus === 'COMPLETED') return 'completed';
+    return 'scheduled';
   }
 }

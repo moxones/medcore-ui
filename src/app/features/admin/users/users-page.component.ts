@@ -17,6 +17,10 @@ import {
   AdminSetPasswordDialogComponent,
   AdminSetPasswordDialogData,
 } from '@shared/dialogs/admin-set-password/admin-set-password-dialog.component';
+import {
+  UserBranchesDialogComponent,
+  UserBranchesDialogData,
+} from '@shared/dialogs/user-branches/user-branches-dialog.component';
 import { AlertBannerComponent } from '@shared/components/alert-banner/alert-banner.component';
 
 interface TenantGroup {
@@ -194,6 +198,24 @@ export class UsersPageComponent implements OnInit {
       AdminSetPasswordDialogComponent,
       {
         width: '420px',
+        maxWidth: '95vw',
+        data: {
+          userId: user.id,
+          userName: `${user.person.firstName} ${user.person.lastName}`,
+        },
+      },
+    );
+  }
+
+  isStaffRole(user: UserResponse): boolean {
+    return user.roles.some((r) => r.code === 'ASSISTANT' || r.code === 'RECEPTIONIST');
+  }
+
+  openBranchDialog(user: UserResponse): void {
+    this.dialog.open<UserBranchesDialogComponent, UserBranchesDialogData>(
+      UserBranchesDialogComponent,
+      {
+        width: '560px',
         maxWidth: '95vw',
         data: {
           userId: user.id,

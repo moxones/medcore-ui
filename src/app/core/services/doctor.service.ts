@@ -15,6 +15,7 @@ import {
   DoctorScheduleListApiResponse,
   DoctorListParams,
   DoctorScheduleListParams,
+  DoctorSelfApiResponse,
   UpdateDoctorScheduleRequest,
 } from '@core/models/doctor.model';
 import { ApiResponse } from '@core/models/api-response.model';
@@ -24,6 +25,10 @@ import { PageRequest } from '@core/models/pagination.model';
 @Injectable({ providedIn: 'root' })
 export class DoctorService {
   private readonly http = inject(HttpClient);
+
+  getMe(): Observable<DoctorSelfApiResponse> {
+    return this.http.get<DoctorSelfApiResponse>(API_ROUTES.doctors.me);
+  }
 
   getList(filters: DoctorListParams = {}): Observable<DoctorListApiResponse> {
     const params = this.buildParams({ page: 0, size: 20, ...filters });

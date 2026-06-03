@@ -98,7 +98,16 @@ export interface CreateDoctorScheduleRequest {
 
 export type UpdateDoctorScheduleRequest = Partial<CreateDoctorScheduleRequest>;
 
+export interface DoctorSelfResponse {
+  id: number;
+  tenantId: number;
+  licenseNumber: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
 export type DoctorApiResponse = ApiResponse<DoctorResponse>;
+export type DoctorSelfApiResponse = ApiResponse<DoctorSelfResponse>;
 export type DoctorListApiResponse = ApiResponse<PagedResponse<DoctorResponse>>;
 export type DoctorCardListApiResponse = ApiResponse<PagedResponse<DoctorCardResponse>>;
 export type DoctorBranchApiResponse = ApiResponse<DoctorBranchResponse>;

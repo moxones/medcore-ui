@@ -100,8 +100,11 @@ export class AppointmentsPageComponent implements OnInit {
 
   statusLabel(status: AppointmentFlowStatus): string {
     const map: Record<AppointmentFlowStatus, string> = {
+      SCHEDULED: 'Programada',
       WAITING: 'En espera',
+      CALLED: 'Llamado',
       IN_PROCESS: 'En consulta',
+      PENDING_PAYMENT: 'Por cobrar',
       COMPLETED: 'Completada',
     };
     return map[status] ?? status;
@@ -109,8 +112,11 @@ export class AppointmentsPageComponent implements OnInit {
 
   statusClass(status: AppointmentFlowStatus): string {
     const map: Record<AppointmentFlowStatus, string> = {
+      SCHEDULED: '',
       WAITING: 'chip--warning',
+      CALLED: 'chip--primary',
       IN_PROCESS: 'chip--primary',
+      PENDING_PAYMENT: 'chip--warning',
       COMPLETED: 'chip--success',
     };
     return map[status] ?? '';
@@ -128,8 +134,8 @@ export class AppointmentsPageComponent implements OnInit {
     return date.toISOString().slice(0, 10);
   }
 
-  private statusToId(status: AppointmentFlowStatus): number {
-    const map: Record<AppointmentFlowStatus, number> = {
+  private statusToId(status: AppointmentFlowStatus): number | undefined {
+    const map: Partial<Record<AppointmentFlowStatus, number>> = {
       WAITING: 1,
       IN_PROCESS: 2,
       COMPLETED: 3,

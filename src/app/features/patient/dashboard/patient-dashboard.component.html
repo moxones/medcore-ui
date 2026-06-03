@@ -79,8 +79,8 @@
                 <span class="appt-date">{{ formatDate(appt.scheduledAt) }}</span>
                 <span class="appt-branch">{{ appt.branchName }}</span>
               </div>
-              <span [class]="'appt-badge appt-badge--' + statusClass(appt.flowStatus)">
-                {{ statusLabel(appt.flowStatus) }}
+              <span [class]="'appt-badge appt-badge--' + badgeClass(appt)">
+                {{ badgeLabel(appt) }}
               </span>
             </div>
           }

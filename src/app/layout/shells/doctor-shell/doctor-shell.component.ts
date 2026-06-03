@@ -77,17 +77,39 @@ export class DoctorShellComponent implements OnInit {
 
   readonly navGroups: NavGroup[] = [
     {
-      label: 'Mi Agenda',
+      label: 'Mi Día',
       items: [
-        { icon: 'dashboard', label: 'Dashboard', route: '/doctor/dashboard' },
+        { icon: 'dashboard', label: 'Inicio', route: '/doctor/dashboard' },
+        { icon: 'event_available', label: 'Pacientes de Hoy', route: '/doctor/today' },
         { icon: 'event_note', label: 'Agenda', route: '/doctor/schedule' },
       ],
     },
     {
-      label: 'Clínica',
+      label: 'Atención',
       items: [
-        { icon: 'people', label: 'Mis Pacientes', route: '/doctor/patients' },
-        { icon: 'folder_open', label: 'Historiales', route: '/doctor/medical-records' },
+        { icon: 'stethoscope', label: 'Sala de Consulta', route: '/doctor/consultation' },
+        { icon: 'folder_open', label: 'Historiales Clínicos', route: '/doctor/medical-records' },
+      ],
+    },
+    {
+      label: 'Mis Pacientes',
+      items: [
+        { icon: 'people', label: 'Pacientes', route: '/doctor/patients' },
+      ],
+    },
+    {
+      label: 'Gestión',
+      items: [
+        { icon: 'schedule', label: 'Mi Disponibilidad', route: '/doctor/availability' },
+        { icon: 'prescriptions', label: 'Recetas', route: '/doctor/prescriptions' },
+        { icon: 'science', label: 'Órdenes y Exámenes', route: '/doctor/orders' },
+        { icon: 'description', label: 'Plantillas', route: '/doctor/templates' },
+      ],
+    },
+    {
+      label: 'Cuenta',
+      items: [
+        { icon: 'badge', label: 'Mi Perfil', route: '/doctor/profile' },
       ],
     },
   ];

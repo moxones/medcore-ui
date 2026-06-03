@@ -11,10 +11,19 @@ import {
   CalendarParams,
   CancelAppointmentRequest,
   CreateAppointmentRequest,
+  MyAppointmentsApiResponse,
+  MyAppointmentsParams,
+  QueueApiResponse,
+  QueueParams,
   RescheduleAppointmentRequest,
   TimeSlotsApiResponse,
   UpdateFlowStatusRequest,
 } from '@core/models/appointment.model';
+import {
+  AvailabilityApiResponse,
+  AvailabilityParams,
+  SpecialtySummaryListApiResponse,
+} from '@core/models/availability.model';
 import { ApiResponse } from '@core/models/api-response.model';
 
 
@@ -31,6 +40,11 @@ export class AppointmentService {
     return this.http.get<AppointmentListApiResponse>(API_ROUTES.appointments.base, { params });
   }
 
+  getMyAppointments(filters: MyAppointmentsParams = {}): Observable<MyAppointmentsApiResponse> {
+    const params = this.buildParams(filters);
+    return this.http.get<MyAppointmentsApiResponse>(API_ROUTES.patients.myAppointments, { params });
+  }
+
   getCalendar(filters: CalendarParams): Observable<CalendarApiResponse> {
     const params = this.buildParams(filters);
     return this.http.get<CalendarApiResponse>(API_ROUTES.appointments.calendar, { params });
@@ -39,6 +53,19 @@ export class AppointmentService {
   getAvailableSlots(filters: AvailableSlotsParams): Observable<TimeSlotsApiResponse> {
     const params = this.buildParams(filters);
     return this.http.get<TimeSlotsApiResponse>(API_ROUTES.appointments.availableSlots, { params });
+  }
+
+  getAvailability(filters: AvailabilityParams): Observable<AvailabilityApiResponse> {
+    const params = this.buildParams(filters);
+    return this.http.get<AvailabilityApiResponse>(API_ROUTES.appointments.availability, { params });
+  }
+
+  getSpecialtiesSummary(branchId: number): Observable<SpecialtySummaryListApiResponse> {
+    const params = this.buildParams({ branchId });
+    return this.http.get<SpecialtySummaryListApiResponse>(
+      API_ROUTES.appointments.specialtiesSummary,
+      { params },
+    );
   }
 
   getById(id: number): Observable<AppointmentApiResponse> {
@@ -55,6 +82,11 @@ export class AppointmentService {
 
   cancel(id: number, body: CancelAppointmentRequest): Observable<ApiResponse<null>> {
     return this.http.post<ApiResponse<null>>(API_ROUTES.appointments.cancel(id), body);
+  }
+
+  getQueue(filters: QueueParams = {}): Observable<QueueApiResponse> {
+    const params = this.buildParams(filters);
+    return this.http.get<QueueApiResponse>(API_ROUTES.appointments.queue, { params });
   }
 
   private buildParams(filters: object): HttpParams {

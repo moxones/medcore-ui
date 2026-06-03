@@ -10,9 +10,7 @@ import { KpiCardComponent } from '@shared/widgets/kpi-card/kpi-card.component';
 interface QuickLink {
   icon: string;
   label: string;
-  description: string;
   route: string;
-  accentClass: string;
 }
 
 @Component({
@@ -29,9 +27,8 @@ export class AdminDashboardComponent implements OnInit {
 
   readonly todayLabel = new Intl.DateTimeFormat('es-PE', {
     weekday: 'long',
-    year: 'numeric',
-    month: 'long',
     day: 'numeric',
+    month: 'long',
   }).format(new Date());
 
   readonly greeting = (() => {
@@ -80,56 +77,20 @@ export class AdminDashboardComponent implements OnInit {
   readonly donutBackground = computed(() => {
     const s = this.dashboardStore.summary();
     if (!s || s.totalAppointmentsToday === 0) {
-      return 'conic-gradient(#e2e8f0 0% 100%)';
+      return 'conic-gradient(var(--color-border) 0% 100%)';
     }
     const cp = this.completedPct();
-    const ca = cp + this.cancelledPct();
-    return `conic-gradient(#22c55e 0% ${cp}%, #f97316 ${cp}% ${ca}%, #3b82f6 ${ca}% 100%)`;
+    const ca = cp + this.waitingPct();
+    return `conic-gradient(var(--color-success) 0% ${cp}%, var(--mat-sys-primary) ${cp}% ${ca}%, var(--color-border) ${ca}% 100%)`;
   });
 
   readonly quickLinks: QuickLink[] = [
-    {
-      icon: 'calendar_month',
-      label: 'Citas',
-      description: 'Gestionar agenda diaria',
-      route: '/admin/appointments',
-      accentClass: 'link--blue',
-    },
-    {
-      icon: 'groups',
-      label: 'Médicos',
-      description: 'Equipo y especialidades',
-      route: '/admin/doctors',
-      accentClass: 'link--green',
-    },
-    {
-      icon: 'personal_injury',
-      label: 'Pacientes',
-      description: 'Historial y registros',
-      route: '/admin/patients',
-      accentClass: 'link--teal',
-    },
-    {
-      icon: 'manage_accounts',
-      label: 'Usuarios',
-      description: 'Accesos y permisos',
-      route: '/admin/users',
-      accentClass: 'link--purple',
-    },
-    {
-      icon: 'location_on',
-      label: 'Sucursales',
-      description: 'Sedes y locales',
-      route: '/admin/branches',
-      accentClass: 'link--orange',
-    },
-    {
-      icon: 'category',
-      label: 'Catálogos',
-      description: 'Tipos y configuración',
-      route: '/admin/catalogs',
-      accentClass: 'link--pink',
-    },
+    { icon: 'calendar_month', label: 'Citas', route: '/admin/appointments' },
+    { icon: 'groups', label: 'Médicos', route: '/admin/doctors' },
+    { icon: 'personal_injury', label: 'Pacientes', route: '/admin/patients' },
+    { icon: 'manage_accounts', label: 'Usuarios', route: '/admin/users' },
+    { icon: 'business', label: 'Sucursales', route: '/admin/branches' },
+    { icon: 'category', label: 'Catálogos', route: '/admin/catalogs' },
   ];
 
   ngOnInit(): void {

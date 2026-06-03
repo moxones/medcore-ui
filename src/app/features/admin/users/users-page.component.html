@@ -151,6 +151,14 @@
                     (click)="openEdit(row)">
                     <mat-icon>edit</mat-icon>
                   </button>
+                  @if (isStaffRole(row)) {
+                    <button
+                      class="action-btn"
+                      matTooltip="Gestionar sucursales"
+                      (click)="openBranchDialog(row)">
+                      <mat-icon>location_on</mat-icon>
+                    </button>
+                  }
                   @if (authStore.isSuperAdmin()) {
                     <button
                       class="action-btn"

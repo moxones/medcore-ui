@@ -79,8 +79,11 @@ export class ReceptionDashboardComponent implements OnInit {
 
   flowLabel(status: AppointmentFlowStatus): string {
     const labels: Record<AppointmentFlowStatus, string> = {
+      SCHEDULED: 'Programada',
       WAITING: 'En espera',
+      CALLED: 'Llamado',
       IN_PROCESS: 'En consulta',
+      PENDING_PAYMENT: 'Por cobrar',
       COMPLETED: 'Completada',
     };
     return labels[status];

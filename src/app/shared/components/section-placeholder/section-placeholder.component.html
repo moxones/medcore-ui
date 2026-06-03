@@ -1,0 +1,42 @@
+<section class="placeholder" [attr.data-accent]="accent()">
+
+  <header class="ph-header">
+    <div class="ph-heading">
+      @if (breadcrumb()) {
+        <span class="ph-breadcrumb">{{ breadcrumb() }}</span>
+      }
+      <div class="ph-title-row">
+        <span class="ph-icon">
+          <mat-icon>{{ icon() }}</mat-icon>
+        </span>
+        <h1 class="ph-title">{{ title() }}</h1>
+      </div>
+      @if (subtitle()) {
+        <p class="ph-subtitle">{{ subtitle() }}</p>
+      }
+    </div>
+
+    <span class="ph-badge">
+      <span class="ph-badge-dot"></span>
+      Estructura
+    </span>
+  </header>
+
+  @if (sections().length) {
+    <p class="ph-hint">Lo que verá esta pantalla:</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      @for (section of sections(); track section.title) {
+        <article class="ph-card">
+          <span class="ph-card-icon">
+            <mat-icon>{{ section.icon }}</mat-icon>
+          </span>
+          <div class="ph-card-body">
+            <h3 class="ph-card-title">{{ section.title }}</h3>
+            <p class="ph-card-desc">{{ section.description }}</p>
+          </div>
+        </article>
+      }
+    </div>
+  }
+
+</section>

@@ -3,13 +3,14 @@ import { computed, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { AppointmentService } from '@core/services/appointment.service';
 import { AppointmentFlowStatus, AppointmentResponse } from '@core/models/appointment.model';
-import { PagedResponse } from '@core/models/pagination.model';
+import { PagedResponse, springPageToPaged } from '@core/models/pagination.model';
 
 interface PatientAppointmentsState {
   page: PagedResponse<AppointmentResponse> | null;
   activeFilter: AppointmentFlowStatus | '';
   loading: boolean;
   cancelling: number | null;
+  rescheduling: number | null;
 }
 
 export const PatientAppointmentsStore = signalStore(
@@ -19,6 +20,7 @@ export const PatientAppointmentsStore = signalStore(
     activeFilter: '',
     loading: false,
     cancelling: null,
+    rescheduling: null,
   }),
   withComputed(({ page }) => ({
     appointments: computed(() => page()?.content ?? []),
@@ -27,31 +29,46 @@ export const PatientAppointmentsStore = signalStore(
     pageNumber: computed(() => page()?.pageNumber ?? 0),
   })),
   withMethods((store, service = inject(AppointmentService)) => ({
-    async load(params: { page?: number; size?: number; statusId?: number } = {}): Promise<void> {
-      if (store.loading()) return;
-      patchState(store, { loading: true });
-      try {
-        const res = await firstValueFrom(service.getList({ size: 10, page: 0, ...params }));
-        patchState(store, { page: res.data, loading: false });
-      } catch {
-        patchState(store, { loading: false });
-      }
-    },
+      async load(params: { page?: number; size?: number } = {}): Promise<void> {
+        if (store.loading()) return;
+        patchState(store, { loading: true });
+        try {
+          const flowStatus = store.activeFilter() || undefined;
+          const res = await firstValueFrom(
+            service.getMyAppointments({ size: 10, page: 0, ...params, flowStatus }),
+          );
+          patchState(store, { page: springPageToPaged(res.data), loading: false });
+        } catch {
+          patchState(store, { loading: false });
+        }
+      },
 
-    async cancel(id: number): Promise<string | null> {
-      patchState(store, { cancelling: id });
-      try {
-        await firstValueFrom(service.cancel(id, { reason: 'Cancelado por el paciente' }));
-        patchState(store, { cancelling: null });
-        return null;
-      } catch {
-        patchState(store, { cancelling: null });
-        return 'No se pudo cancelar la cita. Intenta de nuevo.';
-      }
-    },
+      async cancel(id: number): Promise<string | null> {
+        patchState(store, { cancelling: id });
+        try {
+          await firstValueFrom(service.cancel(id, { reason: 'Cancelado por el paciente' }));
+          patchState(store, { cancelling: null });
+          return null;
+        } catch {
+          patchState(store, { cancelling: null });
+          return 'No se pudo cancelar la cita. Intenta de nuevo.';
+        }
+      },
 
-    setFilter(filter: AppointmentFlowStatus | ''): void {
-      patchState(store, { activeFilter: filter });
-    },
+      async reschedule(id: number, newScheduledAt: string): Promise<string | null> {
+        patchState(store, { rescheduling: id });
+        try {
+          await firstValueFrom(service.reschedule(id, { newScheduledAt }));
+          patchState(store, { rescheduling: null });
+          return null;
+        } catch {
+          patchState(store, { rescheduling: null });
+          return 'No se pudo reagendar la cita. Intenta de nuevo.';
+        }
+      },
+
+      setFilter(filter: AppointmentFlowStatus | ''): void {
+        patchState(store, { activeFilter: filter });
+      },
   })),
 );
