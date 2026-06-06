@@ -1,6 +1,6 @@
 import { environment } from '../../../environments/environment';
 
-export const API_BASE = environment.apiUrl;
+export const API_BASE = `${environment.apiUrl}/api`;
 
 export const API_ROUTES = {
   auth: {
