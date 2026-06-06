@@ -3,6 +3,7 @@ import { provideRouter, withViewTransitions } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { routes } from './app.routes';
+import { apiPrefixInterceptor } from './core/interceptors/api-prefix.interceptor';
 import { tenantInterceptor } from './core/interceptors/tenant.interceptor';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { refreshInterceptor } from './core/interceptors/refresh.interceptor';
@@ -14,7 +15,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withViewTransitions()),
     provideHttpClient(
       withFetch(),
-      withInterceptors([tenantInterceptor, authInterceptor, refreshInterceptor]),
+      withInterceptors([apiPrefixInterceptor, tenantInterceptor, authInterceptor, refreshInterceptor]),
     ),
     provideClientHydration(withEventReplay()),
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
