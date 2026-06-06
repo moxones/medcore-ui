@@ -1,0 +1,113 @@
+<div class="schedule-page">
+
+  <header class="page-header">
+    <div class="header-left">
+      <span class="breadcrumb">médico / agenda</span>
+      <h1 class="page-title">Mi Agenda</h1>
+      <p class="header-sub">{{ store.rangeLabel() }} · {{ store.weekTotal() }} citas esta semana</p>
+    </div>
+
+    <div class="header-right">
+      <div class="nav-group">
+        <button class="icon-btn" (click)="store.prevWeek()" matTooltip="Semana anterior" aria-label="Semana anterior"><mat-icon>chevron_left</mat-icon></button>
+        <button class="today-btn" (click)="store.goToday()">Hoy</button>
+        <button class="icon-btn" (click)="store.nextWeek()" matTooltip="Semana siguiente" aria-label="Semana siguiente"><mat-icon>chevron_right</mat-icon></button>
+      </div>
+      <div class="view-toggle">
+        <button class="view-btn" [class.view-btn--active]="store.view() === 'week'" (click)="setView('week')"><mat-icon>calendar_view_week</mat-icon>Semana</button>
+        <button class="view-btn" [class.view-btn--active]="store.view() === 'day'" (click)="setView('day')"><mat-icon>calendar_view_day</mat-icon>Día</button>
+      </div>
+    </div>
+  </header>
+
+  @if (store.loading()) {
+    <mat-progress-bar mode="indeterminate" class="top-progress" />
+  }
+
+  @if (store.error()) {
+    <app-alert-banner [message]="store.error()" />
+  }
+
+  @if (store.view() === 'week') {
+    <div class="week-grid">
+      @for (day of store.days(); track day.iso) {
+        <div class="day-col" [class.day-col--today]="day.isToday">
+          <button class="day-head" (click)="store.selectDay(day.iso)">
+            <span class="day-weekday">{{ day.weekday }}</span>
+            <span class="day-number">{{ day.dayNumber }}</span>
+            <span class="day-count">{{ appointmentsFor(day.iso).length }}</span>
+          </button>
+
+          <div class="day-body">
+            @for (appt of appointmentsFor(day.iso); track appt.id) {
+              <button
+                class="appt-chip"
+                [class]="'appt-chip--' + flowClass(appt.flowStatus)"
+                [class.appt-chip--clickable]="isActionable(appt)"
+                (click)="onAppointmentClick(appt)"
+                [matTooltip]="appt.reason || appt.patientName">
+                <span class="appt-time">{{ formatTime(appt.scheduledAt) }}</span>
+                <span class="appt-patient">{{ appt.patientName }}</span>
+              </button>
+            } @empty {
+              <span class="day-empty">—</span>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="day-view">
+      <div class="day-strip">
+        @for (day of store.days(); track day.iso) {
+          <button
+            class="strip-day"
+            [class.strip-day--active]="store.selectedDayIso() === day.iso"
+            [class.strip-day--today]="day.isToday"
+            (click)="store.selectDay(day.iso)">
+            <span class="strip-weekday">{{ day.weekday }}</span>
+            <span class="strip-number">{{ day.dayNumber }}</span>
+            @if (appointmentsFor(day.iso).length) {
+              <span class="strip-dot"></span>
+            }
+          </button>
+        }
+      </div>
+
+      @if (store.selectedDayAppointments().length) {
+        <div class="agenda-list">
+          @for (appt of store.selectedDayAppointments(); track appt.id) {
+            <article
+              class="agenda-row"
+              [class.agenda-row--clickable]="isActionable(appt)"
+              (click)="onAppointmentClick(appt)">
+              <div class="agenda-time">
+                <span class="at-hour">{{ formatTime(appt.scheduledAt) }}</span>
+                <span class="at-dur">{{ appt.durationMinutes }} min</span>
+              </div>
+              <div class="agenda-bar" [class]="'agenda-bar--' + flowClass(appt.flowStatus)"></div>
+              <div class="agenda-main">
+                <span class="agenda-patient">{{ appt.patientName }}</span>
+                <span class="agenda-reason">{{ appt.reason || 'Consulta' }}</span>
+                <span class="agenda-branch"><mat-icon>location_on</mat-icon>{{ appt.branchName }}</span>
+              </div>
+              <span class="agenda-status" [class]="'agenda-status--' + flowClass(appt.flowStatus)">
+                {{ flowLabel(appt.flowStatus) }}
+              </span>
+              @if (isActionable(appt)) {
+                <mat-icon class="agenda-go">arrow_forward</mat-icon>
+              }
+            </article>
+          }
+        </div>
+      } @else if (!store.loading()) {
+        <div class="board-empty">
+          <mat-icon>event_available</mat-icon>
+          <h3>Sin citas este día</h3>
+          <p>No tienes pacientes agendados para la fecha seleccionada.</p>
+        </div>
+      }
+    </div>
+  }
+
+</div>

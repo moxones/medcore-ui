@@ -1,12 +1,11 @@
-import { computed, inject } from '@angular/core';
-import { signalStore, withState, withComputed, withMethods, patchState } from '@ngrx/signals';
+import { computed, effect, inject, untracked } from '@angular/core';
+import { signalStore, withState, withComputed, withMethods, withHooks, patchState } from '@ngrx/signals';
 import { firstValueFrom } from 'rxjs';
 import { AppointmentService } from '@core/services/appointment.service';
-import { BranchService } from '@core/services/branch.service';
 import { DoctorService } from '@core/services/doctor.service';
 import { CatalogService } from '@core/services/catalog.service';
+import { BranchContextStore } from '@core/stores/branch-context.store';
 import { AppointmentResponse, AppointmentFlowStatus } from '@core/models/appointment.model';
-import { BranchResponse } from '@core/models/branch.model';
 import { DoctorCardResponse } from '@core/models/doctor.model';
 import { CatalogItemResponse, MasterCatalogItem } from '@core/models/catalog.model';
 
@@ -65,7 +64,6 @@ interface AgendaState {
   filterDoctorId: number | null;
   filterVisualState: VisualState | null;
   appointments: AppointmentResponse[];
-  branches: BranchResponse[];
   doctorCards: DoctorCardResponse[];
   appointmentTypes: CatalogItemResponse[];
   appointmentStatuses: MasterCatalogItem[];
@@ -188,7 +186,6 @@ export const AgendaStore = signalStore(
     filterDoctorId: null,
     filterVisualState: null,
     appointments: [],
-    branches: [],
     doctorCards: [],
     appointmentTypes: [],
     appointmentStatuses: [],
@@ -396,9 +393,9 @@ export const AgendaStore = signalStore(
   withMethods((
     store,
     apptSvc = inject(AppointmentService),
-    branchSvc = inject(BranchService),
     doctorSvc = inject(DoctorService),
     catalogSvc = inject(CatalogService),
+    branchCtx = inject(BranchContextStore),
   ) => {
     async function loadCalendar(): Promise<void> {
       patchState(store, { refreshing: true });
@@ -434,23 +431,19 @@ export const AgendaStore = signalStore(
       },
 
       async loadInit(): Promise<void> {
-        patchState(store, { loading: true, error: null });
+        patchState(store, { loading: true, error: null, branchId: branchCtx.activeBranchId() });
         try {
-          const [branchesRes, typesRes, statusesRes] = await Promise.all([
-            firstValueFrom(branchSvc.getList({ page: 0, size: 50 })),
+          const [typesRes, statusesRes] = await Promise.all([
             firstValueFrom(catalogSvc.getClinicAppointmentTypes()),
             firstValueFrom(catalogSvc.getClinicAppointmentStatuses()),
           ]);
-          const branches = branchesRes.data.content;
-          const defaultBranchId = branches[0]?.id ?? null;
           patchState(store, {
-            branches,
             appointmentTypes: typesRes.data,
             appointmentStatuses: statusesRes.data,
-            branchId: defaultBranchId,
           });
-          if (defaultBranchId !== null) {
-            await loadDoctorCards(defaultBranchId);
+          const branchId = store.branchId();
+          if (branchId !== null) {
+            await loadDoctorCards(branchId);
           }
           await loadCalendar();
         } catch {
@@ -465,6 +458,7 @@ export const AgendaStore = signalStore(
       },
 
       async setBranch(branchId: number): Promise<void> {
+        if (store.branchId() === branchId) return;
         patchState(store, { branchId, filterDoctorId: null, doctorCards: [] });
         await Promise.all([loadDoctorCards(branchId), loadCalendar()]);
       },
@@ -571,5 +565,14 @@ export const AgendaStore = signalStore(
         }
       },
     };
+  }),
+  withHooks({
+    onInit(store, branchCtx = inject(BranchContextStore)) {
+      effect(() => {
+        const id = branchCtx.activeBranchId();
+        if (id === null) return;
+        untracked(() => void store.setBranch(id));
+      });
+    },
   })
 );

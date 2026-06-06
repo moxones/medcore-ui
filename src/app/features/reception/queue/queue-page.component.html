@@ -48,18 +48,6 @@
   </div>
 
   <div class="queue-filters-bar">
-    <div class="filter-group">
-      @for (branch of store.branches(); track branch.id) {
-        <button
-          class="filter-chip"
-          [class.filter-chip--active]="store.branchId() === branch.id"
-          (click)="selectBranch(branch.id)">
-          <mat-icon>business</mat-icon>
-          {{ branch.name }}
-        </button>
-      }
-    </div>
-
     <div class="stats-bar">
       <span class="stat-item">
         <strong>{{ store.stats().total }}</strong>
@@ -148,7 +136,7 @@
     <div class="board-empty">
       <mat-icon>weekend</mat-icon>
       <h3>La sala de espera está vacía</h3>
-      <p>No hay pacientes en {{ selectedBranchName() }} por ahora. Aparecerán acá apenas tengan cita hoy.</p>
+      <p>No hay pacientes en {{ branchContext.activeBranchName() }} por ahora. Aparecerán acá apenas tengan cita hoy.</p>
       <button class="primary-btn" (click)="openNewAppointment()">
         <mat-icon>add</mat-icon>
         Nueva cita

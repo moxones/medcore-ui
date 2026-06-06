@@ -1,0 +1,220 @@
+<div class="today-page">
+
+  <header class="today-header">
+    <div class="header-left">
+      <span class="breadcrumb">médico / pacientes de hoy</span>
+      <h1 class="page-title">Pacientes de Hoy</h1>
+      <p class="header-sub">{{ doctorName() }} · <span class="header-date">{{ todayLabel() }}</span></p>
+    </div>
+
+    <div class="header-right">
+      <div class="stat-chips" role="list" aria-label="Resumen del día">
+        <span class="stat-chip" role="listitem">
+          <span class="stat-dot stat-dot--amber"></span>
+          <strong>{{ store.stats().ready }}</strong>
+          <span class="stat-label">en espera</span>
+        </span>
+        <span class="stat-chip" role="listitem">
+          <span class="stat-dot stat-dot--green"></span>
+          <strong>{{ store.stats().inConsult }}</strong>
+          <span class="stat-label">en consulta</span>
+        </span>
+        <span class="stat-chip" role="listitem">
+          <span class="stat-dot stat-dot--gray"></span>
+          <strong>{{ store.stats().done }}</strong>
+          <span class="stat-label">atendidos</span>
+        </span>
+        <span class="stat-chip stat-chip--total" role="listitem">
+          <strong>{{ store.stats().total }}</strong>
+          <span class="stat-label">hoy</span>
+        </span>
+      </div>
+      <button
+        class="icon-btn"
+        (click)="store.refresh()"
+        [disabled]="store.refreshing()"
+        matTooltip="Actualizar"
+        aria-label="Actualizar lista">
+        <mat-icon [class.spinning]="store.refreshing()">sync</mat-icon>
+      </button>
+    </div>
+  </header>
+
+  <div class="today-toolbar">
+    <div class="search-box">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input
+        class="search-input"
+        type="text"
+        placeholder="Buscar paciente o tipo de cita..."
+        [value]="searchQuery()"
+        (input)="onSearch($event)"
+        aria-label="Buscar paciente" />
+      @if (searchQuery()) {
+        <button class="search-clear" (click)="clearSearch()" aria-label="Limpiar búsqueda">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </div>
+
+    <div class="filter-group" role="tablist" aria-label="Filtrar pacientes">
+      @for (pill of filters; track pill.id) {
+        <button
+          class="filter-chip"
+          [class.filter-chip--active]="store.filter() === pill.id"
+          role="tab"
+          [attr.aria-selected]="store.filter() === pill.id"
+          (click)="setFilter(pill.id)">
+          <mat-icon>{{ pill.icon }}</mat-icon>
+          {{ pill.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (store.loading()) {
+    <mat-progress-bar mode="indeterminate" class="top-progress" />
+  }
+
+  @if (store.error()) {
+    <div class="today-alert">
+      <app-alert-banner [message]="store.error()" />
+    </div>
+  }
+
+  @if (store.loading()) {
+    <div class="card-grid" aria-hidden="true">
+      @for (s of [1, 2, 3, 4, 5, 6]; track s) {
+        <div class="patient-card patient-card--skeleton">
+          <div class="card-top">
+            <span class="skeleton skeleton-avatar"></span>
+            <div class="skeleton-lines">
+              <span class="skeleton skeleton-line"></span>
+              <span class="skeleton skeleton-line skeleton-line--short"></span>
+            </div>
+          </div>
+          <span class="skeleton skeleton-block"></span>
+          <span class="skeleton skeleton-action"></span>
+        </div>
+      }
+    </div>
+  } @else if (store.isEmpty()) {
+    <div class="board-empty">
+      <mat-icon>event_available</mat-icon>
+      <h3>No tienes pacientes hoy</h3>
+      <p>Cuando recepción agende citas para ti, aparecerán aquí listas para atender.</p>
+    </div>
+  } @else if (store.visible().length === 0) {
+    <div class="board-empty">
+      <mat-icon>search_off</mat-icon>
+      <h3>Sin resultados</h3>
+      <p>No hay pacientes que coincidan con tu búsqueda o filtro.</p>
+    </div>
+  } @else {
+    <div class="card-grid">
+      @for (p of store.visible(); track p.id) {
+        <article
+          class="patient-card"
+          [class]="'patient-card--' + p.visualState"
+          [class.patient-card--critical]="p.urgency === 'CRITICAL'">
+
+          <div class="card-top">
+            <div class="card-avatar" [class]="'card-avatar--' + p.urgency.toLowerCase()">
+              {{ initials(p.patientName) }}
+            </div>
+            <div class="card-id">
+              <span class="card-name">{{ p.patientName }}</span>
+              <span class="card-type">{{ p.typeName }}</span>
+            </div>
+            <span class="state-chip" [class]="'state-chip--' + p.visualState">
+              {{ stateLabel(p.visualState) }}
+            </span>
+          </div>
+
+          <div class="card-meta">
+            <span class="meta-item">
+              <mat-icon>schedule</mat-icon>
+              {{ formatTime(p.scheduledAt) }}
+            </span>
+            @if (p.visualState === 'waiting' || p.visualState === 'called') {
+              <span class="meta-item meta-item--wait" [class.meta-item--overdue]="p.waitMinutes > 15">
+                <mat-icon>hourglass_top</mat-icon>
+                {{ p.waitMinutes }} min esperando
+              </span>
+            }
+            @if (p.urgency !== 'NORMAL') {
+              <span class="urgency-tag" [class]="'urgency-tag--' + p.urgency.toLowerCase()">
+                <mat-icon>priority_high</mat-icon>
+                {{ urgencyLabel(p.urgency) }}
+              </span>
+            }
+          </div>
+
+          @if (p.triage; as t) {
+            <div class="vitals" role="list" aria-label="Signos vitales del triaje">
+              <span class="vital" role="listitem" matTooltip="Temperatura">
+                <mat-icon>thermostat</mat-icon>{{ t.temperature }}°
+              </span>
+              <span class="vital" role="listitem" matTooltip="Frecuencia cardíaca">
+                <mat-icon>favorite</mat-icon>{{ t.heartRate }}
+              </span>
+              <span class="vital" role="listitem" matTooltip="Presión arterial">
+                <mat-icon>monitor_heart</mat-icon>{{ t.bloodPressure }}
+              </span>
+              <span class="vital" role="listitem" matTooltip="Saturación de oxígeno">
+                <mat-icon>spa</mat-icon>{{ t.oxygenSaturation }}%
+              </span>
+            </div>
+          } @else {
+            <div class="no-triage">
+              <mat-icon>pending_actions</mat-icon>
+              Sin triaje aún
+            </div>
+          }
+
+          <div class="card-actions">
+            @if (canCall(p)) {
+              <button
+                class="card-btn card-btn--ghost"
+                (click)="onCall(p)"
+                [disabled]="store.actionPending()"
+                matTooltip="Llamar al paciente"
+                aria-label="Llamar al paciente">
+                <mat-icon>campaign</mat-icon>
+                Llamar
+              </button>
+            }
+            @if (canStart(p)) {
+              <button
+                class="card-btn card-btn--primary"
+                (click)="onStart(p)"
+                [disabled]="store.actionPending()"
+                matTooltip="Iniciar consulta"
+                aria-label="Iniciar consulta">
+                <mat-icon>play_circle</mat-icon>
+                Iniciar consulta
+              </button>
+            }
+            @if (p.visualState === 'in-process') {
+              <button
+                class="card-btn card-btn--primary"
+                (click)="onStart(p)"
+                matTooltip="Volver a la consulta"
+                aria-label="Volver a la consulta">
+                <mat-icon>medical_services</mat-icon>
+                Continuar
+              </button>
+            }
+            @if (p.visualState === 'done') {
+              <span class="card-done">
+                <mat-icon>verified</mat-icon>
+                Atendido
+              </span>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  }
+
+</div>

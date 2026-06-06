@@ -8,13 +8,26 @@ import { TenantStore } from '@core/tenant/tenant.store';
 import { AuthStore } from '@core/auth/auth.store';
 import { PatientDashboardStore } from '@core/stores/patient-dashboard.store';
 import { KpiCardComponent } from '@shared/widgets/kpi-card/kpi-card.component';
+import { DashboardHeroComponent } from '@shared/components/dashboard/dashboard-hero/dashboard-hero.component';
+import { DashboardPanelComponent } from '@shared/components/dashboard/dashboard-panel/dashboard-panel.component';
+import { QuickActionsComponent, QuickAction } from '@shared/components/dashboard/quick-actions/quick-actions.component';
 import { CompleteProfileDialogComponent } from '@shared/dialogs/complete-profile/complete-profile-dialog.component';
 import { AppointmentResponse } from '@core/models/appointment.model';
 
 @Component({
   selector: 'app-patient-dashboard',
   standalone: true,
-  imports: [RouterLink, MatIconModule, MatButtonModule, MatProgressBarModule, MatDialogModule, KpiCardComponent],
+  imports: [
+    RouterLink,
+    MatIconModule,
+    MatButtonModule,
+    MatProgressBarModule,
+    MatDialogModule,
+    KpiCardComponent,
+    DashboardHeroComponent,
+    DashboardPanelComponent,
+    QuickActionsComponent,
+  ],
   templateUrl: './patient-dashboard.component.html',
   styleUrl: './patient-dashboard.component.scss',
 })
@@ -24,8 +37,46 @@ export class PatientDashboardComponent implements OnInit {
   readonly dashboardStore = inject(PatientDashboardStore);
   private readonly dialog = inject(MatDialog);
 
+  readonly todayLabel = new Intl.DateTimeFormat('es-PE', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  }).format(new Date());
+
+  readonly greeting = this.buildGreeting();
+
+  readonly quickLinks: QuickAction[] = [
+    {
+      icon: 'calendar_month',
+      label: 'Mis Citas',
+      description: 'Revisa y gestiona tus citas',
+      route: '/patient/appointments',
+      accent: 'blue',
+    },
+    {
+      icon: 'person',
+      label: 'Mi Perfil',
+      description: 'Actualiza tus datos',
+      route: '/patient/profile',
+      accent: 'green',
+    },
+  ];
+
   ngOnInit(): void {
     void this.dashboardStore.loadAll();
+  }
+
+  heroSubtitle(): string {
+    const next = this.dashboardStore.nextAppointment();
+    if (next) return `Tu próxima cita: ${this.formatDate(next.scheduledAt)}`;
+    return `Bienvenido a ${this.tenantStore.tenant().name}`;
+  }
+
+  private buildGreeting(): string {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Buenos días';
+    if (hour < 18) return 'Buenas tardes';
+    return 'Buenas noches';
   }
 
   openCompleteProfile(): void {

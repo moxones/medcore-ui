@@ -1,5 +1,4 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,20 +7,24 @@ import { TenantStore } from '@core/tenant/tenant.store';
 import { AuthStore } from '@core/auth/auth.store';
 import { ReceptionDashboardStore } from '@core/stores/reception-dashboard.store';
 import { KpiCardComponent } from '@shared/widgets/kpi-card/kpi-card.component';
+import { DashboardHeroComponent } from '@shared/components/dashboard/dashboard-hero/dashboard-hero.component';
+import { DashboardPanelComponent } from '@shared/components/dashboard/dashboard-panel/dashboard-panel.component';
+import { QuickActionsComponent, QuickAction } from '@shared/components/dashboard/quick-actions/quick-actions.component';
 import { AppointmentFlowStatus } from '@core/models/appointment.model';
-
-interface QuickLink {
-  icon: string;
-  label: string;
-  description: string;
-  route: string;
-  accentClass: string;
-}
 
 @Component({
   selector: 'app-reception-dashboard',
   standalone: true,
-  imports: [RouterLink, MatIconModule, MatProgressBarModule, MatButtonModule, MatTooltipModule, KpiCardComponent],
+  imports: [
+    MatIconModule,
+    MatProgressBarModule,
+    MatButtonModule,
+    MatTooltipModule,
+    KpiCardComponent,
+    DashboardHeroComponent,
+    DashboardPanelComponent,
+    QuickActionsComponent,
+  ],
   templateUrl: './reception-dashboard.component.html',
   styleUrl: './reception-dashboard.component.scss',
 })
@@ -38,34 +41,34 @@ export class ReceptionDashboardComponent implements OnInit {
 
   readonly greeting = this.buildGreeting();
 
-  readonly quickLinks: QuickLink[] = [
+  readonly quickLinks: QuickAction[] = [
     {
       icon: 'queue',
       label: 'Cola de Espera',
       description: 'Registrar llegada de pacientes',
       route: '/reception/queue',
-      accentClass: 'accent-orange',
+      accent: 'orange',
     },
     {
       icon: 'add_circle',
       label: 'Nueva Cita',
       description: 'Agendar por teléfono o presencial',
       route: '/reception/appointments/new',
-      accentClass: 'accent-blue',
+      accent: 'blue',
     },
     {
       icon: 'calendar_month',
       label: 'Agenda del Día',
       description: 'Ver timeline completo del día',
       route: '/reception/agenda',
-      accentClass: 'accent-purple',
+      accent: 'purple',
     },
     {
       icon: 'people',
       label: 'Pacientes',
       description: 'Buscar o registrar pacientes',
       route: '/reception/patients',
-      accentClass: 'accent-green',
+      accent: 'green',
     },
   ];
 

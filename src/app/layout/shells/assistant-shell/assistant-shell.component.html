@@ -75,6 +75,31 @@
         <span class="topbar-name">{{ tenantStore.tenant().name }}</span>
       }
 
+      @if (branchContext.hasMultiple()) {
+        <button
+          mat-button
+          class="branch-selector"
+          [matMenuTriggerFor]="branchMenu"
+          matTooltip="Cambiar sucursal">
+          <mat-icon class="branch-icon">location_on</mat-icon>
+          <span class="branch-name">{{ branchContext.activeBranchName() }}</span>
+          <mat-icon class="branch-chevron">expand_more</mat-icon>
+        </button>
+        <mat-menu #branchMenu="matMenu" xPosition="before" class="branch-dropdown">
+          @for (b of branchContext.branches(); track b.id) {
+            <button mat-menu-item (click)="selectBranch(b.id)">
+              <mat-icon>{{ branchContext.activeBranchId() === b.id ? 'check_circle' : 'location_on' }}</mat-icon>
+              <span>{{ b.name }}</span>
+            </button>
+          }
+        </mat-menu>
+      } @else if (branchContext.activeBranchName()) {
+        <span class="branch-static" matTooltip="Sucursal asignada">
+          <mat-icon class="branch-icon">location_on</mat-icon>
+          {{ branchContext.activeBranchName() }}
+        </span>
+      }
+
       <span class="spacer"></span>
 
       <button mat-icon-button matTooltip="Buscar">
@@ -119,7 +144,13 @@
     </header>
 
     <main class="page-content">
-      <router-outlet />
+      @if (branchContext.ready()) {
+        <router-outlet />
+      } @else {
+        <div class="branch-loading">
+          <mat-progress-bar mode="indeterminate" />
+        </div>
+      }
     </main>
 
     <footer class="app-footer">

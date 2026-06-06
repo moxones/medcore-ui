@@ -1,0 +1,217 @@
+<div class="patients-page">
+
+  <div class="patients-toolbar">
+    <div class="toolbar-left">
+      <span class="breadcrumb">asistente / pacientes</span>
+      <h1 class="page-title">Pacientes</h1>
+      <p class="page-subtitle">Consultá datos de contacto, alergias y antecedentes antes del triaje.</p>
+    </div>
+    <div class="search-box">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input
+        class="search-input"
+        type="text"
+        placeholder="Buscar por nombre..."
+        [formControl]="searchControl"
+        autocomplete="off"
+        aria-label="Buscar paciente"
+      />
+      @if (searchControl.value) {
+        <button class="search-clear" (click)="clearSearch()" aria-label="Limpiar búsqueda">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (store.loading()) {
+    <mat-progress-bar mode="indeterminate" class="top-progress" />
+  }
+
+  @if (!store.loading()) {
+    <div class="results-bar">
+      <span class="results-count">
+        @if (searchControl.value) {
+          {{ patients().length }} resultado{{ patients().length !== 1 ? 's' : '' }} para <strong>"{{ searchControl.value }}"</strong>
+        } @else {
+          {{ totalElements() }} paciente{{ totalElements() !== 1 ? 's' : '' }} registrados
+        }
+      </span>
+    </div>
+  }
+
+  @if (!store.loading() && patients().length === 0) {
+    <div class="board-empty">
+      <mat-icon>person_search</mat-icon>
+      <h3>
+        @if (searchControl.value) { Sin resultados para "{{ searchControl.value }}" }
+        @else { Aún no hay pacientes }
+      </h3>
+      <p>
+        @if (searchControl.value) { Intentá con otro nombre. }
+        @else { Cuando recepción registre pacientes, aparecerán acá. }
+      </p>
+    </div>
+  } @else {
+    <div class="patients-grid">
+      @for (patient of patients(); track patient.id) {
+        <article
+          class="p-card"
+          [class.p-card--selected]="dossier.patient()?.id === patient.id"
+          tabindex="0"
+          (click)="openDossier(patient)"
+          (keyup.enter)="openDossier(patient)"
+          [attr.aria-label]="'Ver ficha de ' + fullName(patient)">
+          <div class="p-card-top">
+            <div class="p-avatar">{{ initials(patient) }}</div>
+            <div class="p-id">
+              <span class="p-name">{{ fullName(patient) }}</span>
+              <span class="p-badge">#{{ patient.id }}</span>
+            </div>
+          </div>
+          <div class="p-meta">
+            @if (ageDisplay(patient.birthDate); as age) {
+              <span class="p-meta-item"><mat-icon>cake</mat-icon>{{ age }}</span>
+            }
+            @if (patient.phone) {
+              <span class="p-meta-item"><mat-icon>call</mat-icon>{{ patient.phone }}</span>
+            }
+            @if (patient.contactEmail) {
+              <span class="p-meta-item p-meta-item--email"><mat-icon>mail</mat-icon>{{ patient.contactEmail }}</span>
+            }
+          </div>
+          <span class="p-card-cta">
+            Ver ficha <mat-icon>arrow_forward</mat-icon>
+          </span>
+        </article>
+      }
+    </div>
+
+    @if (totalPages() > 1 && !searchControl.value) {
+      <div class="pagination">
+        <button class="page-btn" [disabled]="pageNumber() === 0" (click)="onPage('prev')" aria-label="Página anterior">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <span class="page-info">Pág. {{ pageNumber() + 1 }} de {{ totalPages() }}</span>
+        <button class="page-btn" [disabled]="isLast()" (click)="onPage('next')" aria-label="Página siguiente">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+    }
+  }
+
+  @if (dossier.patient(); as patient) {
+    <div class="detail-backdrop" (click)="closeDossier()"></div>
+    <aside class="detail-drawer" role="dialog" aria-label="Ficha del paciente">
+
+      <header class="detail-head">
+        <div class="detail-head-top">
+          <span class="detail-state-chip">Ficha clínica</span>
+          <button class="detail-close" (click)="closeDossier()" aria-label="Cerrar">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        <div class="detail-patient">
+          <div class="detail-avatar">{{ initials(patient) }}</div>
+          <div class="detail-patient-info">
+            <span class="detail-patient-name">{{ fullName(patient) }}</span>
+            <span class="detail-patient-sub">
+              <span>#{{ patient.id }}</span>
+              @if (ageDisplay(patient.birthDate); as age) { <span>· {{ age }}</span> }
+              @if (genderLabel(patient.gender); as g) { <span>· {{ g }}</span> }
+            </span>
+          </div>
+        </div>
+        <div class="detail-contact">
+          @if (patient.phone) {
+            <a class="contact-pill" [href]="'tel:' + patient.phone"><mat-icon>call</mat-icon>{{ patient.phone }}</a>
+          }
+          @if (patient.contactEmail) {
+            <a class="contact-pill" [href]="'mailto:' + patient.contactEmail"><mat-icon>mail</mat-icon>{{ patient.contactEmail }}</a>
+          }
+        </div>
+      </header>
+
+      <div class="detail-body">
+        @if (dossier.loading()) {
+          <mat-progress-bar mode="indeterminate" />
+        }
+
+        @if (dossier.error()) {
+          <div class="dossier-note dossier-note--warn">
+            <mat-icon>info</mat-icon>
+            <span>{{ dossier.error() }}</span>
+          </div>
+        }
+
+        <section class="dossier-section">
+          <h3 class="dossier-title"><mat-icon>medical_information</mat-icon> Datos clínicos</h3>
+          <div class="clinical-grid">
+            <div class="clinical-item">
+              <span class="clinical-label">Tipo de sangre</span>
+              <span class="clinical-value clinical-value--blood">{{ dossier.record()?.bloodType || '—' }}</span>
+            </div>
+          </div>
+
+          <div class="clinical-block">
+            <span class="clinical-label"><mat-icon>warning</mat-icon> Alergias</span>
+            @if (allergyList().length > 0) {
+              <div class="tag-row">
+                @for (a of allergyList(); track a) { <span class="clinical-tag clinical-tag--allergy">{{ a }}</span> }
+              </div>
+            } @else {
+              <span class="clinical-empty">Sin alergias registradas</span>
+            }
+          </div>
+
+          <div class="clinical-block">
+            <span class="clinical-label"><mat-icon>monitor_heart</mat-icon> Condiciones crónicas</span>
+            @if (conditionList().length > 0) {
+              <div class="tag-row">
+                @for (c of conditionList(); track c) { <span class="clinical-tag">{{ c }}</span> }
+              </div>
+            } @else {
+              <span class="clinical-empty">Sin condiciones registradas</span>
+            }
+          </div>
+
+          @if (dossier.record()?.clinicalNotes; as notes) {
+            <div class="clinical-block">
+              <span class="clinical-label"><mat-icon>notes</mat-icon> Notas clínicas</span>
+              <p class="clinical-notes">{{ notes }}</p>
+            </div>
+          }
+        </section>
+
+        <section class="dossier-section">
+          <h3 class="dossier-title"><mat-icon>history</mat-icon> Últimos triajes</h3>
+          @if (!dossier.loading() && dossier.triages().length === 0) {
+            <p class="clinical-empty">Este paciente aún no tiene triajes registrados.</p>
+          } @else {
+            <ul class="triage-history">
+              @for (t of dossier.triages(); track t.id) {
+                <li class="th-row">
+                  <span class="th-urgency" [class]="'th-urgency--' + urgencyKeyOf(t.urgencyLevel)"></span>
+                  <div class="th-body">
+                    <div class="th-top">
+                      <span class="th-date">{{ triageDate(t) }}</span>
+                      <span class="th-urgency-chip" [class]="'th-urgency-chip--' + urgencyKeyOf(t.urgencyLevel)">{{ urgencyText(t.urgencyLevel) }}</span>
+                    </div>
+                    <div class="th-vitals">
+                      <span><mat-icon>thermostat</mat-icon>{{ t.temperature }}°</span>
+                      <span><mat-icon>favorite</mat-icon>{{ t.heartRate }}</span>
+                      <span><mat-icon>monitor_heart</mat-icon>{{ t.bloodPressure }}</span>
+                      <span><mat-icon>spa</mat-icon>{{ t.oxygenSaturation }}%</span>
+                      @if (imcValue(t); as imc) { <span><mat-icon>straighten</mat-icon>IMC {{ imc }}</span> }
+                    </div>
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+      </div>
+    </aside>
+  }
+
+</div>

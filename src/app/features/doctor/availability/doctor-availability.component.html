@@ -1,0 +1,105 @@
+<div class="availability-page">
+
+  <header class="page-header">
+    <div class="header-left">
+      <span class="breadcrumb">médico / mi disponibilidad</span>
+      <h1 class="page-title">Mi Disponibilidad</h1>
+      <p class="header-sub">Define tus franjas de atención semanales por sucursal</p>
+    </div>
+    <div class="header-right">
+      <span class="count-pill"><mat-icon>schedule</mat-icon><strong>{{ store.weeklyHours() }}</strong> h / semana</span>
+    </div>
+  </header>
+
+  @if (store.loading()) {
+    <mat-progress-bar mode="indeterminate" class="top-progress" />
+  }
+
+  @if (store.error()) {
+    <app-alert-banner [message]="store.error()" />
+  }
+
+  @if (!store.loading() && !store.hasBranches()) {
+    <div class="board-empty">
+      <mat-icon>location_off</mat-icon>
+      <h3>Sin sucursales asignadas</h3>
+      <p>Pide a un administrador que te asigne al menos una sucursal para configurar tu horario.</p>
+    </div>
+  } @else {
+
+    <section class="add-panel">
+      <div class="panel-title"><mat-icon>add_circle</mat-icon><h2>Agregar franja</h2></div>
+      <form [formGroup]="addForm" class="add-form" (ngSubmit)="submit()">
+        <label class="field field--grow">
+          <span class="field-label">Sucursal</span>
+          <select formControlName="doctorBranchId">
+            @for (b of store.branches(); track b.id) {
+              <option [value]="b.id">{{ b.branchName }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">Día</span>
+          <select formControlName="dayOfWeek">
+            @for (d of days; track d.value) {
+              <option [value]="d.value">{{ d.label }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">Desde</span>
+          <input type="time" formControlName="startTime" />
+        </label>
+        <label class="field">
+          <span class="field-label">Hasta</span>
+          <input type="time" formControlName="endTime" />
+        </label>
+        <label class="field field--narrow">
+          <span class="field-label">Duración (min)</span>
+          <input type="number" formControlName="slotDurationMinutes" min="5" max="240" />
+        </label>
+        <label class="field field--narrow">
+          <span class="field-label">Cupos/slot</span>
+          <input type="number" formControlName="maxPatientsPerSlot" min="1" placeholder="1" />
+        </label>
+        <button type="submit" class="add-btn" [disabled]="store.saving()">
+          <mat-icon>{{ store.saving() ? 'sync' : 'add' }}</mat-icon>
+          Agregar
+        </button>
+      </form>
+    </section>
+
+    <div class="week-grid">
+      @for (day of daySummary(); track day.value) {
+        <div class="day-card" [class.day-card--empty]="!day.blocks.length">
+          <div class="day-card-head">
+            <span class="day-name">{{ day.label }}</span>
+            <span class="day-pill">{{ day.blocks.length }}</span>
+          </div>
+
+          @if (day.blocks.length) {
+            <div class="block-list">
+              @for (block of day.blocks; track block.id) {
+                <div class="block">
+                  <div class="block-main">
+                    <span class="block-time"><mat-icon>schedule</mat-icon>{{ formatTime(block.startTime) }} – {{ formatTime(block.endTime) }}</span>
+                    <span class="block-meta">{{ block.branchName }} · {{ block.slotDurationMinutes }} min</span>
+                  </div>
+                  <button class="block-remove" (click)="remove(block)" matTooltip="Eliminar" aria-label="Eliminar franja">
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="day-rest">
+              <mat-icon>bedtime</mat-icon>
+              <span>Sin atención</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+</div>

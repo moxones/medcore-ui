@@ -1,22 +1,25 @@
 import { Component, OnInit, inject, computed } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { RouterLink } from '@angular/router';
 import { TenantStore } from '@core/tenant/tenant.store';
 import { DashboardStore } from '@core/dashboard/dashboard.store';
 import { AuthStore } from '@core/auth/auth.store';
 import { KpiCardComponent } from '@shared/widgets/kpi-card/kpi-card.component';
-
-interface QuickLink {
-  icon: string;
-  label: string;
-  route: string;
-}
+import { DashboardHeroComponent } from '@shared/components/dashboard/dashboard-hero/dashboard-hero.component';
+import { DashboardPanelComponent } from '@shared/components/dashboard/dashboard-panel/dashboard-panel.component';
+import { QuickActionsComponent, QuickAction } from '@shared/components/dashboard/quick-actions/quick-actions.component';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [MatIconModule, MatProgressBarModule, KpiCardComponent, RouterLink],
+  imports: [
+    MatIconModule,
+    MatProgressBarModule,
+    KpiCardComponent,
+    DashboardHeroComponent,
+    DashboardPanelComponent,
+    QuickActionsComponent,
+  ],
   templateUrl: './admin-dashboard.component.html',
   styleUrl: './admin-dashboard.component.scss',
 })
@@ -84,13 +87,13 @@ export class AdminDashboardComponent implements OnInit {
     return `conic-gradient(var(--color-success) 0% ${cp}%, var(--mat-sys-primary) ${cp}% ${ca}%, var(--color-border) ${ca}% 100%)`;
   });
 
-  readonly quickLinks: QuickLink[] = [
-    { icon: 'calendar_month', label: 'Citas', route: '/admin/appointments' },
-    { icon: 'groups', label: 'Médicos', route: '/admin/doctors' },
-    { icon: 'personal_injury', label: 'Pacientes', route: '/admin/patients' },
-    { icon: 'manage_accounts', label: 'Usuarios', route: '/admin/users' },
-    { icon: 'business', label: 'Sucursales', route: '/admin/branches' },
-    { icon: 'category', label: 'Catálogos', route: '/admin/catalogs' },
+  readonly quickLinks: QuickAction[] = [
+    { icon: 'calendar_month', label: 'Citas', description: 'Gestionar la agenda de la clínica', route: '/admin/appointments', accent: 'blue' },
+    { icon: 'groups', label: 'Médicos', description: 'Administrar el equipo médico', route: '/admin/doctors', accent: 'purple' },
+    { icon: 'personal_injury', label: 'Pacientes', description: 'Buscar y registrar pacientes', route: '/admin/patients', accent: 'green' },
+    { icon: 'manage_accounts', label: 'Usuarios', description: 'Cuentas y roles del personal', route: '/admin/users', accent: 'orange' },
+    { icon: 'business', label: 'Sucursales', description: 'Sedes y configuración', route: '/admin/branches', accent: 'blue' },
+    { icon: 'category', label: 'Catálogos', description: 'Especialidades y tipos', route: '/admin/catalogs', accent: 'red' },
   ];
 
   ngOnInit(): void {

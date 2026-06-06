@@ -120,3 +120,8 @@ export interface UserBranchResponse {
 
 export type UserBranchApiResponse = ApiResponse<UserBranchResponse>;
 export type UserBranchListApiResponse = ApiResponse<UserBranchResponse[]>;
+
+export interface StaffBranchRow {
+  user: UserResponse;
+  branches: UserBranchResponse[];
+}

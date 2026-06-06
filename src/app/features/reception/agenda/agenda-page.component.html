@@ -54,18 +54,6 @@
 
   <div class="agenda-filters-bar">
     <div class="filter-group">
-      @for (branch of store.branches(); track branch.id) {
-        <button
-          class="filter-chip"
-          [class.filter-chip--active]="store.branchId() === branch.id"
-          (click)="selectBranch(branch.id)">
-          <mat-icon>business</mat-icon>
-          {{ branch.name }}
-          @if (store.branchId() === branch.id) {
-            <mat-icon class="chip-close">close</mat-icon>
-          }
-        </button>
-      }
 
       @for (col of store.doctorColumns(); track col.doctorId) {
         <button
@@ -162,7 +150,7 @@
                     <div class="doc-info">
                       <span class="doc-name">{{ col.doctorName }}</span>
                       <span class="doc-meta">
-                        {{ selectedBranchName() }}
+                        {{ branchContext.activeBranchName() }}
                         @if (col.specialties.length > 0) { · {{ col.specialties[0] }} }
                       </span>
                     </div>

@@ -1,0 +1,29 @@
+<header class="hero">
+  <div class="hero-content">
+    <div class="hero-text">
+      @if (greeting() || name()) {
+        <p class="hero-greeting">
+          {{ greeting() }}@if (name()) {, <strong>{{ name() }}</strong>}
+        </p>
+      }
+      @if (title()) {
+        <h1 class="hero-title">{{ title() }}</h1>
+      }
+      @if (subtitle()) {
+        <p class="hero-sub">{{ subtitle() }}</p>
+      }
+    </div>
+
+    <div class="hero-meta">
+      @if (dateLabel()) {
+        <div class="hero-date">
+          <mat-icon class="hero-date-icon">today</mat-icon>
+          <span>{{ dateLabel() }}</span>
+        </div>
+      }
+      <ng-content select="[hero-actions]" />
+    </div>
+  </div>
+
+  <ng-content select="[hero-footer]" />
+</header>

@@ -1,0 +1,224 @@
+$border: var(--color-border);
+$surface: var(--color-surface);
+$bg: var(--color-background);
+$text: var(--color-text-primary);
+$muted: var(--color-text-muted);
+$secondary: var(--color-text-secondary);
+
+:host { display: block; height: 100%; }
+
+.tpl-page { display: flex; flex-direction: column; gap: 14px; }
+
+.page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.breadcrumb { font-size: 11px; color: $muted; letter-spacing: 0.3px; }
+.page-title { font-size: 24px; font-weight: 700; color: $text; letter-spacing: -0.4px; margin: 2px 0 0; line-height: 1.2; }
+.header-sub { font-size: 13px; color: $secondary; margin: 2px 0 0; }
+
+.primary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 10px;
+  background: var(--mat-sys-primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 140ms;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+  &:hover:not(:disabled) { filter: brightness(1.08); }
+  &:disabled { opacity: 0.6; cursor: default; }
+}
+
+.ghost-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 18px;
+  border: 1px solid $border;
+  border-radius: 10px;
+  background: $surface;
+  font-size: 13px;
+  font-weight: 600;
+  color: $secondary;
+  cursor: pointer;
+  transition: border-color 140ms, color 140ms;
+  &:hover { border-color: var(--mat-sys-primary); color: var(--mat-sys-primary); }
+}
+
+.top-progress { border-radius: 4px; }
+
+.tpl-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  @media (min-width: 640px) { grid-template-columns: repeat(2, 1fr); }
+  @media (min-width: 1024px) { grid-template-columns: repeat(3, 1fr); }
+}
+
+.tpl-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 14px;
+  transition: box-shadow 160ms, transform 140ms;
+  &:hover { box-shadow: 0 6px 18px rgba(15,23,42,0.08); transform: translateY(-2px); }
+}
+
+.tpl-head { display: flex; align-items: center; gap: 10px; }
+.tpl-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--mat-sys-primary) 12%, transparent);
+  flex-shrink: 0;
+  mat-icon { font-size: 20px; width: 20px; height: 20px; color: var(--mat-sys-primary); }
+}
+.tpl-id { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.tpl-name { font-size: 14px; font-weight: 600; color: $text; }
+.tpl-spec { font-size: 12px; color: $muted; }
+
+.tpl-preview {
+  font-size: 13px;
+  color: $secondary;
+  margin: 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 58px;
+}
+
+.tpl-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
+.usage {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: $muted;
+  mat-icon { font-size: 15px; width: 15px; height: 15px; }
+}
+.tpl-actions { display: flex; gap: 6px; }
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid $border;
+  border-radius: 9px;
+  background: $surface;
+  color: $secondary;
+  cursor: pointer;
+  transition: border-color 140ms, color 140ms, background 140ms;
+  mat-icon { font-size: 17px; width: 17px; height: 17px; }
+  &:hover { border-color: var(--mat-sys-primary); color: var(--mat-sys-primary); }
+  &--danger:hover { border-color: var(--color-danger); color: var(--color-danger); background: color-mix(in srgb, var(--color-danger) 6%, transparent); }
+}
+
+.board-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 10px;
+  padding: 56px 24px;
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 16px;
+  mat-icon { font-size: 48px; width: 48px; height: 48px; color: color-mix(in srgb, var(--mat-sys-primary) 45%, #cbd5e1); }
+  h3 { font-size: 16px; font-weight: 700; color: $text; margin: 4px 0 0; }
+  p { font-size: 13px; color: $muted; margin: 0; max-width: 380px; }
+}
+
+.editor-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+  display: flex;
+  justify-content: flex-end;
+  animation: fade-in 160ms ease;
+}
+
+.editor-panel {
+  width: 100%;
+  max-width: 520px;
+  height: 100%;
+  background: $surface;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -8px 0 30px rgba(15, 23, 42, 0.18);
+  animation: slide-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid $border;
+  h2 { font-size: 16px; font-weight: 700; color: $text; margin: 0; }
+}
+
+.close-btn {
+  display: inline-flex;
+  border: none;
+  background: transparent;
+  color: $muted;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+  mat-icon { font-size: 20px; width: 20px; height: 20px; }
+  &:hover { color: $text; background: $bg; }
+}
+
+.editor-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field-label { font-size: 12px; font-weight: 600; color: $secondary; }
+.field input,
+.field textarea {
+  width: 100%;
+  border: 1px solid $border;
+  border-radius: 10px;
+  padding: 9px 11px;
+  font-size: 13px;
+  color: $text;
+  background: $surface;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 140ms;
+  &::placeholder { color: $muted; }
+  &:focus { outline: none; border-color: var(--mat-sys-primary); }
+}
+
+.editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slide-in { from { transform: translateX(40px); opacity: 0.5; } to { transform: translateX(0); opacity: 1; } }

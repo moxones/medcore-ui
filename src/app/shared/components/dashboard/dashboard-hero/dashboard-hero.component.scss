@@ -1,0 +1,70 @@
+.hero {
+  background: linear-gradient(
+    135deg,
+    var(--mat-sys-primary) 0%,
+    color-mix(in srgb, var(--mat-sys-primary) 70%, #1e40af) 100%
+  );
+  border-radius: 16px;
+  padding: 28px 32px;
+  margin-bottom: 24px;
+  color: #fff;
+}
+
+.hero-content {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.hero-text {
+  min-width: 0;
+}
+
+.hero-greeting {
+  font-size: 14px;
+  opacity: 0.85;
+  margin: 0 0 6px;
+  font-weight: 400;
+}
+
+.hero-title {
+  font-size: 26px;
+  font-weight: 700;
+  margin: 0 0 4px;
+  letter-spacing: -0.3px;
+}
+
+.hero-sub {
+  font-size: 13px;
+  opacity: 0.78;
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.hero-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255 255 255 / 0.18);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.hero-date-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}

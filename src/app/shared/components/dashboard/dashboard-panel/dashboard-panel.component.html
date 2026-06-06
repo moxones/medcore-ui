@@ -1,0 +1,21 @@
+<section class="panel">
+  <header class="panel-header">
+    <div class="panel-header-left">
+      @if (icon()) {
+        <div class="panel-icon panel-icon--{{ iconVariant() }}">
+          <mat-icon>{{ icon() }}</mat-icon>
+        </div>
+      }
+      <span class="panel-title">{{ title() }}</span>
+    </div>
+    <div class="panel-header-right">
+      @if (badge() !== null) {
+        <span class="panel-badge">{{ badge() }}</span>
+      }
+      <ng-content select="[panel-action]" />
+    </div>
+  </header>
+  <div class="panel-body">
+    <ng-content />
+  </div>
+</section>

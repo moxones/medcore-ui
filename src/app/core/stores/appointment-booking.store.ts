@@ -6,6 +6,7 @@ import { DoctorService } from '@core/services/doctor.service';
 import { PatientService } from '@core/services/patient.service';
 import { CatalogService } from '@core/services/catalog.service';
 import { BranchService } from '@core/services/branch.service';
+import { BranchContextStore } from '@core/stores/branch-context.store';
 import {
   AppointmentResponse,
   BookingSource,
@@ -199,6 +200,7 @@ export const AppointmentBookingStore = signalStore(
       patientService = inject(PatientService),
       catalogService = inject(CatalogService),
       branchService = inject(BranchService),
+      branchCtx = inject(BranchContextStore),
     ) => {
       let patientTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -291,11 +293,15 @@ export const AppointmentBookingStore = signalStore(
             firstValueFrom(catalogService.getClinicAppointmentTypes()),
           ]);
           const branches = branchesRes.data.content;
+          const activeBranchId = branchCtx.activeBranchId();
+          const preselectedBranchId = branches.some((b) => b.id === activeBranchId)
+            ? activeBranchId
+            : (branches[0]?.id ?? null);
           patchState(store, {
             branches,
             branchesLoading: false,
             appointmentTypes: typesRes.data.filter((t) => t.activated),
-            selectedBranchId: branches[0]?.id ?? null,
+            selectedBranchId: preselectedBranchId,
           });
           await loadBranchData();
           patchState(store, { doctorsLoading: false });

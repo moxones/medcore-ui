@@ -1,0 +1,179 @@
+$border: var(--color-border);
+$surface: var(--color-surface);
+$bg: var(--color-background);
+$text: var(--color-text-primary);
+$muted: var(--color-text-muted);
+$secondary: var(--color-text-secondary);
+
+@mixin host {
+  display: block;
+  height: 100%;
+  --accent: #be185d;
+  --accent-soft: #{color-mix(in srgb, #be185d 12%, transparent)};
+}
+
+@mixin page-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 64px - 28px - 48px);
+  background: linear-gradient(160deg, #faf5f8 0%, #f1f0f7 100%);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+@mixin search-cluster {
+  .search-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    padding: 0 10px;
+    background: $bg;
+    border: 1px solid $border;
+    border-radius: 10px;
+    transition: border-color 160ms;
+
+    &:focus-within { border-color: var(--accent); }
+  }
+
+  .search-icon { font-size: 16px; width: 16px; height: 16px; color: $muted; }
+
+  .search-input {
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    color: $text;
+    width: 200px;
+    outline: none;
+
+    &::placeholder { color: $muted; }
+  }
+
+  .search-clear {
+    display: flex;
+    align-items: center;
+    border: none;
+    background: transparent;
+    color: $muted;
+    cursor: pointer;
+    padding: 0;
+
+    mat-icon { font-size: 14px; width: 14px; height: 14px; }
+  }
+}
+
+@mixin board-empty {
+  .board-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 56px 20px;
+    text-align: center;
+
+    mat-icon { font-size: 52px; width: 52px; height: 52px; color: $muted; opacity: 0.4; }
+    h3 { font-size: 17px; font-weight: 700; color: $text; margin: 4px 0 0; }
+    p { font-size: 13px; color: $secondary; margin: 0; max-width: 380px; line-height: 1.5; }
+  }
+}
+
+@mixin detail-overlay {
+  .detail-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.32);
+    backdrop-filter: blur(1px);
+    z-index: 200;
+    animation: detail-fade 160ms ease;
+  }
+
+  .detail-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 420px;
+    max-width: 94vw;
+    display: flex;
+    flex-direction: column;
+    background: $surface;
+    border-left: 1px solid $border;
+    box-shadow: -12px 0 32px rgba(15, 23, 42, 0.14);
+    z-index: 201;
+    animation: detail-slide 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @keyframes detail-fade { from { opacity: 0; } to { opacity: 1; } }
+
+  @keyframes detail-slide {
+    from { transform: translateX(16px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  .detail-head {
+    padding: 14px 18px 16px;
+    border-bottom: 1px solid $border;
+    background: linear-gradient(135deg, var(--accent-soft), color-mix(in srgb, var(--accent) 4%, #fff));
+  }
+
+  .detail-head-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .detail-state-chip {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.7);
+    color: $text;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+  }
+
+  .detail-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.6);
+    color: $secondary;
+    cursor: pointer;
+    transition: background 140ms;
+
+    mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    &:hover { background: #fff; color: $text; }
+  }
+
+  .detail-patient { display: flex; align-items: center; gap: 12px; }
+
+  .detail-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--accent);
+    flex-shrink: 0;
+    letter-spacing: 0.5px;
+  }
+
+  .detail-patient-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+
+  .detail-patient-name { font-size: 16px; font-weight: 700; color: $text; letter-spacing: -0.2px; }
+
+  .detail-body { flex: 1; overflow-y: auto; }
+}

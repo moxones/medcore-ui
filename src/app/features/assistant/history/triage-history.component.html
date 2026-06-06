@@ -1,0 +1,158 @@
+<div class="history-page">
+
+  <div class="history-toolbar">
+    <div class="toolbar-left">
+      <span class="breadcrumb">asistente / triajes de hoy</span>
+      <h1 class="page-title">Triajes de Hoy</h1>
+    </div>
+    <div class="toolbar-right">
+      <div class="search-box">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input
+          class="search-input"
+          type="text"
+          placeholder="Buscar paciente, médico..."
+          [value]="searchQuery()"
+          (input)="onSearch($event)"
+          aria-label="Buscar en triajes de hoy"
+        />
+        @if (searchQuery()) {
+          <button class="search-clear" (click)="clearSearch()" aria-label="Limpiar búsqueda">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="history-filters-bar">
+    <div class="filter-group">
+      @if (doctors().length > 0) {
+        <div class="doctor-select">
+          <mat-icon>stethoscope</mat-icon>
+          <select
+            aria-label="Filtrar por médico"
+            (change)="selectDoctor($any($event.target).value ? +$any($event.target).value : null)">
+            <option [value]="''" [selected]="doctorFilter() === null">Todos los médicos</option>
+            @for (doc of doctors(); track doc.id) {
+              <option [value]="doc.id" [selected]="doctorFilter() === doc.id">{{ doc.name }}</option>
+            }
+          </select>
+        </div>
+      }
+    </div>
+
+    <div class="urgency-filters">
+      @for (uf of urgencyFilters; track uf.label) {
+        <button
+          class="urg-chip"
+          [class]="uf.level ? 'urg-chip--' + urgencyKeyOf(uf.level) : ''"
+          [class.urg-chip--active]="urgencyFilter() === uf.level"
+          (click)="selectUrgency(uf.level)">
+          {{ uf.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (store.loadingHistory()) {
+    <mat-progress-bar mode="indeterminate" class="top-progress" />
+  }
+
+  <div class="results-bar">
+    <span class="results-count">
+      {{ visible().length }} triaje{{ visible().length !== 1 ? 's' : '' }}
+      @if (searchQuery() || doctorFilter() !== null || urgencyFilter() !== null) { filtrados }
+      @else { hoy en {{ branchContext.activeBranchName() }} }
+    </span>
+    <div class="results-tags">
+      @if (counts().critical > 0) { <span class="rt rt--critical">{{ counts().critical }} críticas</span> }
+      @if (counts().urgent > 0) { <span class="rt rt--urgent">{{ counts().urgent }} urgentes</span> }
+      <span class="rt rt--normal">{{ counts().normal }} normales</span>
+    </div>
+  </div>
+
+  @if (!store.loadingHistory() && store.todayTriages().length === 0) {
+    <div class="board-empty">
+      <mat-icon>monitor_heart</mat-icon>
+      <h3>Sin triajes registrados hoy</h3>
+      <p>Cuando completes una toma de signos en la cola, aparecerá acá con su resumen.</p>
+    </div>
+  } @else if (visible().length === 0) {
+    <div class="board-empty board-empty--filter">
+      <mat-icon>filter_alt_off</mat-icon>
+      <h3>Nada coincide con el filtro</h3>
+      <p>Ajustá la búsqueda, el médico o el nivel de urgencia.</p>
+    </div>
+  } @else {
+    <div class="triage-list">
+      @for (t of visible(); track t.id) {
+        <article class="h-card" [class.h-card--open]="expandedId() === t.id">
+          <button class="h-card-main" (click)="toggleExpand(t.id)" [attr.aria-expanded]="expandedId() === t.id">
+            <span class="h-urgency" [class]="'h-urgency--' + urgencyKeyOf(t.urgencyLevel)"></span>
+            <div class="h-avatar">{{ patientInitials(t.patientName) }}</div>
+
+            <div class="h-identity">
+              <span class="h-name">{{ t.patientName }}</span>
+              <span class="h-sub">
+                <mat-icon>medical_services</mat-icon>{{ shortDoctor(t.doctorName) }}
+                @if (t.appointmentTypeName) { <span class="h-sub-sep">·</span>{{ t.appointmentTypeName }} }
+              </span>
+            </div>
+
+            <div class="h-vitals-preview">
+              <span class="hv"><mat-icon>thermostat</mat-icon>{{ t.temperature }}°</span>
+              <span class="hv"><mat-icon>favorite</mat-icon>{{ t.heartRate }}</span>
+              <span class="hv"><mat-icon>monitor_heart</mat-icon>{{ t.bloodPressure }}</span>
+              <span class="hv"><mat-icon>spa</mat-icon>{{ t.oxygenSaturation }}%</span>
+            </div>
+
+            <span class="h-urgency-chip" [class]="'h-urgency-chip--' + urgencyKeyOf(t.urgencyLevel)">
+              {{ urgencyText(t.urgencyLevel) }}
+            </span>
+
+            <span class="h-time">
+              <mat-icon>schedule</mat-icon>
+              {{ triageTime(t) }}
+            </span>
+
+            <mat-icon class="h-chevron">{{ expandedId() === t.id ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </button>
+
+          @if (expandedId() === t.id) {
+            <div class="h-detail">
+              <div class="h-detail-grid">
+                <div class="hd-item"><span class="hd-label">Peso</span><span class="hd-value">{{ t.weight }} kg</span></div>
+                <div class="hd-item"><span class="hd-label">Talla</span><span class="hd-value">{{ t.height }} cm</span></div>
+                @if (imcValue(t); as imc) {
+                  <div class="hd-item"><span class="hd-label">IMC</span><span class="hd-value">{{ imc }}</span></div>
+                }
+                <div class="hd-item"><span class="hd-label">Temperatura</span><span class="hd-value">{{ t.temperature }} °C</span></div>
+                <div class="hd-item"><span class="hd-label">Frec. cardíaca</span><span class="hd-value">{{ t.heartRate }} lpm</span></div>
+                <div class="hd-item"><span class="hd-label">Presión arterial</span><span class="hd-value">{{ t.bloodPressure }} mmHg</span></div>
+                <div class="hd-item"><span class="hd-label">Saturación O₂</span><span class="hd-value">{{ t.oxygenSaturation }} %</span></div>
+                <div class="hd-item"><span class="hd-label">Frec. respiratoria</span><span class="hd-value">{{ t.respiratoryRate }} rpm</span></div>
+                <div class="hd-item"><span class="hd-label">Escala de dolor</span><span class="hd-value">{{ t.painScale }} / 10</span></div>
+              </div>
+
+              @if (t.notes) {
+                <div class="h-notes">
+                  <mat-icon>sticky_note_2</mat-icon>
+                  <p>{{ t.notes }}</p>
+                </div>
+              }
+
+              @if (t.assistantName) {
+                <p class="h-author">
+                  <mat-icon>badge</mat-icon>
+                  Registrado por {{ t.assistantName }}
+                </p>
+              }
+            </div>
+          }
+        </article>
+      }
+    </div>
+  }
+
+</div>

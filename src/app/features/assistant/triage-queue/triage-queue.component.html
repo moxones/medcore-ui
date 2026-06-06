@@ -1,0 +1,447 @@
+<div class="triage-page">
+
+  <div class="triage-toolbar">
+    <div class="toolbar-left">
+      <span class="breadcrumb">asistente / cola de triaje</span>
+      <div class="title-row">
+        <h1 class="page-title">Cola de Triaje</h1>
+        <span class="live-pill" [class.live-pill--paused]="store.refreshing()">
+          <span class="live-dot"></span>
+          EN VIVO
+        </span>
+      </div>
+    </div>
+
+    <div class="toolbar-center">
+      <div class="clock-block">
+        <span class="clock-time">{{ clock() }}</span>
+        <span class="clock-date">{{ todayLabel() }}</span>
+      </div>
+      <span class="refresh-hint">
+        <mat-icon>sync</mat-icon>
+        {{ lastRefreshLabel() }}
+      </span>
+    </div>
+
+    <div class="toolbar-right">
+      <div class="search-box">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input
+          class="search-input"
+          type="text"
+          placeholder="Buscar paciente, médico..."
+          [value]="searchQuery()"
+          (input)="onSearch($event)"
+          aria-label="Buscar en la cola de triaje"
+        />
+        @if (searchQuery()) {
+          <button class="search-clear" (click)="clearSearch()" aria-label="Limpiar búsqueda">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </div>
+      <button
+        class="primary-btn"
+        (click)="callNext()"
+        [disabled]="!store.nextPending() || store.actionPending()"
+        matTooltip="Abrir el siguiente paciente pendiente de triaje">
+        <mat-icon>play_circle</mat-icon>
+        Atender siguiente
+      </button>
+    </div>
+  </div>
+
+  <div class="triage-filters-bar">
+    <div class="filter-group">
+      @if (store.doctorsInQueue().length > 0) {
+        <div class="doctor-select">
+          <mat-icon>stethoscope</mat-icon>
+          <select
+            aria-label="Filtrar por médico"
+            (change)="selectDoctor($any($event.target).value ? +$any($event.target).value : null)">
+            <option [value]="''" [selected]="store.doctorFilterId() === null">Todos los médicos</option>
+            @for (doc of store.doctorsInQueue(); track doc.id) {
+              <option [value]="doc.id" [selected]="store.doctorFilterId() === doc.id">{{ doc.fullName }}</option>
+            }
+          </select>
+        </div>
+      }
+    </div>
+
+    <div class="stats-bar">
+      <span class="stat-item">
+        <span class="stat-dot stat-dot--amber"></span>
+        <strong>{{ store.stats().pending }}</strong>
+        <span class="stat-label">sin triaje</span>
+      </span>
+      <span class="stat-sep"></span>
+      <span class="stat-item">
+        <span class="stat-dot stat-dot--green"></span>
+        <strong>{{ store.stats().ready }}</strong>
+        <span class="stat-label">listos</span>
+      </span>
+      <span class="stat-sep"></span>
+      <span class="stat-item">
+        <span class="stat-dot stat-dot--gray"></span>
+        <strong>{{ store.stats().scheduled }}</strong>
+        <span class="stat-label">por llegar</span>
+      </span>
+      <span class="stat-sep"></span>
+      <span class="stat-item" matTooltip="Tiempo de espera promedio / máximo en triaje">
+        <mat-icon class="stat-clock">schedule</mat-icon>
+        <strong [class.stat-warn]="store.stats().longestWait > 20">{{ store.stats().avgWait }}</strong>
+        <span class="stat-label">min prom · máx {{ store.stats().longestWait }}</span>
+      </span>
+    </div>
+  </div>
+
+  @if (store.loading()) {
+    <mat-progress-bar mode="indeterminate" class="top-progress" />
+  }
+
+  @if (store.error() && !store.selected()) {
+    <div class="triage-alert">
+      <app-alert-banner [message]="store.error()" />
+    </div>
+  }
+
+  <div class="tabs-row" role="tablist">
+    @for (tab of tabs; track tab.id) {
+      <button
+        class="tab-btn"
+        role="tab"
+        [class.tab-btn--active]="store.tab() === tab.id"
+        [attr.aria-selected]="store.tab() === tab.id"
+        (click)="selectTab(tab.id)">
+        <mat-icon>{{ tab.icon }}</mat-icon>
+        {{ tab.label }}
+        <span class="tab-count">{{ store.tabCounts()[tab.id] }}</span>
+      </button>
+    }
+  </div>
+
+  @if (!store.loading() && store.isEmpty()) {
+    <div class="board-empty">
+      <mat-icon>fact_check</mat-icon>
+      <h3>Sin pacientes en triaje</h3>
+      <p>No hay citas en {{ branchContext.activeBranchName() }} hoy. Cuando recepción registre una llegada, aparecerá acá para tomar signos.</p>
+    </div>
+  } @else if (!store.loading() && store.visible().length === 0) {
+    <div class="board-empty board-empty--filter">
+      <mat-icon>filter_alt_off</mat-icon>
+      <h3>Nada en esta vista</h3>
+      <p>No hay pacientes que coincidan con el filtro actual.</p>
+    </div>
+  } @else {
+    <div class="patient-list" role="list">
+      @for (p of store.visible(); track p.id) {
+        <article
+          class="t-card"
+          [class]="'t-card--' + p.stage"
+          [class.t-card--overdue]="p.overdue"
+          [class.t-card--selected]="store.selectedId() === p.id"
+          role="listitem"
+          tabindex="0"
+          (click)="openDetail(p)"
+          (keyup.enter)="openDetail(p)"
+          [attr.aria-label]="p.patientName + ', ' + stageLabel(p.stage)">
+
+          <div class="t-card-identity">
+            <div class="t-avatar" [class]="'t-avatar--' + p.stage">{{ p.initials }}</div>
+            <div class="t-id-text">
+              <span class="t-name">{{ p.patientName }}</span>
+              <span class="t-sub">
+                <mat-icon>tag</mat-icon>#{{ p.id }}
+                @if (p.patientPhone) {
+                  <span class="t-sub-sep">·</span>
+                  <mat-icon>call</mat-icon>{{ p.patientPhone }}
+                }
+              </span>
+            </div>
+          </div>
+
+          <div class="t-card-meta">
+            <span class="t-meta-item">
+              <mat-icon>schedule</mat-icon>
+              <span>{{ fmtIso(p.scheduledAt) }} · {{ p.durationMinutes }} min</span>
+            </span>
+            <span class="t-meta-item">
+              <mat-icon>medical_services</mat-icon>
+              <span>{{ p.doctorShort }}</span>
+            </span>
+            <span class="t-meta-item t-meta-item--reason">
+              <mat-icon>notes</mat-icon>
+              <span>{{ p.reason || p.typeName }}</span>
+            </span>
+          </div>
+
+          <div class="t-card-wait">
+            @if (p.stage === 'pending' || p.stage === 'triaged') {
+              <span class="t-wait" [class.t-wait--urgent]="p.overdue">
+                <mat-icon>hourglass_top</mat-icon>
+                <strong>{{ p.waitMinutes }}</strong> min
+              </span>
+            } @else if (p.stage === 'scheduled') {
+              <span class="t-wait t-wait--muted">
+                <mat-icon>event_upcoming</mat-icon>
+                {{ fmtIso(p.scheduledAt) }}
+              </span>
+            }
+          </div>
+
+          <div class="t-card-status">
+            <span class="t-stage-chip" [class]="'t-stage-chip--' + p.stage">
+              <span class="t-stage-dot"></span>
+              {{ stageLabel(p.stage) }}
+            </span>
+          </div>
+
+          <div class="t-card-action">
+            @switch (p.stage) {
+              @case ('scheduled') {
+                <button class="t-action t-action--arrive" (click)="registerArrival(p, $event)" [disabled]="store.actionPending()">
+                  <mat-icon>login</mat-icon>
+                  Registrar llegada
+                </button>
+              }
+              @case ('pending') {
+                <button class="t-action t-action--triage" (click)="openDetail(p)">
+                  <mat-icon>vital_signs</mat-icon>
+                  Tomar signos
+                </button>
+              }
+              @case ('triaged') {
+                <button class="t-action t-action--pass" (click)="passToDoctor(p, $event)" [disabled]="store.actionPending()">
+                  <mat-icon>arrow_forward</mat-icon>
+                  Pasar al médico
+                </button>
+              }
+              @default {
+                <span class="t-action-done">
+                  <mat-icon>verified</mat-icon>
+                  En atención
+                </span>
+              }
+            }
+          </div>
+        </article>
+      }
+    </div>
+  }
+
+  @if (store.selected(); as p) {
+    <div class="detail-backdrop" (click)="closeDetail()"></div>
+    <aside class="detail-drawer" role="dialog" aria-label="Triaje del paciente">
+
+      <header class="detail-head" [class]="'detail-head--' + p.stage">
+        <div class="detail-head-top">
+          <span class="detail-state-chip">{{ stageLabel(p.stage) }}</span>
+          <button class="detail-close" (click)="closeDetail()" aria-label="Cerrar">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        <div class="detail-patient">
+          <div class="detail-avatar">{{ p.initials }}</div>
+          <div class="detail-patient-info">
+            <span class="detail-patient-name">{{ p.patientName }}</span>
+            <span class="detail-patient-sub">
+              <span>#{{ p.id }}</span>
+              @if (p.patientPhone) {
+                <a class="detail-phone" [href]="'tel:' + p.patientPhone">
+                  <mat-icon>call</mat-icon>{{ p.patientPhone }}
+                </a>
+              }
+            </span>
+          </div>
+        </div>
+
+        <div class="detail-summary">
+          <div class="detail-summary-item">
+            <span class="detail-summary-label">Hora</span>
+            <span class="detail-summary-value">{{ fmtIso(p.scheduledAt) }}–{{ endTimeLabel(p) }}</span>
+          </div>
+          <div class="detail-summary-item">
+            <span class="detail-summary-label">Médico</span>
+            <span class="detail-summary-value">{{ p.doctorShort }}</span>
+          </div>
+          <div class="detail-summary-item">
+            <span class="detail-summary-label">Tipo</span>
+            <span class="detail-summary-value">{{ p.typeName }}</span>
+          </div>
+          <div class="detail-summary-item">
+            <span class="detail-summary-label">Origen</span>
+            <span class="detail-summary-value">{{ sourceLabel(p) }}</span>
+          </div>
+        </div>
+
+        @if (p.reason) {
+          <div class="detail-reason">
+            <mat-icon>sticky_note_2</mat-icon>
+            <div>
+              <span class="detail-reason-label">Motivo de consulta</span>
+              <p class="detail-reason-text">{{ p.reason }}</p>
+            </div>
+          </div>
+        }
+      </header>
+
+      <div class="detail-body">
+        @if (store.error()) {
+          <app-alert-banner [message]="store.error()" />
+        }
+
+        @if (p.stage === 'scheduled') {
+          <div class="detail-blocker">
+            <mat-icon>door_front</mat-icon>
+            <h3>El paciente aún no llegó</h3>
+            <p>Registrá la llegada para habilitar la toma de signos vitales.</p>
+            <button class="detail-btn detail-btn--primary" (click)="registerArrival(p)" [disabled]="store.actionPending()">
+              <mat-icon>login</mat-icon>
+              Registrar llegada
+            </button>
+          </div>
+        } @else {
+          @if (store.loadingTriage()) {
+            <mat-progress-bar mode="indeterminate" />
+          }
+
+          <form class="vitals-form" [formGroup]="vitalsForm" (ngSubmit)="submitTriage(p, true)">
+
+            <div class="form-section-head">
+              <mat-icon>straighten</mat-icon>
+              <span>Antropometría</span>
+            </div>
+
+            <div class="field-grid">
+              <div class="field">
+                <label for="weight">Peso <span class="field-unit">kg</span></label>
+                <input id="weight" type="number" inputmode="decimal" step="0.1" formControlName="weight" [class.field--error]="controlInvalid('weight')" />
+              </div>
+              <div class="field">
+                <label for="height">Talla <span class="field-unit">cm</span></label>
+                <input id="height" type="number" inputmode="decimal" step="0.1" formControlName="height" [class.field--error]="controlInvalid('height')" />
+              </div>
+            </div>
+
+            @if (imc(); as reading) {
+              <div class="imc-readout" [class]="'imc-readout--' + reading.level">
+                <span class="imc-label">IMC</span>
+                <span class="imc-value">{{ reading.value }}</span>
+                <span class="imc-category">{{ reading.category }}</span>
+                <span class="imc-formula">auto · peso/talla²</span>
+              </div>
+            }
+
+            <div class="form-section-head">
+              <mat-icon>monitor_heart</mat-icon>
+              <span>Signos vitales</span>
+            </div>
+
+            <div class="field-grid">
+              <div class="field">
+                <label for="temperature">Temperatura <span class="field-unit">°C</span></label>
+                <input id="temperature" type="number" inputmode="decimal" step="0.1" formControlName="temperature" [class.field--error]="controlInvalid('temperature')" />
+              </div>
+              <div class="field">
+                <label for="heartRate">Frec. cardíaca <span class="field-unit">lpm</span></label>
+                <input id="heartRate" type="number" inputmode="numeric" formControlName="heartRate" [class.field--error]="controlInvalid('heartRate')" />
+              </div>
+            </div>
+
+            <div class="field-grid">
+              <div class="field">
+                <label>Presión arterial <span class="field-unit">mmHg</span></label>
+                <div class="bp-row" [class.bp-row--error]="controlInvalid('systolic') || controlInvalid('diastolic')">
+                  <input type="number" inputmode="numeric" formControlName="systolic" placeholder="120" aria-label="Sistólica" />
+                  <span class="bp-sep">/</span>
+                  <input type="number" inputmode="numeric" formControlName="diastolic" placeholder="80" aria-label="Diastólica" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="oxygenSaturation">Saturación O₂ <span class="field-unit">%</span></label>
+                <input id="oxygenSaturation" type="number" inputmode="numeric" formControlName="oxygenSaturation" placeholder="98" [class.field--error]="controlInvalid('oxygenSaturation')" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="respiratoryRate">Frec. respiratoria <span class="field-unit">rpm</span></label>
+              <input id="respiratoryRate" type="number" inputmode="numeric" formControlName="respiratoryRate" placeholder="16" [class.field--error]="controlInvalid('respiratoryRate')" />
+            </div>
+
+            <div class="field">
+              <label>Escala de dolor <span class="pain-value" [class]="'pain-value--' + (vitalsForm.controls.painScale.value ?? 0)">{{ vitalsForm.controls.painScale.value ?? 0 }} / 10</span></label>
+              <input class="pain-range" type="range" min="0" max="10" step="1" formControlName="painScale" aria-label="Escala de dolor de 0 a 10" />
+              <div class="pain-scale-legend">
+                <span>Sin dolor</span>
+                <span>Máximo</span>
+              </div>
+            </div>
+
+            <div class="form-section-head">
+              <mat-icon>flag</mat-icon>
+              <span>Nivel de urgencia</span>
+            </div>
+
+            <div class="urgency-picker" role="radiogroup" aria-label="Nivel de urgencia">
+              @for (opt of urgencyOptions; track opt.level) {
+                <button
+                  type="button"
+                  class="urgency-opt"
+                  [class]="'urgency-opt--' + opt.level.toLowerCase()"
+                  [class.urgency-opt--active]="effectiveUrgency() === opt.level"
+                  [attr.aria-pressed]="effectiveUrgency() === opt.level"
+                  (click)="setUrgency(opt.level)">
+                  <mat-icon>{{ opt.icon }}</mat-icon>
+                  {{ opt.label }}
+                </button>
+              }
+            </div>
+            @if (urgencyOverride() === null) {
+              <p class="urgency-hint">
+                <mat-icon>auto_awesome</mat-icon>
+                Sugerido automáticamente: <strong>{{ urgencyText(suggestedUrgency()) }}</strong>
+              </p>
+            } @else {
+              <p class="urgency-hint urgency-hint--manual">
+                <mat-icon>edit</mat-icon>
+                Ajustado manualmente · sugerido {{ urgencyText(suggestedUrgency()) }}
+              </p>
+            }
+
+            <div class="form-section-head">
+              <mat-icon>sticky_note_2</mat-icon>
+              <span>Notas de triaje</span>
+            </div>
+
+            <div class="field">
+              <textarea
+                rows="3"
+                formControlName="notes"
+                maxlength="255"
+                placeholder="Observaciones relevantes para el médico (opcional)"></textarea>
+              <span class="field-counter">{{ (vitalsForm.controls.notes.value || '').length }} / 255</span>
+            </div>
+          </form>
+
+          <div class="detail-actions">
+            <button
+              class="detail-btn detail-btn--ghost"
+              (click)="submitTriage(p, false)"
+              [disabled]="vitalsForm.invalid || store.savingTriage()">
+              <mat-icon>save</mat-icon>
+              Guardar
+            </button>
+            <button
+              class="detail-btn detail-btn--primary"
+              (click)="submitTriage(p, true)"
+              [disabled]="vitalsForm.invalid || store.savingTriage() || store.actionPending()">
+              <mat-icon>arrow_forward</mat-icon>
+              Guardar y pasar al médico
+            </button>
+          </div>
+        }
+      </div>
+    </aside>
+  }
+
+</div>

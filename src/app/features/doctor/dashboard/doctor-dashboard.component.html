@@ -1,12 +1,195 @@
-<div class="dashboard-header">
-  <div>
-    <h1 class="greeting">Bienvenido, Dr. {{ authStore.user()?.firstName }}</h1>
-    <p class="date-label">{{ todayLabel }}</p>
-  </div>
-</div>
+<div class="mx-auto max-w-[1200px]">
 
-<div class="coming-soon">
-  <mat-icon class="coming-soon-icon">stethoscope</mat-icon>
-  <h2>Portal del Médico</h2>
-  <p>Aquí podrás gestionar tu agenda, ver tus pacientes y registrar historiales clínicos.</p>
+  <app-dashboard-hero
+    [greeting]="greeting"
+    [name]="doctorName"
+    [title]="tenantStore.tenant().name"
+    [subtitle]="agendaSubtitle()"
+    [dateLabel]="todayLabel">
+    <button
+      hero-actions
+      mat-icon-button
+      class="hero-refresh"
+      matTooltip="Actualizar"
+      (click)="onRefresh()">
+      <mat-icon>refresh</mat-icon>
+    </button>
+
+    @if (!store.loading() && (store.summary()?.totalToday ?? 0) > 0) {
+      <div hero-footer class="progress-wrap">
+        <div class="progress-track">
+          <div class="progress-fill" [style.width.%]="store.progressPercent()"></div>
+        </div>
+        <span class="progress-label">
+          {{ store.summary()?.completedToday }} de {{ store.summary()?.totalToday }} pacientes atendidos
+          ({{ store.progressPercent() }}%)
+        </span>
+      </div>
+    }
+  </app-dashboard-hero>
+
+  @if (store.loading()) {
+    <mat-progress-bar mode="indeterminate" class="top-progress" />
+  }
+
+  <div class="grid gap-4 mb-6 [grid-template-columns:repeat(auto-fit,minmax(190px,1fr))]">
+    <app-kpi-card
+      icon="calendar_today"
+      label="Citas hoy"
+      [value]="(store.summary()?.totalToday ?? 0).toString()"
+      [loading]="store.loading()"
+      variant="blue" />
+    <app-kpi-card
+      icon="hourglass_top"
+      label="En espera"
+      [value]="(store.summary()?.waiting ?? 0).toString()"
+      [loading]="store.loading()"
+      variant="orange" />
+    <app-kpi-card
+      icon="stethoscope"
+      label="En consulta"
+      [value]="(store.summary()?.inProgress ?? 0).toString()"
+      [loading]="store.loading()"
+      variant="purple" />
+    <app-kpi-card
+      icon="check_circle"
+      label="Atendidos hoy"
+      [value]="(store.summary()?.completedToday ?? 0).toString()"
+      [loading]="store.loading()"
+      variant="green" />
+    <app-kpi-card
+      icon="edit_note"
+      label="Notas por firmar"
+      [value]="(store.summary()?.pendingNotes ?? 0).toString()"
+      [loading]="store.loading()"
+      variant="red" />
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-7">
+
+    <app-dashboard-panel
+      icon="event_note"
+      iconVariant="blue"
+      title="Mi agenda de hoy"
+      [badge]="store.agenda().length || null">
+      <a panel-action class="panel-link" routerLink="/doctor/today">
+        Ver todo <mat-icon>arrow_forward</mat-icon>
+      </a>
+
+      @if (store.loading()) {
+        <div class="panel-skeleton">
+          @for (i of [1, 2, 3, 4]; track i) {
+            <div class="skeleton-row">
+              <div class="sk sk-time"></div>
+              <div class="sk sk-avatar"></div>
+              <div class="sk-info">
+                <div class="sk sk-name"></div>
+                <div class="sk sk-detail"></div>
+              </div>
+              <div class="sk sk-badge"></div>
+            </div>
+          }
+        </div>
+      } @else if (store.agenda().length === 0) {
+        <div class="panel-empty">
+          <mat-icon>event_available</mat-icon>
+          <span>No tienes pacientes agendados para hoy</span>
+        </div>
+      } @else {
+        @if (store.nextPatient(); as next) {
+          <div class="next-card">
+            <span class="next-tag">Próximo paciente</span>
+            <div class="next-body">
+              <div class="next-avatar">{{ next.patientInitials }}</div>
+              <div class="next-info">
+                <span class="next-name">{{ next.patientName }}</span>
+                <span class="next-meta">
+                  <mat-icon class="meta-icon">schedule</mat-icon>{{ formatTime(next.scheduledAt) }}
+                  @if (next.reason) {
+                    &nbsp;·&nbsp;{{ next.reason }}
+                  }
+                </span>
+              </div>
+              <a class="next-action" routerLink="/doctor/consultation">
+                <mat-icon>play_circle</mat-icon>
+                Atender
+              </a>
+            </div>
+          </div>
+        }
+
+        <div class="agenda-list">
+          @for (item of store.agenda(); track item.appointmentId) {
+            <div class="agenda-row">
+              <span class="agenda-time">{{ formatTime(item.scheduledAt) }}</span>
+              <div class="agenda-avatar">{{ item.patientInitials }}</div>
+              <div class="agenda-info">
+                <span class="agenda-name">
+                  {{ item.patientName }}
+                  @if (item.isNewPatient) {
+                    <span class="new-chip">Nuevo</span>
+                  }
+                </span>
+                <span class="agenda-detail">
+                  {{ item.appointmentType || 'Consulta' }}
+                  @if (item.reason) {
+                    &nbsp;·&nbsp;{{ item.reason }}
+                  }
+                </span>
+              </div>
+              <span class="flow-badge flow-badge--{{ flowClass(item.flowStatus) }}">
+                {{ flowLabel(item.flowStatus) }}
+              </span>
+            </div>
+          }
+        </div>
+      }
+    </app-dashboard-panel>
+
+    <app-dashboard-panel
+      icon="history"
+      iconVariant="purple"
+      title="Pacientes recientes">
+      <a panel-action class="panel-link" routerLink="/doctor/patients">
+        Ver todos <mat-icon>arrow_forward</mat-icon>
+      </a>
+
+      @if (store.loading()) {
+        <div class="panel-skeleton">
+          @for (i of [1, 2, 3]; track i) {
+            <div class="skeleton-row">
+              <div class="sk sk-avatar"></div>
+              <div class="sk-info">
+                <div class="sk sk-name"></div>
+                <div class="sk sk-detail"></div>
+              </div>
+              <div class="sk sk-date"></div>
+            </div>
+          }
+        </div>
+      } @else if (store.recentPatients().length === 0) {
+        <div class="panel-empty">
+          <mat-icon>groups</mat-icon>
+          <span>Aún no has atendido pacientes</span>
+        </div>
+      } @else {
+        <div class="recent-list">
+          @for (patient of store.recentPatients(); track patient.patientId) {
+            <div class="recent-row">
+              <div class="recent-avatar">{{ patient.patientInitials }}</div>
+              <div class="recent-info">
+                <span class="recent-name">{{ patient.patientName }}</span>
+                <span class="recent-detail">{{ patient.lastReason || 'Consulta general' }}</span>
+              </div>
+              <span class="recent-date">{{ formatRelativeDate(patient.lastVisitAt) }}</span>
+            </div>
+          }
+        </div>
+      }
+    </app-dashboard-panel>
+
+  </div>
+
+  <app-quick-actions [links]="quickLinks" />
+
 </div>

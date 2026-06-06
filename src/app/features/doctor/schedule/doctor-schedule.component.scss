@@ -1,0 +1,250 @@
+$border: var(--color-border);
+$surface: var(--color-surface);
+$bg: var(--color-background);
+$text: var(--color-text-primary);
+$muted: var(--color-text-muted);
+$secondary: var(--color-text-secondary);
+
+:host { display: block; height: 100%; }
+
+.schedule-page { display: flex; flex-direction: column; gap: 14px; }
+
+.page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.breadcrumb { font-size: 11px; color: $muted; letter-spacing: 0.3px; }
+.page-title { font-size: 24px; font-weight: 700; color: $text; letter-spacing: -0.4px; margin: 2px 0 0; line-height: 1.2; }
+.header-sub { font-size: 13px; color: $secondary; margin: 2px 0 0; text-transform: capitalize; }
+
+.header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.nav-group { display: flex; align-items: center; gap: 6px; }
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid $border;
+  border-radius: 10px;
+  background: $surface;
+  color: $secondary;
+  cursor: pointer;
+  transition: border-color 140ms, color 140ms;
+  mat-icon { font-size: 19px; width: 19px; height: 19px; }
+  &:hover { border-color: var(--mat-sys-primary); color: var(--mat-sys-primary); }
+}
+
+.today-btn {
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid $border;
+  border-radius: 10px;
+  background: $surface;
+  font-size: 13px;
+  font-weight: 600;
+  color: $secondary;
+  cursor: pointer;
+  transition: border-color 140ms, color 140ms;
+  &:hover { border-color: var(--mat-sys-primary); color: var(--mat-sys-primary); }
+}
+
+.view-toggle { display: inline-flex; border: 1px solid $border; border-radius: 10px; overflow: hidden; background: $surface; }
+
+.view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 36px;
+  padding: 0 12px;
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  color: $secondary;
+  cursor: pointer;
+  transition: all 140ms;
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  &--active { background: color-mix(in srgb, var(--mat-sys-primary) 12%, transparent); color: var(--color-primary-700); }
+}
+
+.top-progress { border-radius: 4px; }
+
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+
+  @media (max-width: 760px) { grid-template-columns: repeat(7, minmax(120px, 1fr)); overflow-x: auto; }
+}
+
+.day-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 12px;
+  padding: 8px;
+  min-height: 160px;
+
+  &--today { border-color: color-mix(in srgb, var(--mat-sys-primary) 40%, transparent); background: color-mix(in srgb, var(--mat-sys-primary) 4%, $surface); }
+}
+
+.day-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+  position: relative;
+  transition: background 140ms;
+  &:hover { background: $bg; }
+}
+
+.day-weekday { font-size: 11px; color: $muted; text-transform: uppercase; letter-spacing: 0.3px; }
+.day-number { font-size: 18px; font-weight: 700; color: $text; }
+.day-count {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-primary-700);
+  background: color-mix(in srgb, var(--mat-sys-primary) 12%, transparent);
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+.day-body { display: flex; flex-direction: column; gap: 5px; }
+
+.appt-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border: none;
+  border-left: 3px solid #94a3b8;
+  border-radius: 6px;
+  background: $bg;
+  padding: 5px 7px;
+  text-align: left;
+  cursor: default;
+  transition: transform 120ms, box-shadow 120ms;
+
+  &--clickable { cursor: pointer; &:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(15,23,42,0.1); } }
+
+  &--scheduled { border-left-color: #94a3b8; }
+  &--waiting { border-left-color: var(--color-warning); }
+  &--called { border-left-color: var(--mat-sys-primary); }
+  &--in-process { border-left-color: var(--color-success); }
+  &--pending-payment { border-left-color: #a855f7; }
+  &--completed { border-left-color: #cbd5e1; opacity: 0.7; }
+}
+
+.appt-time { font-size: 11px; font-weight: 700; color: $secondary; }
+.appt-patient { font-size: 12px; color: $text; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.day-empty { font-size: 12px; color: $muted; text-align: center; padding: 8px 0; }
+
+.day-view { display: flex; flex-direction: column; gap: 12px; }
+
+.day-strip { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+
+.strip-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 56px;
+  padding: 8px 6px;
+  border: 1px solid $border;
+  border-radius: 12px;
+  background: $surface;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 140ms;
+  position: relative;
+
+  &:hover { border-color: var(--mat-sys-primary); }
+  &--today .strip-number { color: var(--color-primary-700); }
+  &--active { background: var(--mat-sys-primary); border-color: var(--mat-sys-primary); .strip-weekday, .strip-number { color: #fff; } .strip-dot { background: #fff; } }
+}
+
+.strip-weekday { font-size: 11px; color: $muted; text-transform: uppercase; }
+.strip-number { font-size: 16px; font-weight: 700; color: $text; }
+.strip-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--mat-sys-primary); }
+
+.agenda-list { display: flex; flex-direction: column; gap: 8px; }
+
+.agenda-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 12px;
+  transition: box-shadow 140ms, transform 120ms;
+
+  &--clickable { cursor: pointer; &:hover { box-shadow: 0 4px 14px rgba(15,23,42,0.07); transform: translateY(-1px); } }
+}
+
+.agenda-time { display: flex; flex-direction: column; align-items: flex-start; min-width: 56px; flex-shrink: 0; }
+.at-hour { font-size: 14px; font-weight: 700; color: $text; }
+.at-dur { font-size: 11px; color: $muted; }
+
+.agenda-bar { width: 4px; align-self: stretch; border-radius: 4px; background: #94a3b8;
+  &--scheduled { background: #94a3b8; }
+  &--waiting { background: var(--color-warning); }
+  &--called { background: var(--mat-sys-primary); }
+  &--in-process { background: var(--color-success); }
+  &--pending-payment { background: #a855f7; }
+  &--completed { background: #cbd5e1; }
+}
+
+.agenda-main { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.agenda-patient { font-size: 14px; font-weight: 600; color: $text; }
+.agenda-reason { font-size: 12px; color: $secondary; }
+.agenda-branch { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: $muted; mat-icon { font-size: 13px; width: 13px; height: 13px; } }
+
+.agenda-status {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  background: $bg;
+  color: $secondary;
+
+  &--waiting { background: color-mix(in srgb, var(--color-warning) 14%, #fff); color: #92400e; }
+  &--called { background: color-mix(in srgb, var(--mat-sys-primary) 12%, #fff); color: var(--color-primary-700); }
+  &--in-process { background: color-mix(in srgb, var(--color-success) 14%, #fff); color: #166534; }
+  &--pending-payment { background: color-mix(in srgb, #a855f7 14%, #fff); color: #7e22ce; }
+  &--completed { background: #f1f5f9; color: #64748b; }
+}
+
+.agenda-go { font-size: 18px; width: 18px; height: 18px; color: var(--mat-sys-primary); flex-shrink: 0; }
+
+.board-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  padding: 56px 24px;
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 16px;
+  mat-icon { font-size: 48px; width: 48px; height: 48px; color: color-mix(in srgb, var(--mat-sys-primary) 45%, #cbd5e1); }
+  h3 { font-size: 16px; font-weight: 700; color: $text; margin: 4px 0 0; }
+  p { font-size: 13px; color: $muted; margin: 0; max-width: 360px; }
+}

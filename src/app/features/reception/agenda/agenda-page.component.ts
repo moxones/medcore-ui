@@ -9,6 +9,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AlertBannerComponent } from '@shared/components/alert-banner/alert-banner.component';
 import { AgendaStore, EnrichedAppointment, PackedAppointment, DoctorColumn, VisualState, AgendaView, GRID_START_H, PX_PER_MIN } from '@core/stores/agenda.store';
+import { BranchContextStore } from '@core/stores/branch-context.store';
 
 type DetailMode = 'view' | 'cancel' | 'reschedule';
 
@@ -21,6 +22,7 @@ type DetailMode = 'view' | 'cancel' | 'reschedule';
 })
 export class AgendaPageComponent implements OnInit {
   readonly store = inject(AgendaStore);
+  readonly branchContext = inject(BranchContextStore);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
@@ -67,11 +69,6 @@ export class AgendaPageComponent implements OnInit {
     return `${this.fmtTime(now)} — ${this.fmtTime(in60)}`;
   });
 
-  readonly selectedBranchName = computed(() => {
-    const id = this.store.branchId();
-    return this.store.branches().find((b) => b.id === id)?.name ?? 'Sucursal';
-  });
-
   readonly selectedDoctorName = computed(() => {
     const id = this.store.filterDoctorId();
     if (id === null) return 'todos';
@@ -109,10 +106,6 @@ export class AgendaPageComponent implements OnInit {
   openDay(date: string): void {
     this.store.setDate(date);
     this.store.setView('day');
-  }
-
-  selectBranch(id: number): void {
-    void this.store.setBranch(id);
   }
 
   toggleDoctorFilter(doctorId: number): void {

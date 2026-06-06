@@ -4,8 +4,10 @@ import { Observable } from 'rxjs';
 import { API_ROUTES } from '@core/api/api.config';
 import {
   CreateMedicalEntryRequest,
+  CreateOrderResultRequest,
   MedicalEntryApiResponse,
   MedicalEntryListApiResponse,
+  MedicalOrderApiResponse,
   MedicalRecordApiResponse,
   UpdateClinicalRequest,
 } from '@core/models/medical-record.model';
@@ -28,6 +30,23 @@ export class MedicalRecordService {
 
   getEntryById(entryId: number): Observable<MedicalEntryApiResponse> {
     return this.http.get<MedicalEntryApiResponse>(API_ROUTES.medicalRecords.entryById(entryId));
+  }
+
+  signEntry(entryId: number): Observable<MedicalEntryApiResponse> {
+    return this.http.post<MedicalEntryApiResponse>(
+      API_ROUTES.medicalRecords.signEntry(entryId),
+      {},
+    );
+  }
+
+  addOrderResult(
+    orderId: number,
+    body: CreateOrderResultRequest,
+  ): Observable<MedicalOrderApiResponse> {
+    return this.http.post<MedicalOrderApiResponse>(
+      API_ROUTES.medicalRecords.orderResults(orderId),
+      body,
+    );
   }
 
   getEntriesByAppointment(appointmentId: number): Observable<MedicalEntryListApiResponse> {

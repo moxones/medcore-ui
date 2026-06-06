@@ -1,0 +1,395 @@
+<div class="consult-page">
+
+  @if (store.loading()) {
+    <mat-progress-bar mode="indeterminate" class="top-progress" />
+  }
+
+  <header class="patient-bar">
+    <button class="icon-btn" (click)="goBack()" matTooltip="Volver a pacientes" aria-label="Volver">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+
+    @if (store.appointment(); as appt) {
+      <div class="patient-identity">
+        <div class="patient-avatar">{{ patientInitials() }}</div>
+        <div class="patient-meta">
+          <div class="patient-name-row">
+            <h1 class="patient-name">{{ appt.patientName }}</h1>
+            @if (store.patientAge() !== null) {
+              <span class="patient-sub">{{ store.patientAge() }} años</span>
+            }
+            @if (store.patient()?.gender; as g) {
+              <span class="patient-sub">· {{ g }}</span>
+            }
+            @if (store.record()?.bloodType; as bt) {
+              <span class="blood-chip"><mat-icon>bloodtype</mat-icon>{{ bt }}</span>
+            }
+          </div>
+          <div class="patient-tags">
+            @for (a of allergyChips(); track a) {
+              <span class="tag tag--allergy"><mat-icon>warning</mat-icon>{{ a }}</span>
+            }
+            @for (c of conditionChips(); track c) {
+              <span class="tag tag--condition"><mat-icon>monitor_heart</mat-icon>{{ c }}</span>
+            }
+            @if (!allergyChips().length && !conditionChips().length) {
+              <span class="tag tag--neutral">Sin antecedentes relevantes</span>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="appt-info">
+        <span class="appt-chip"><mat-icon>schedule</mat-icon>{{ formatTime(appt.scheduledAt) }}</span>
+        @if (appt.reason) {
+          <span class="appt-reason" [matTooltip]="appt.reason">{{ appt.reason }}</span>
+        }
+      </div>
+    }
+  </header>
+
+  @if (store.error()) {
+    <app-alert-banner [message]="store.error()" />
+  }
+
+  <div class="consult-grid">
+
+    <div class="consult-main">
+
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><mat-icon>edit_note</mat-icon><h2>Nota clínica</h2></div>
+          <button
+            class="ghost-btn"
+            [matMenuTriggerFor]="tplMenu"
+            [disabled]="!store.templates().length"
+            matTooltip="Aplicar plantilla">
+            <mat-icon>auto_awesome</mat-icon> Plantilla
+          </button>
+          <mat-menu #tplMenu="matMenu">
+            @for (t of store.templates(); track t.id) {
+              <button mat-menu-item (click)="applyTemplate(t)">
+                <mat-icon>description</mat-icon>
+                <span>{{ t.name }}</span>
+              </button>
+            }
+          </mat-menu>
+        </div>
+
+        <form [formGroup]="noteForm" class="note-form">
+          <label class="field">
+            <span class="field-label">Motivo de consulta</span>
+            <textarea formControlName="chiefComplaint" rows="2" placeholder="Motivo principal de la visita"></textarea>
+          </label>
+          <label class="field">
+            <span class="field-label">Enfermedad actual</span>
+            <textarea formControlName="presentIllness" rows="3" placeholder="Cronología y características del cuadro"></textarea>
+          </label>
+          <label class="field">
+            <span class="field-label">Examen físico</span>
+            <textarea formControlName="physicalExamination" rows="3" placeholder="Hallazgos al examen"></textarea>
+          </label>
+          <div class="field-row">
+            <label class="field">
+              <span class="field-label">Evaluación / Impresión</span>
+              <textarea formControlName="assessment" rows="3" placeholder="Análisis clínico"></textarea>
+            </label>
+            <label class="field">
+              <span class="field-label">Plan</span>
+              <textarea formControlName="plan" rows="3" placeholder="Conducta y plan de manejo"></textarea>
+            </label>
+          </div>
+          <label class="field">
+            <span class="field-label">Indicaciones / Tratamiento</span>
+            <textarea formControlName="treatment" rows="2" placeholder="Indicaciones generales para el paciente"></textarea>
+          </label>
+          <div class="field-row">
+            <label class="field">
+              <span class="field-label">Notas internas</span>
+              <textarea formControlName="notes" rows="2" placeholder="Observaciones no visibles para el paciente"></textarea>
+            </label>
+            <label class="field field--compact">
+              <span class="field-label">Próximo control</span>
+              <input type="date" formControlName="followUpAt" />
+            </label>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><mat-icon>diagnoses</mat-icon><h2>Diagnósticos</h2></div>
+          <div class="rank-toggle">
+            <button
+              type="button"
+              class="rank-btn"
+              [class.rank-btn--active]="diagnosisRank() === 'PRIMARY'"
+              (click)="diagnosisRank.set('PRIMARY')">Principal</button>
+            <button
+              type="button"
+              class="rank-btn"
+              [class.rank-btn--active]="diagnosisRank() === 'SECONDARY'"
+              (click)="diagnosisRank.set('SECONDARY')">Secundario</button>
+          </div>
+        </div>
+
+        <div class="cie-search">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            type="text"
+            placeholder="Buscar diagnóstico CIE-10 o escribir libre..."
+            [value]="cie10Term()"
+            (input)="onCie10Search($event)"
+            (keydown.enter)="addFreeDiagnosis()" />
+          @if (store.cie10Searching()) { <mat-icon class="spinning">progress_activity</mat-icon> }
+        </div>
+
+        @if (store.cie10Results().length) {
+          <div class="cie-results">
+            @for (c of store.cie10Results(); track c.id) {
+              <button type="button" class="cie-result" (click)="selectCie10(c)">
+                <span class="cie-code">{{ c.code }}</span>
+                <span class="cie-desc">{{ c.description }}</span>
+                <mat-icon>add</mat-icon>
+              </button>
+            }
+          </div>
+        }
+
+        @if (store.diagnoses().length) {
+          <div class="chip-list">
+            @for (d of store.diagnoses(); track $index) {
+              <span class="dx-chip" [class.dx-chip--secondary]="d.diagnosisRank === 'SECONDARY'">
+                @if (d.cie10Code) { <strong>{{ d.cie10Code }}</strong> }
+                {{ d.description }}
+                <button type="button" (click)="store.removeDiagnosis($index)" aria-label="Quitar diagnóstico">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </span>
+            }
+          </div>
+        } @else {
+          <p class="panel-hint">Aún no agregas diagnósticos.</p>
+        }
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><mat-icon>prescriptions</mat-icon><h2>Recetas</h2></div>
+        </div>
+
+        <form [formGroup]="prescriptionForm" class="inline-form" (ngSubmit)="addPrescription()">
+          <input class="grow" type="text" formControlName="medication" placeholder="Medicamento *" />
+          <input type="text" formControlName="dosage" placeholder="Dosis" />
+          <input type="text" formControlName="frequency" placeholder="Frecuencia" />
+          <input type="text" formControlName="duration" placeholder="Duración" />
+          <input class="grow" type="text" formControlName="instructions" placeholder="Indicaciones" />
+          <button type="submit" class="add-btn" aria-label="Agregar medicamento"><mat-icon>add</mat-icon></button>
+        </form>
+
+        @if (store.prescriptions().length) {
+          <ul class="item-list">
+            @for (p of store.prescriptions(); track $index) {
+              <li class="item-row">
+                <mat-icon class="item-icon">medication</mat-icon>
+                <div class="item-body">
+                  <span class="item-title">{{ p.medication }}</span>
+                  <span class="item-sub">
+                    {{ p.dosage }}{{ p.frequency ? ' · ' + p.frequency : '' }}{{ p.duration ? ' · ' + p.duration : '' }}
+                    {{ p.instructions ? ' — ' + p.instructions : '' }}
+                  </span>
+                </div>
+                <button type="button" class="remove-btn" (click)="store.removePrescription($index)" aria-label="Quitar">
+                  <mat-icon>delete_outline</mat-icon>
+                </button>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="panel-hint">Sin medicamentos recetados.</p>
+        }
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><mat-icon>science</mat-icon><h2>Órdenes y exámenes</h2></div>
+        </div>
+
+        <form [formGroup]="orderForm" class="inline-form" (ngSubmit)="addOrder()">
+          <select formControlName="orderType">
+            @for (o of orderTypes; track o.value) {
+              <option [value]="o.value">{{ o.label }}</option>
+            }
+          </select>
+          <input class="grow" type="text" formControlName="description" placeholder="Descripción de la orden *" />
+          <button type="submit" class="add-btn" aria-label="Agregar orden"><mat-icon>add</mat-icon></button>
+        </form>
+
+        @if (store.orders().length) {
+          <ul class="item-list">
+            @for (o of store.orders(); track $index) {
+              <li class="item-row">
+                <mat-icon class="item-icon">labs</mat-icon>
+                <div class="item-body">
+                  <span class="item-title">{{ o.description }}</span>
+                  <span class="item-sub">{{ orderTypeLabel(o.orderType) }}</span>
+                </div>
+                <button type="button" class="remove-btn" (click)="store.removeOrder($index)" aria-label="Quitar">
+                  <mat-icon>delete_outline</mat-icon>
+                </button>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="panel-hint">Sin órdenes generadas.</p>
+        }
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><mat-icon>verified</mat-icon><h2>Certificados</h2></div>
+        </div>
+
+        <form [formGroup]="certificateForm" class="inline-form" (ngSubmit)="addCertificate()">
+          <select formControlName="certificateType">
+            @for (c of certificateTypes; track c.value) {
+              <option [value]="c.value">{{ c.label }}</option>
+            }
+          </select>
+          <input type="number" formControlName="restDays" min="0" placeholder="Días" class="days-input" />
+          <input class="grow" type="text" formControlName="content" placeholder="Detalle del certificado *" />
+          <button type="submit" class="add-btn" aria-label="Agregar certificado"><mat-icon>add</mat-icon></button>
+        </form>
+
+        @if (store.certificates().length) {
+          <ul class="item-list">
+            @for (c of store.certificates(); track $index) {
+              <li class="item-row">
+                <mat-icon class="item-icon">description</mat-icon>
+                <div class="item-body">
+                  <span class="item-title">{{ c.content }}</span>
+                  <span class="item-sub">{{ c.certificateType }}{{ c.restDays ? ' · ' + c.restDays + ' días' : '' }}</span>
+                </div>
+                <button type="button" class="remove-btn" (click)="store.removeCertificate($index)" aria-label="Quitar">
+                  <mat-icon>delete_outline</mat-icon>
+                </button>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="panel-hint">Sin certificados emitidos.</p>
+        }
+      </section>
+
+    </div>
+
+    <aside class="consult-aside">
+      <div class="aside-tabs" role="tablist">
+        <button class="aside-tab" [class.aside-tab--active]="activeAside() === 'triage'" (click)="setAside('triage')" role="tab">
+          <mat-icon>monitor_heart</mat-icon> Triaje
+        </button>
+        <button class="aside-tab" [class.aside-tab--active]="activeAside() === 'history'" (click)="setAside('history')" role="tab">
+          <mat-icon>history</mat-icon> Historia
+        </button>
+        <button class="aside-tab" [class.aside-tab--active]="activeAside() === 'templates'" (click)="setAside('templates')" role="tab">
+          <mat-icon>auto_awesome</mat-icon> Plantillas
+        </button>
+      </div>
+
+      @switch (activeAside()) {
+        @case ('triage') {
+          @if (store.triage(); as t) {
+            <div class="vitals-grid">
+              <div class="vital-card"><mat-icon>thermostat</mat-icon><span class="vital-value">{{ t.temperature ?? '—' }}<small>°C</small></span><span class="vital-name">Temp.</span></div>
+              <div class="vital-card"><mat-icon>favorite</mat-icon><span class="vital-value">{{ t.heartRate ?? '—' }}<small>lpm</small></span><span class="vital-name">FC</span></div>
+              <div class="vital-card"><mat-icon>monitor_heart</mat-icon><span class="vital-value">{{ t.bloodPressure ?? '—' }}</span><span class="vital-name">P.A.</span></div>
+              <div class="vital-card"><mat-icon>spa</mat-icon><span class="vital-value">{{ t.oxygenSaturation ?? '—' }}<small>%</small></span><span class="vital-name">SatO₂</span></div>
+              <div class="vital-card"><mat-icon>air</mat-icon><span class="vital-value">{{ t.respiratoryRate ?? '—' }}<small>rpm</small></span><span class="vital-name">FR</span></div>
+              <div class="vital-card"><mat-icon>monitor_weight</mat-icon><span class="vital-value">{{ t.weight ?? '—' }}<small>kg</small></span><span class="vital-name">Peso</span></div>
+              <div class="vital-card"><mat-icon>height</mat-icon><span class="vital-value">{{ t.height ?? '—' }}<small>cm</small></span><span class="vital-name">Talla</span></div>
+              <div class="vital-card"><mat-icon>sentiment_dissatisfied</mat-icon><span class="vital-value">{{ t.painScale ?? '—' }}<small>/10</small></span><span class="vital-name">Dolor</span></div>
+            </div>
+            @if (t.notes) {
+              <div class="triage-note"><mat-icon>sticky_note_2</mat-icon><p>{{ t.notes }}</p></div>
+            }
+          } @else {
+            <div class="aside-empty">
+              <mat-icon>pending_actions</mat-icon>
+              <p>No hay triaje registrado para esta cita.</p>
+            </div>
+          }
+        }
+        @case ('history') {
+          <div class="history-summary">
+            <div class="summary-row"><span class="summary-key">Tipo de sangre</span><span class="summary-val">{{ store.record()?.bloodType ?? '—' }}</span></div>
+            <div class="summary-row"><span class="summary-key">Alergias</span><span class="summary-val">{{ store.record()?.allergies ?? 'Ninguna registrada' }}</span></div>
+            <div class="summary-row"><span class="summary-key">Crónicos</span><span class="summary-val">{{ store.record()?.chronicConditions ?? 'Ninguno registrado' }}</span></div>
+          </div>
+
+          @if (store.pastEntries().length) {
+            <div class="timeline">
+              @for (e of store.pastEntries(); track e.id) {
+                <article class="timeline-item">
+                  <div class="timeline-dot"></div>
+                  <div class="timeline-body">
+                    <span class="timeline-date">{{ formatDate(e.createdAt) }}</span>
+                    <span class="timeline-title">{{ entryTitle(e) }}</span>
+                    @if (e.plan) { <span class="timeline-sub">{{ e.plan }}</span> }
+                    <div class="timeline-meta">
+                      @if (e.prescriptions.length) { <span><mat-icon>prescriptions</mat-icon>{{ e.prescriptions.length }}</span> }
+                      @if (e.orders.length) { <span><mat-icon>science</mat-icon>{{ e.orders.length }}</span> }
+                      @if (e.isLocked) { <span class="locked"><mat-icon>lock</mat-icon>firmada</span> }
+                    </div>
+                  </div>
+                </article>
+              }
+            </div>
+          } @else {
+            <div class="aside-empty">
+              <mat-icon>folder_open</mat-icon>
+              <p>Primera consulta registrada para este paciente.</p>
+            </div>
+          }
+        }
+        @case ('templates') {
+          @if (store.templates().length) {
+            <div class="tpl-list">
+              @for (t of store.templates(); track t.id) {
+                <button type="button" class="tpl-card" (click)="applyTemplate(t)">
+                  <div class="tpl-head">
+                    <mat-icon>description</mat-icon>
+                    <span class="tpl-name">{{ t.name }}</span>
+                  </div>
+                  @if (t.specialtyName) { <span class="tpl-spec">{{ t.specialtyName }}</span> }
+                  <span class="tpl-apply">Aplicar <mat-icon>arrow_forward</mat-icon></span>
+                </button>
+              }
+            </div>
+          } @else {
+            <div class="aside-empty">
+              <mat-icon>auto_awesome</mat-icon>
+              <p>No tienes plantillas. Créalas en la sección Plantillas.</p>
+            </div>
+          }
+        }
+      }
+    </aside>
+
+  </div>
+
+  @if (store.appointment()) {
+    <footer class="finalize-bar">
+      <div class="finalize-summary">
+        <span><strong>{{ store.diagnoses().length }}</strong> dx</span>
+        <span><strong>{{ store.prescriptions().length }}</strong> recetas</span>
+        <span><strong>{{ store.orders().length }}</strong> órdenes</span>
+        <span><strong>{{ store.certificates().length }}</strong> certif.</span>
+      </div>
+      <button class="finalize-btn" (click)="finalize()" [disabled]="!store.canFinalize()">
+        <mat-icon>check_circle</mat-icon>
+        {{ store.saving() ? 'Finalizando...' : 'Finalizar consulta' }}
+      </button>
+    </footer>
+  }
+
+</div>

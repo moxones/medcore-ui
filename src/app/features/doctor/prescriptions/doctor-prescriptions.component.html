@@ -1,0 +1,96 @@
+<div class="rx-page">
+
+  <header class="page-header">
+    <div class="header-left">
+      <span class="breadcrumb">médico / recetas</span>
+      <h1 class="page-title">Recetas</h1>
+      <p class="header-sub">{{ store.total() }} recetas · {{ store.totalMedications() }} medicamentos</p>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="search-box">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input
+        type="text"
+        placeholder="Buscar por paciente o medicamento..."
+        [value]="searchQuery()"
+        (input)="onSearch($event)"
+        aria-label="Buscar receta" />
+      @if (searchQuery()) {
+        <button class="search-clear" (click)="clearSearch()" aria-label="Limpiar"><mat-icon>close</mat-icon></button>
+      }
+    </div>
+  </div>
+
+  @if (store.loading()) {
+    <mat-progress-bar mode="indeterminate" class="top-progress" />
+  }
+
+  @if (store.error()) {
+    <app-alert-banner [message]="store.error()" />
+  }
+
+  @if (store.loading()) {
+    <div class="rx-grid" aria-hidden="true">
+      @for (s of [1,2,3,4]; track s) {
+        <div class="rx-card rx-card--skeleton">
+          <span class="skeleton skeleton-line"></span>
+          <span class="skeleton skeleton-block"></span>
+        </div>
+      }
+    </div>
+  } @else if (store.isEmpty()) {
+    <div class="board-empty">
+      <mat-icon>{{ searchQuery() ? 'search_off' : 'prescriptions' }}</mat-icon>
+      <h3>{{ searchQuery() ? 'Sin resultados' : 'Aún no has emitido recetas' }}</h3>
+      <p>{{ searchQuery() ? 'No hay recetas que coincidan con tu búsqueda.' : 'Las recetas que generes en consulta aparecerán aquí.' }}</p>
+    </div>
+  } @else {
+    <div class="rx-grid">
+      @for (doc of store.documents(); track doc.entryId) {
+        <article class="rx-card">
+          <div class="rx-head">
+            <div class="rx-avatar">{{ doc.patientInitials }}</div>
+            <div class="rx-id">
+              <span class="rx-patient">{{ doc.patientName }}</span>
+              <span class="rx-date">{{ formatDate(doc.issuedAt) }}</span>
+            </div>
+            <button class="rx-print" (click)="print(doc)" matTooltip="Imprimir receta" aria-label="Imprimir receta">
+              <mat-icon>print</mat-icon>
+            </button>
+          </div>
+
+          @if (doc.diagnosisSummary) {
+            <span class="rx-dx"><mat-icon>diagnoses</mat-icon>{{ doc.diagnosisSummary }}</span>
+          }
+
+          <ul class="rx-meds">
+            @for (med of doc.items; track med.id) {
+              <li class="rx-med">
+                <mat-icon>medication</mat-icon>
+                <div class="med-body">
+                  <span class="med-name">{{ med.medication }}</span>
+                  <span class="med-detail">
+                    {{ med.dosage }}{{ med.frequency ? ' · ' + med.frequency : '' }}{{ med.duration ? ' · ' + med.duration : '' }}
+                    @if (med.instructions) { <span class="med-instr">— {{ med.instructions }}</span> }
+                  </span>
+                </div>
+              </li>
+            }
+          </ul>
+        </article>
+      }
+    </div>
+
+    @if (store.canLoadMore()) {
+      <div class="load-more">
+        <button class="load-more-btn" (click)="store.loadMore()" [disabled]="store.loadingMore()">
+          <mat-icon [class.spinning]="store.loadingMore()">{{ store.loadingMore() ? 'sync' : 'expand_more' }}</mat-icon>
+          {{ store.loadingMore() ? 'Cargando...' : 'Cargar más' }}
+        </button>
+      </div>
+    }
+  }
+
+</div>

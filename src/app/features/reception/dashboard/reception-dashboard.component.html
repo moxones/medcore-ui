@@ -1,34 +1,24 @@
-<div class="page">
+<div class="mx-auto max-w-[1200px]">
 
-  <div class="hero">
-    <div class="hero-content">
-      <div class="hero-text">
-        <p class="hero-greeting">
-          {{ greeting }},
-          <strong>{{ authStore.fullName() || 'Recepcionista' }}</strong>
-        </p>
-        <h1 class="hero-title">{{ tenantStore.tenant().name }}</h1>
-        <p class="hero-sub">{{ tenantStore.tenant().subtitle }}</p>
-      </div>
-      <div class="hero-meta">
-        <div class="hero-date">
-          <mat-icon class="hero-date-icon">today</mat-icon>
-          <span>{{ todayLabel }}</span>
-        </div>
-        <button
-          mat-icon-button
-          class="refresh-btn"
-          matTooltip="Actualizar datos"
-          (click)="onRefresh()">
-          <mat-icon>refresh</mat-icon>
-        </button>
-      </div>
-    </div>
+  <app-dashboard-hero
+    [greeting]="greeting"
+    [name]="authStore.fullName() || 'Recepcionista'"
+    [title]="tenantStore.tenant().name"
+    [subtitle]="tenantStore.tenant().subtitle"
+    [dateLabel]="todayLabel">
+    <button
+      hero-actions
+      mat-icon-button
+      class="hero-refresh"
+      matTooltip="Actualizar datos"
+      (click)="onRefresh()">
+      <mat-icon>refresh</mat-icon>
+    </button>
 
     @if (!store.loading() && store.totalToday() > 0) {
-      <div class="progress-bar-wrap">
-        <div class="progress-bar-track">
-          <div class="progress-bar-fill" [style.width.%]="store.progressPercent()"></div>
+      <div hero-footer class="progress-wrap">
+        <div class="progress-track">
+          <div class="progress-fill" [style.width.%]="store.progressPercent()"></div>
         </div>
         <span class="progress-label">
           {{ store.completed() }} de {{ store.totalToday() }} citas completadas
@@ -36,13 +26,13 @@
         </span>
       </div>
     }
-  </div>
+  </app-dashboard-hero>
 
   @if (store.loading()) {
     <mat-progress-bar mode="indeterminate" class="top-progress" />
   }
 
-  <div class="kpi-grid">
+  <div class="grid gap-4 mb-6 [grid-template-columns:repeat(auto-fit,minmax(190px,1fr))]">
     <app-kpi-card
       icon="calendar_today"
       label="Citas hoy"
@@ -69,20 +59,13 @@
       variant="green" />
   </div>
 
-  <div class="content-grid">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-7">
 
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-header-left">
-          <div class="panel-icon panel-icon--orange">
-            <mat-icon>queue</mat-icon>
-          </div>
-          <span class="panel-title">Cola activa</span>
-        </div>
-        @if (store.activeQueue().length > 0) {
-          <span class="panel-badge">{{ store.activeQueue().length }}</span>
-        }
-      </div>
+    <app-dashboard-panel
+      icon="queue"
+      iconVariant="orange"
+      title="Cola activa"
+      [badge]="store.activeQueue().length || null">
 
       @if (store.loading()) {
         <div class="panel-skeleton">
@@ -122,17 +105,12 @@
           }
         </div>
       }
-    </div>
+    </app-dashboard-panel>
 
-    <div class="panel">
-      <div class="panel-header">
-        <div class="panel-header-left">
-          <div class="panel-icon panel-icon--purple">
-            <mat-icon>stethoscope</mat-icon>
-          </div>
-          <span class="panel-title">Carga por médico</span>
-        </div>
-      </div>
+    <app-dashboard-panel
+      icon="stethoscope"
+      iconVariant="purple"
+      title="Carga por médico">
 
       @if (store.loading()) {
         <div class="panel-skeleton">
@@ -180,26 +158,10 @@
           }
         </div>
       }
-    </div>
+    </app-dashboard-panel>
 
   </div>
 
-  <div class="quick-section">
-    <div class="quick-section-header">
-      <mat-icon>grid_view</mat-icon>
-      <span>Acciones rápidas</span>
-    </div>
-    <div class="quick-grid">
-      @for (link of quickLinks; track link.route) {
-        <a [class]="'quick-card ' + link.accentClass" [routerLink]="link.route">
-          <div class="quick-icon">
-            <mat-icon>{{ link.icon }}</mat-icon>
-          </div>
-          <span class="quick-label">{{ link.label }}</span>
-          <span class="quick-desc">{{ link.description }}</span>
-        </a>
-      }
-    </div>
-  </div>
+  <app-quick-actions [links]="quickLinks" />
 
 </div>

@@ -105,6 +105,15 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'staff-branches',
+        canActivate: [roleGuard],
+        data: { roles: ['CLINIC_ADMIN', 'SUPER_ADMIN'] },
+        loadComponent: () =>
+          import('./features/admin/staff-branches/staff-branches-page.component').then(
+            (m) => m.StaffBranchesPageComponent,
+          ),
+      },
+      {
         path: 'organizations',
         canActivate: [roleGuard],
         data: { roles: ['SUPER_ADMIN'] },
@@ -190,22 +199,10 @@ export const routes: Routes = [
       },
       {
         path: 'triage',
-        children: [
-          {
-            path: '',
-            loadComponent: () =>
-              import('./features/assistant/triage-queue/triage-queue.component').then(
-                (m) => m.TriageQueueComponent,
-              ),
-          },
-          {
-            path: ':id',
-            loadComponent: () =>
-              import('./features/assistant/triage-detail/triage-detail.component').then(
-                (m) => m.TriageDetailComponent,
-              ),
-          },
-        ],
+        loadComponent: () =>
+          import('./features/assistant/triage-queue/triage-queue.component').then(
+            (m) => m.TriageQueueComponent,
+          ),
       },
       {
         path: 'history',

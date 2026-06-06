@@ -1,0 +1,191 @@
+<div class="records-page">
+
+  <header class="page-header">
+    <div class="header-left">
+      <span class="breadcrumb">médico / historiales clínicos</span>
+      <h1 class="page-title">Historiales Clínicos</h1>
+      <p class="header-sub">Consulta el historial completo de tus pacientes</p>
+    </div>
+  </header>
+
+  <div class="records-layout" [class.records-layout--detail]="mobileShowDetail()">
+
+    <aside class="patient-pane">
+      <div class="search-box">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input
+          type="text"
+          placeholder="Buscar paciente..."
+          [value]="searchQuery()"
+          (input)="onSearch($event)"
+          aria-label="Buscar paciente" />
+        @if (searchQuery()) {
+          <button class="search-clear" (click)="clearSearch()" aria-label="Limpiar"><mat-icon>close</mat-icon></button>
+        }
+      </div>
+
+      @if (patientsStore.loading()) {
+        <div class="patient-list">
+          @for (s of [1,2,3,4,5]; track s) {
+            <div class="patient-row patient-row--skeleton">
+              <span class="skeleton skeleton-avatar"></span>
+              <div class="skeleton-lines">
+                <span class="skeleton skeleton-line"></span>
+                <span class="skeleton skeleton-line skeleton-line--short"></span>
+              </div>
+            </div>
+          }
+        </div>
+      } @else if (patientsStore.isEmpty()) {
+        <div class="pane-empty">
+          <mat-icon>group_off</mat-icon>
+          <p>{{ searchQuery() ? 'Sin resultados' : 'Sin pacientes' }}</p>
+        </div>
+      } @else {
+        <div class="patient-list">
+          @for (p of patientsStore.patients(); track p.patientId) {
+            <button
+              class="patient-row"
+              [class.patient-row--active]="store.selectedPatientId() === p.patientId"
+              (click)="selectPatient(p.patientId)">
+              <span class="row-avatar">{{ p.initials }}</span>
+              <span class="row-info">
+                <span class="row-name">{{ p.fullName }}</span>
+                <span class="row-sub">{{ p.totalVisits }} consultas · {{ formatDate(p.lastVisitAt) }}</span>
+              </span>
+              <mat-icon class="row-chevron">chevron_right</mat-icon>
+            </button>
+          }
+        </div>
+      }
+    </aside>
+
+    <section class="record-pane">
+      @if (!store.hasSelection()) {
+        <div class="record-empty">
+          <mat-icon>folder_open</mat-icon>
+          <h3>Selecciona un paciente</h3>
+          <p>Elige un paciente de la lista para ver su historial clínico completo.</p>
+        </div>
+      } @else {
+        <div class="record-toolbar">
+          <button class="back-btn" (click)="backToList()" aria-label="Volver a la lista">
+            <mat-icon>arrow_back</mat-icon>
+          </button>
+          @if (selectedPatient(); as sp) {
+            <div class="record-identity">
+              <div class="record-avatar">{{ sp.initials }}</div>
+              <div class="record-meta">
+                <span class="record-name">{{ sp.fullName }}</span>
+                <span class="record-sub">
+                  @if (sp.age !== null) { {{ sp.age }} años }
+                  @if (sp.gender) { · {{ sp.gender }} }
+                  · {{ store.entryCount() }} consultas
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (store.loading()) {
+          <mat-progress-bar mode="indeterminate" class="top-progress" />
+        }
+
+        @if (store.error()) {
+          <app-alert-banner [message]="store.error()" />
+        }
+
+        @if (store.record(); as rec) {
+          <div class="clinical-summary">
+            <div class="summary-item"><mat-icon>bloodtype</mat-icon><div><span class="si-label">Tipo de sangre</span><span class="si-value">{{ rec.bloodType ?? '—' }}</span></div></div>
+            <div class="summary-item"><mat-icon>warning</mat-icon><div><span class="si-label">Alergias</span><span class="si-value">{{ rec.allergies ?? 'Ninguna' }}</span></div></div>
+            <div class="summary-item"><mat-icon>monitor_heart</mat-icon><div><span class="si-label">Crónicos</span><span class="si-value">{{ rec.chronicConditions ?? 'Ninguno' }}</span></div></div>
+          </div>
+
+          @if (store.entries().length) {
+            <div class="entry-timeline">
+              @for (e of store.entries(); track e.id) {
+                <article class="entry-card" [class.entry-card--open]="isExpanded(e)">
+                  <button class="entry-head" (click)="toggleEntry(e)">
+                    <div class="entry-date-col">
+                      <span class="entry-day">{{ formatDate(e.createdAt) }}</span>
+                      <span class="entry-time">{{ formatTime(e.createdAt) }}</span>
+                    </div>
+                    <div class="entry-head-main">
+                      <span class="entry-title">{{ entryTitle(e) }}</span>
+                      <span class="entry-author">{{ e.createdByName }}</span>
+                    </div>
+                    <div class="entry-badges">
+                      @if (e.prescriptions.length) { <span class="mini-badge"><mat-icon>prescriptions</mat-icon>{{ e.prescriptions.length }}</span> }
+                      @if (e.orders.length) { <span class="mini-badge"><mat-icon>science</mat-icon>{{ e.orders.length }}</span> }
+                      @if (e.isLocked) { <span class="mini-badge mini-badge--signed"><mat-icon>verified</mat-icon></span> }
+                      <mat-icon class="entry-chevron">{{ isExpanded(e) ? 'expand_less' : 'expand_more' }}</mat-icon>
+                    </div>
+                  </button>
+
+                  @if (isExpanded(e)) {
+                    <div class="entry-body">
+                      @if (e.chiefComplaint) { <div class="note-block"><span class="nb-label">Motivo</span><p>{{ e.chiefComplaint }}</p></div> }
+                      @if (e.presentIllness) { <div class="note-block"><span class="nb-label">Enfermedad actual</span><p>{{ e.presentIllness }}</p></div> }
+                      @if (e.physicalExamination) { <div class="note-block"><span class="nb-label">Examen físico</span><p>{{ e.physicalExamination }}</p></div> }
+                      @if (e.assessment) { <div class="note-block"><span class="nb-label">Evaluación</span><p>{{ e.assessment }}</p></div> }
+                      @if (e.plan) { <div class="note-block"><span class="nb-label">Plan</span><p>{{ e.plan }}</p></div> }
+                      @if (e.treatment) { <div class="note-block"><span class="nb-label">Tratamiento</span><p>{{ e.treatment }}</p></div> }
+
+                      @if (e.diagnoses.length) {
+                        <div class="note-block">
+                          <span class="nb-label">Diagnósticos</span>
+                          <div class="dx-row">
+                            @for (d of e.diagnoses; track d.id) {
+                              <span class="dx-tag">@if (d.cie10Code) { <strong>{{ d.cie10Code }}</strong> } {{ d.description }}</span>
+                            }
+                          </div>
+                        </div>
+                      }
+
+                      @if (e.prescriptions.length) {
+                        <div class="note-block">
+                          <span class="nb-label">Recetas</span>
+                          <ul class="detail-list">
+                            @for (p of e.prescriptions; track p.id) {
+                              <li><mat-icon>medication</mat-icon><span>{{ p.medication }} <small>{{ p.dosage }}{{ p.frequency ? ' · ' + p.frequency : '' }}{{ p.duration ? ' · ' + p.duration : '' }}</small></span></li>
+                            }
+                          </ul>
+                        </div>
+                      }
+
+                      @if (e.orders.length) {
+                        <div class="note-block">
+                          <span class="nb-label">Órdenes</span>
+                          <ul class="detail-list">
+                            @for (o of e.orders; track o.id) {
+                              <li>
+                                <mat-icon>science</mat-icon>
+                                <span>{{ o.description }} <span class="order-status" [class]="'order-status--' + o.status.toLowerCase()">{{ o.status }}</span></span>
+                              </li>
+                            }
+                          </ul>
+                        </div>
+                      }
+
+                      @if (e.followUpAt) {
+                        <div class="followup"><mat-icon>event_upcoming</mat-icon>Próximo control: {{ formatDate(e.followUpAt) }}</div>
+                      }
+                    </div>
+                  }
+                </article>
+              }
+            </div>
+          } @else if (!store.loading()) {
+            <div class="record-empty record-empty--inline">
+              <mat-icon>note_stack</mat-icon>
+              <h3>Sin consultas registradas</h3>
+              <p>Este paciente aún no tiene atenciones en su historial.</p>
+            </div>
+          }
+        }
+      }
+    </section>
+
+  </div>
+</div>

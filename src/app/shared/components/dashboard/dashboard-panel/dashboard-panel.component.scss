@@ -1,0 +1,97 @@
+:host {
+  display: block;
+}
+
+.panel {
+  background: var(--color-surface, #fff);
+  border-radius: 14px;
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  height: 100%;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.panel-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.panel-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.panel-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  &--blue {
+    background: color-mix(in srgb, var(--mat-sys-primary) 12%, transparent);
+    color: var(--mat-sys-primary);
+  }
+
+  &--green {
+    background: color-mix(in srgb, var(--color-success) 14%, transparent);
+    color: var(--color-success);
+  }
+
+  &--orange {
+    background: color-mix(in srgb, var(--color-warning) 14%, transparent);
+    color: var(--color-warning);
+  }
+
+  &--purple {
+    background: color-mix(in srgb, #7c3aed 12%, transparent);
+    color: #7c3aed;
+  }
+
+  &--red {
+    background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+    color: var(--color-danger);
+  }
+}
+
+.panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panel-badge {
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--mat-sys-primary);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+
+.panel-body {
+  min-height: 0;
+}

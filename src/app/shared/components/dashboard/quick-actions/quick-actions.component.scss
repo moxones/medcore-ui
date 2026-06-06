@@ -1,0 +1,96 @@
+.quick-section {
+  margin-top: 4px;
+}
+
+.quick-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.quick-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px;
+  border-radius: 14px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface, #fff);
+  text-decoration: none;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+  cursor: pointer;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0 0 0 / 0.08);
+  }
+
+  &--blue {
+    .quick-icon { background: color-mix(in srgb, var(--mat-sys-primary) 12%, transparent); color: var(--mat-sys-primary); }
+    &:hover { border-color: var(--mat-sys-primary); }
+  }
+
+  &--green {
+    .quick-icon { background: color-mix(in srgb, var(--color-success) 14%, transparent); color: var(--color-success); }
+    &:hover { border-color: var(--color-success); }
+  }
+
+  &--orange {
+    .quick-icon { background: color-mix(in srgb, var(--color-warning) 14%, transparent); color: var(--color-warning); }
+    &:hover { border-color: var(--color-warning); }
+  }
+
+  &--purple {
+    .quick-icon { background: color-mix(in srgb, #7c3aed 12%, transparent); color: #7c3aed; }
+    &:hover { border-color: #7c3aed; }
+  }
+
+  &--red {
+    .quick-icon { background: color-mix(in srgb, var(--color-danger) 12%, transparent); color: var(--color-danger); }
+    &:hover { border-color: var(--color-danger); }
+  }
+}
+
+.quick-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.quick-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.quick-desc {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}

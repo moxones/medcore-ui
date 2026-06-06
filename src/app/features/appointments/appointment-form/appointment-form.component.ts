@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   OnInit,
   computed,
   effect,
@@ -59,6 +60,7 @@ export class AppointmentFormComponent implements OnInit {
   private readonly patientService = inject(PatientService);
   private readonly catalogService = inject(CatalogService);
   private readonly profileStore = inject(PatientProfileStore);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly patientQuery = signal('');
   readonly patientResults = signal<PatientResponse[]>([]);
@@ -186,6 +188,10 @@ export class AppointmentFormComponent implements OnInit {
         this.slots.set([]);
         this.selectedSlot.set(null);
       }
+    });
+
+    this.destroyRef.onDestroy(() => {
+      if (this.patientSearchTimer) clearTimeout(this.patientSearchTimer);
     });
   }
 

@@ -1,0 +1,132 @@
+<div class="patients-page">
+
+  <header class="page-header">
+    <div class="header-left">
+      <span class="breadcrumb">médico / pacientes</span>
+      <h1 class="page-title">Mis Pacientes</h1>
+      <p class="header-sub">Pacientes que has atendido, con acceso directo a su historial</p>
+    </div>
+    <div class="header-right">
+      <span class="count-pill"><strong>{{ store.total() }}</strong> pacientes</span>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="search-box">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input
+        type="text"
+        placeholder="Buscar por nombre o documento..."
+        [value]="searchQuery()"
+        (input)="onSearch($event)"
+        aria-label="Buscar paciente" />
+      @if (searchQuery()) {
+        <button class="search-clear" (click)="clearSearch()" aria-label="Limpiar búsqueda">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (store.loading()) {
+    <mat-progress-bar mode="indeterminate" class="top-progress" />
+  }
+
+  @if (store.error()) {
+    <app-alert-banner [message]="store.error()" />
+  }
+
+  @if (store.loading()) {
+    <div class="card-grid" aria-hidden="true">
+      @for (s of [1,2,3,4,5,6]; track s) {
+        <div class="patient-card patient-card--skeleton">
+          <div class="card-top">
+            <span class="skeleton skeleton-avatar"></span>
+            <div class="skeleton-lines">
+              <span class="skeleton skeleton-line"></span>
+              <span class="skeleton skeleton-line skeleton-line--short"></span>
+            </div>
+          </div>
+          <span class="skeleton skeleton-block"></span>
+        </div>
+      }
+    </div>
+  } @else if (store.isEmpty()) {
+    <div class="board-empty">
+      <mat-icon>{{ searchQuery() ? 'search_off' : 'groups' }}</mat-icon>
+      <h3>{{ searchQuery() ? 'Sin resultados' : 'Aún no tienes pacientes' }}</h3>
+      <p>
+        {{ searchQuery()
+          ? 'No hay pacientes que coincidan con tu búsqueda.'
+          : 'Cuando atiendas consultas, tus pacientes aparecerán aquí.' }}
+      </p>
+    </div>
+  } @else {
+    <div class="card-grid">
+      @for (p of store.patients(); track p.patientId) {
+        <article class="patient-card">
+          <div class="card-top">
+            <div class="card-avatar">{{ p.initials }}</div>
+            <div class="card-id">
+              <span class="card-name">{{ p.fullName }}</span>
+              <span class="card-sub">
+                @if (p.age !== null) { {{ p.age }} años }
+                @if (p.gender) { · {{ p.gender }} }
+              </span>
+            </div>
+            @if (p.bloodType) {
+              <span class="blood-chip"><mat-icon>bloodtype</mat-icon>{{ p.bloodType }}</span>
+            }
+          </div>
+
+          <div class="card-flags">
+            @if (p.allergyCount > 0) {
+              <span class="flag flag--allergy"><mat-icon>warning</mat-icon>{{ p.allergyCount }} alergias</span>
+            }
+            @if (p.conditionCount > 0) {
+              <span class="flag flag--condition"><mat-icon>monitor_heart</mat-icon>{{ p.conditionCount }} crónicos</span>
+            }
+            @if (!p.allergyCount && !p.conditionCount) {
+              <span class="flag flag--ok"><mat-icon>check_circle</mat-icon>Sin antecedentes</span>
+            }
+          </div>
+
+          <div class="card-stats">
+            <div class="stat">
+              <span class="stat-value">{{ p.totalVisits }}</span>
+              <span class="stat-label">consultas</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value">{{ formatDate(p.lastVisitAt) }}</span>
+              <span class="stat-label">última visita</span>
+            </div>
+          </div>
+
+          @if (p.nextAppointmentAt) {
+            <div class="next-appt">
+              <mat-icon>event_upcoming</mat-icon>
+              Próxima: {{ formatNextAppointment(p.nextAppointmentAt) }}
+            </div>
+          }
+
+          <div class="card-actions">
+            <button class="card-btn card-btn--primary" (click)="openHistory(p)">
+              <mat-icon>folder_shared</mat-icon>
+              Ver historial
+            </button>
+          </div>
+        </article>
+      }
+    </div>
+
+    @if (store.canLoadMore()) {
+      <div class="load-more">
+        <button class="load-more-btn" (click)="store.loadMore()" [disabled]="store.loadingMore()">
+          <mat-icon [class.spinning]="store.loadingMore()">{{ store.loadingMore() ? 'sync' : 'expand_more' }}</mat-icon>
+          {{ store.loadingMore() ? 'Cargando...' : 'Cargar más' }}
+        </button>
+      </div>
+    }
+  }
+
+</div>

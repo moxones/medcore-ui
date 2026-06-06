@@ -1,11 +1,11 @@
-<div class="dash">
+<div class="mx-auto max-w-[1200px]">
 
-  <div class="dash-header">
-    <div>
-      <h1 class="greeting">Hola, {{ authStore.fullName() }}</h1>
-      <p class="sub">Bienvenido a {{ tenantStore.tenant().name }}</p>
-    </div>
-  </div>
+  <app-dashboard-hero
+    [greeting]="greeting"
+    [name]="authStore.fullName()"
+    [title]="tenantStore.tenant().name"
+    [subtitle]="heroSubtitle()"
+    [dateLabel]="todayLabel" />
 
   @if (authStore.needsProfileCompletion()) {
     <div class="profile-banner">
@@ -22,7 +22,7 @@
     </div>
   }
 
-  <div class="kpi-grid">
+  <div class="grid gap-4 mb-6 [grid-template-columns:repeat(auto-fit,minmax(190px,1fr))]">
     <app-kpi-card
       icon="event"
       label="Citas próximas"
@@ -45,29 +45,23 @@
     }
   </div>
 
-  <div class="section-row">
-    <div class="appt-card">
-      <div class="card-header">
-        <span class="card-title">Mis próximas citas</span>
-        <a routerLink="/patient/appointments" class="card-link">
-          Ver todas
-          <mat-icon>chevron_right</mat-icon>
-        </a>
-      </div>
+  <div class="mb-7">
+    <app-dashboard-panel icon="event" iconVariant="blue" title="Mis próximas citas">
+      <a panel-action class="panel-link" routerLink="/patient/appointments">
+        Ver todas <mat-icon>chevron_right</mat-icon>
+      </a>
 
       @if (dashboardStore.loading()) {
-        <mat-progress-bar mode="indeterminate" />
-      }
-
-      @if (!dashboardStore.loading() && dashboardStore.upcoming().length === 0) {
+        <div class="panel-progress">
+          <mat-progress-bar mode="indeterminate" />
+        </div>
+      } @else if (dashboardStore.upcoming().length === 0) {
         <div class="empty-state">
           <mat-icon>event_busy</mat-icon>
           <span>No tienes citas programadas</span>
           <p class="empty-hint">Contacta a la clínica para agendar una cita.</p>
         </div>
-      }
-
-      @if (dashboardStore.upcoming().length > 0) {
+      } @else {
         <div class="appt-list">
           @for (appt of dashboardStore.upcoming(); track appt.id) {
             <div class="appt-row">
@@ -86,7 +80,9 @@
           }
         </div>
       }
-    </div>
+    </app-dashboard-panel>
   </div>
+
+  <app-quick-actions [links]="quickLinks" />
 
 </div>

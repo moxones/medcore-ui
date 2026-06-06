@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, signal, OnInit } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -16,9 +16,12 @@ export class RegisterComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly patientService = inject(PatientService);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
   readonly tenantStore = inject(TenantStore);
 
   readonly documentTypes = ['DNI', 'CE', 'PASAPORTE'];
+
+  private redirectTimer: ReturnType<typeof setTimeout> | null = null;
 
   showPassword = signal(false);
   loading = signal(false);
@@ -36,6 +39,9 @@ export class RegisterComponent implements OnInit {
 
   ngOnInit(): void {
     this.tenantStore.load();
+    this.destroyRef.onDestroy(() => {
+      if (this.redirectTimer) clearTimeout(this.redirectTimer);
+    });
   }
 
   togglePassword(): void {
@@ -51,7 +57,7 @@ export class RegisterComponent implements OnInit {
       const res = await firstValueFrom(this.patientService.checkEmail(ctrl.value));
       this.emailTaken.set(!res.data.available);
     } catch {
-      // ignore connectivity errors on check
+      this.emailTaken.set(false);
     } finally {
       this.emailChecking.set(false);
     }
@@ -74,7 +80,7 @@ export class RegisterComponent implements OnInit {
       );
       if (res.success) {
         this.success.set(true);
-        setTimeout(() => this.router.navigate(['/login']), 2500);
+        this.redirectTimer = setTimeout(() => this.router.navigate(['/login']), 2500);
       } else {
         this.error.set(res.message ?? 'Error al registrar la cuenta');
       }

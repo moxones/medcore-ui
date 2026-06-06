@@ -1,0 +1,149 @@
+<div class="page">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Sucursales del Personal</h1>
+      <p class="page-subtitle">Asigna sucursales a asistentes y recepcionistas. Sin una sucursal asignada no pueden ingresar al sistema.</p>
+    </div>
+  </div>
+
+  <div class="kpi-row">
+    <app-kpi-card
+      icon="groups"
+      label="Personal"
+      [value]="store.totalStaff().toString()"
+      [loading]="store.loading()"
+      variant="blue" />
+    <app-kpi-card
+      icon="how_to_reg"
+      label="Con sucursal"
+      [value]="store.assignedCount().toString()"
+      [loading]="store.loading()"
+      variant="green" />
+    <app-kpi-card
+      icon="location_off"
+      label="Sin sucursal"
+      [value]="store.unassignedCount().toString()"
+      [loading]="store.loading()"
+      variant="orange" />
+  </div>
+
+  @if (store.loading()) {
+    <mat-progress-bar mode="indeterminate" class="progress" />
+  }
+
+  <div class="toolbar">
+    <div class="search-box">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input
+        class="search-input"
+        type="text"
+        placeholder="Buscar por nombre o correo..."
+        [value]="searchQuery()"
+        (input)="onSearchInput($event)"
+      />
+      @if (searchQuery()) {
+        <button class="search-clear" (click)="searchQuery.set('')">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </div>
+
+    <div class="filter-pills">
+      <button
+        class="filter-pill"
+        [class.filter-pill--active]="branchFilter() === 'all'"
+        (click)="branchFilter.set('all')">
+        Todos
+      </button>
+      <button
+        class="filter-pill"
+        [class.filter-pill--active]="branchFilter() === 'assigned'"
+        (click)="branchFilter.set('assigned')">
+        <span class="dot dot--green"></span>
+        Con sucursal
+      </button>
+      <button
+        class="filter-pill"
+        [class.filter-pill--active]="branchFilter() === 'unassigned'"
+        (click)="branchFilter.set('unassigned')">
+        <span class="dot dot--amber"></span>
+        Sin sucursal
+      </button>
+    </div>
+  </div>
+
+  @if (!store.loading()) {
+    <div class="results-summary">
+      <span class="results-count">
+        {{ filteredRows().length }} {{ filteredRows().length === 1 ? 'persona' : 'personas' }}
+        @if (searchQuery() || branchFilter() !== 'all') {
+          encontradas
+        }
+      </span>
+    </div>
+  }
+
+  @if (!store.loading() && filteredRows().length === 0) {
+    <div class="empty-state">
+      <mat-icon>person_search</mat-icon>
+      @if (searchQuery() || branchFilter() !== 'all') {
+        <span>No hay personal que coincida con los filtros.</span>
+      } @else {
+        <span>Aún no hay asistentes ni recepcionistas registrados.</span>
+      }
+    </div>
+  }
+
+  <div class="staff-grid">
+    @for (row of filteredRows(); track row.user.id) {
+      <div class="staff-card" [class.staff-card--unassigned]="row.branches.length === 0">
+
+        <div class="card-accent" [class]="accentClass(row)">
+          <div class="card-avatar-wrapper">
+            <div class="staff-avatar" [class]="avatarClass(row)">
+              {{ avatarInitials(row) }}
+            </div>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <h3 class="staff-name">{{ fullName(row) }}</h3>
+          <span class="role-chip" [class]="roleClass(row)">{{ roleLabel(row) }}</span>
+
+          <span class="staff-email" [title]="row.user.email">
+            <mat-icon class="meta-icon">mail_outline</mat-icon>
+            {{ row.user.email }}
+          </span>
+
+          <div class="branch-zone">
+            @if (row.branches.length === 0) {
+              <div class="no-branch-banner">
+                <mat-icon>warning_amber</mat-icon>
+                <span>Sin sucursal asignada</span>
+              </div>
+            } @else {
+              <div class="branch-chips">
+                @for (branch of row.branches; track branch.id) {
+                  <span class="branch-chip" [title]="branch.branchName">
+                    <mat-icon>storefront</mat-icon>
+                    {{ branch.branchName }}
+                  </span>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="card-footer">
+          <button class="manage-btn" (click)="openManage(row)">
+            <mat-icon>location_on</mat-icon>
+            Gestionar sucursales
+          </button>
+        </div>
+
+      </div>
+    }
+  </div>
+
+</div>

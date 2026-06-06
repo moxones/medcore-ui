@@ -15,6 +15,7 @@ import {
 } from '@angular/cdk/drag-drop';
 import { AlertBannerComponent } from '@shared/components/alert-banner/alert-banner.component';
 import { QueueStore, QueuePatient, QueueColumnId } from '@core/stores/queue.store';
+import { BranchContextStore } from '@core/stores/branch-context.store';
 import { AppointmentFlowStatus } from '@core/models/appointment.model';
 
 type DetailMode = 'view' | 'cancel' | 'reschedule';
@@ -37,6 +38,7 @@ type DetailMode = 'view' | 'cancel' | 'reschedule';
 })
 export class QueuePageComponent implements OnInit {
   readonly store = inject(QueueStore);
+  readonly branchContext = inject(BranchContextStore);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
@@ -64,11 +66,6 @@ export class QueuePageComponent implements OnInit {
     return `hace ${Math.floor(diff / 60)} min`;
   });
 
-  readonly selectedBranchName = computed(() => {
-    const id = this.store.branchId();
-    return this.store.branches().find((b) => b.id === id)?.name ?? 'Sucursal';
-  });
-
   readonly enterPredicate = (_drag: CdkDrag, drop: CdkDropList): boolean => drop.id !== 'toArrive';
 
   ngOnInit(): void {
@@ -91,10 +88,6 @@ export class QueuePageComponent implements OnInit {
   clearSearch(): void {
     this.searchQuery.set('');
     this.store.setSearch('');
-  }
-
-  selectBranch(id: number): void {
-    void this.store.setBranch(id);
   }
 
   onDrop(event: CdkDragDrop<QueuePatient[]>, target: QueueColumnId): void {

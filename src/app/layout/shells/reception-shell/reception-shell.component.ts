@@ -6,12 +6,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { TenantStore } from '@core/tenant/tenant.store';
 import { AuthStore } from '@core/auth/auth.store';
+import { BranchContextStore } from '@core/stores/branch-context.store';
 import { ChangePasswordDialogComponent } from '@shared/dialogs/change-password/change-password-dialog.component';
 import { LogoutOverlayComponent } from '@shared/components/logout-overlay/logout-overlay.component';
 
@@ -39,6 +41,7 @@ interface NavGroup {
     MatMenuModule,
     MatTooltipModule,
     MatDividerModule,
+    MatProgressBarModule,
     MatDialogModule,
     LogoutOverlayComponent,
   ],
@@ -53,6 +56,7 @@ export class ReceptionShellComponent implements OnInit {
 
   readonly tenantStore = inject(TenantStore);
   readonly authStore = inject(AuthStore);
+  readonly branchContext = inject(BranchContextStore);
 
   readonly isHandset = toSignal(
     this.breakpointObserver
@@ -105,6 +109,11 @@ export class ReceptionShellComponent implements OnInit {
 
   ngOnInit(): void {
     this.tenantStore.load();
+    void this.branchContext.init();
+  }
+
+  selectBranch(branchId: number): void {
+    this.branchContext.setActiveBranch(branchId);
   }
 
   onMenuClick(): void {

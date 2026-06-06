@@ -1,0 +1,113 @@
+<div class="dash-page">
+  <div class="dash-body">
+    <div class="mx-auto max-w-[1200px] w-full">
+
+      <app-dashboard-hero
+        [greeting]="greeting()"
+        [name]="authStore.fullName() || 'Asistente'"
+        title="Estación de Triaje"
+        subtitle="Pacientes derivados por recepción esperando toma de signos antes de pasar a consulta."
+        [dateLabel]="todayLabel()">
+        <div hero-actions class="hero-actions">
+          <div class="hero-clock">
+            <mat-icon class="hero-clock-icon">schedule</mat-icon>
+            <span class="hero-clock-time">{{ clock() }}</span>
+          </div>
+          <button class="hero-attend" (click)="attendNext()" [disabled]="!store.nextPending()">
+            <mat-icon>play_circle</mat-icon>
+            Atender siguiente
+          </button>
+        </div>
+      </app-dashboard-hero>
+
+      @if (store.loading()) {
+        <mat-progress-bar mode="indeterminate" class="top-progress" />
+      }
+
+      <div class="grid gap-4 mb-6 [grid-template-columns:repeat(auto-fit,minmax(190px,1fr))]">
+        <app-kpi-card icon="pending_actions" label="Pendientes de triaje" [value]="store.stats().pending.toString()" [loading]="store.loading()" variant="orange" />
+        <app-kpi-card icon="event_upcoming" label="Por llegar" [value]="store.stats().scheduled.toString()" [loading]="store.loading()" variant="blue" />
+        <app-kpi-card icon="task_alt" label="Triajes completados" [value]="store.triageStats().completed.toString()" [loading]="store.loadingHistory()" variant="green" />
+        <app-kpi-card icon="timer" label="Demora promedio" [value]="store.stats().avgWait + ' min'" [loading]="store.loading()" variant="purple" />
+        <app-kpi-card icon="priority_high" label="Casos prioritarios" [value]="priorityCount().toString()" [loading]="store.loadingHistory()" variant="red" />
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-7">
+
+        <app-dashboard-panel icon="groups" iconVariant="blue" title="Carga por médico">
+          <button panel-action class="link-btn" (click)="goToQueue()">
+            Ver cola <mat-icon>arrow_forward</mat-icon>
+          </button>
+
+          @if (store.loading()) {
+            <div class="skeleton-list">
+              @for (s of [1, 2, 3]; track s) { <div class="skeleton-row"></div> }
+            </div>
+          } @else if (store.byDoctor().length === 0) {
+            <div class="panel-empty">
+              <mat-icon>medical_services</mat-icon>
+              <p>No hay pacientes asignados a médicos por ahora.</p>
+            </div>
+          } @else {
+            <div class="doctor-loads">
+              @for (doc of store.byDoctor(); track doc.doctorId) {
+                <article class="doc-load">
+                  <div class="doc-load-avatar">{{ doc.initials }}</div>
+                  <div class="doc-load-body">
+                    <div class="doc-load-top">
+                      <span class="doc-load-name">{{ doc.doctorName }}</span>
+                      @if (doc.specialty) { <span class="doc-load-spec">{{ doc.specialty }}</span> }
+                    </div>
+                    <div class="doc-load-bar">
+                      <span class="doc-load-fill" [style.width.%]="loadPercent(doc)"></span>
+                    </div>
+                    <div class="doc-load-tags">
+                      @if (doc.pending > 0) { <span class="load-tag load-tag--pending">{{ doc.pending }} sin triaje</span> }
+                      @if (doc.triaged > 0) { <span class="load-tag load-tag--triaged">{{ doc.triaged }} listos</span> }
+                      @if (doc.scheduled > 0) { <span class="load-tag load-tag--scheduled">{{ doc.scheduled }} por llegar</span> }
+                    </div>
+                  </div>
+                </article>
+              }
+            </div>
+          }
+        </app-dashboard-panel>
+
+        <app-dashboard-panel icon="history" iconVariant="purple" title="Actividad reciente">
+          <a panel-action class="link-btn" routerLink="/assistant/history">
+            Triajes de hoy <mat-icon>arrow_forward</mat-icon>
+          </a>
+
+          @if (store.loadingHistory()) {
+            <div class="skeleton-list">
+              @for (s of [1, 2, 3]; track s) { <div class="skeleton-row"></div> }
+            </div>
+          } @else if (recent().length === 0) {
+            <div class="panel-empty">
+              <mat-icon>monitor_heart</mat-icon>
+              <p>Aún no se han registrado triajes hoy.</p>
+            </div>
+          } @else {
+            <ul class="activity-list">
+              @for (t of recent(); track t.id) {
+                <li class="activity-row">
+                  <span class="activity-urgency" [class]="'activity-urgency--' + urgencyKeyOf(t.urgencyLevel)"></span>
+                  <div class="activity-avatar">{{ patientInitials(t.patientName) }}</div>
+                  <div class="activity-body">
+                    <span class="activity-name">{{ t.patientName }}</span>
+                    <span class="activity-meta">{{ shortDoctor(t.doctorName) }} · {{ urgencyText(t.urgencyLevel) }}</span>
+                  </div>
+                  <span class="activity-time">{{ triageTime(t) }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </app-dashboard-panel>
+
+      </div>
+
+      <app-quick-actions [links]="quickLinks" />
+
+    </div>
+  </div>
+</div>

@@ -1,0 +1,112 @@
+<div class="orders-page">
+
+  <header class="page-header">
+    <div class="header-left">
+      <span class="breadcrumb">médico / órdenes y exámenes</span>
+      <h1 class="page-title">Órdenes y Exámenes</h1>
+      <p class="header-sub">Seguimiento de las solicitudes de laboratorio e imágenes</p>
+    </div>
+  </header>
+
+  <div class="filter-group" role="tablist">
+    @for (pill of filters; track pill.id) {
+      <button
+        class="filter-chip"
+        [class.filter-chip--active]="store.filter() === pill.id"
+        role="tab"
+        [attr.aria-selected]="store.filter() === pill.id"
+        (click)="setFilter(pill.id)">
+        <mat-icon>{{ pill.icon }}</mat-icon>
+        {{ pill.label }}
+        <span class="chip-count">
+          @switch (pill.id) {
+            @case ('ALL') { {{ store.counts().all }} }
+            @case ('REQUESTED') { {{ store.counts().requested }} }
+            @case ('IN_PROGRESS') { {{ store.counts().inProgress }} }
+            @case ('COMPLETED') { {{ store.counts().completed }} }
+          }
+        </span>
+      </button>
+    }
+  </div>
+
+  @if (store.loading()) {
+    <mat-progress-bar mode="indeterminate" class="top-progress" />
+  }
+
+  @if (store.error()) {
+    <app-alert-banner [message]="store.error()" />
+  }
+
+  @if (store.loading()) {
+    <div class="orders-grid" aria-hidden="true">
+      @for (s of [1,2,3,4,5,6]; track s) {
+        <div class="order-card order-card--skeleton">
+          <span class="skeleton skeleton-line"></span>
+          <span class="skeleton skeleton-block"></span>
+        </div>
+      }
+    </div>
+  } @else if (store.isEmpty()) {
+    <div class="board-empty">
+      <mat-icon>science</mat-icon>
+      <h3>Aún no has emitido órdenes</h3>
+      <p>Las solicitudes de exámenes que generes en consulta aparecerán aquí.</p>
+    </div>
+  } @else if (store.visible().length === 0) {
+    <div class="board-empty">
+      <mat-icon>filter_alt_off</mat-icon>
+      <h3>Sin órdenes en este estado</h3>
+      <p>Cambia el filtro para ver otras órdenes.</p>
+    </div>
+  } @else {
+    <div class="orders-grid">
+      @for (order of store.visible(); track order.id) {
+        <article class="order-card" [class]="'order-card--' + statusClass(order.status)">
+          <div class="order-head">
+            <div class="type-icon" [class]="'type-icon--' + order.orderType.toLowerCase()">
+              <mat-icon>{{ typeIcon(order.orderType) }}</mat-icon>
+            </div>
+            <div class="order-id">
+              <span class="order-desc">{{ order.description }}</span>
+              <span class="order-type">{{ typeLabel(order.orderType) }}</span>
+            </div>
+            <span class="status-chip" [class]="'status-chip--' + statusClass(order.status)">
+              {{ statusLabel(order.status) }}
+            </span>
+          </div>
+
+          <div class="order-meta">
+            <span class="meta-item"><mat-icon>person</mat-icon>{{ order.patientName }}</span>
+            <span class="meta-item"><mat-icon>event</mat-icon>{{ formatDate(order.requestedAt) }}</span>
+          </div>
+
+          @if (order.results.length) {
+            <div class="results">
+              @for (r of order.results; track r.id) {
+                <div class="result-row">
+                  <mat-icon>description</mat-icon>
+                  <div class="result-body">
+                    <span class="result-text">{{ r.result || 'Resultado disponible' }}</span>
+                    @if (r.resultDate) { <span class="result-date">{{ formatDate(r.resultDate) }}</span> }
+                  </div>
+                  @if (r.fileUrl) {
+                    <a class="result-link" [href]="r.fileUrl" target="_blank" rel="noopener" matTooltip="Abrir adjunto">
+                      <mat-icon>open_in_new</mat-icon>
+                    </a>
+                  }
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="no-results">
+              <mat-icon>pending</mat-icon>
+              Esperando resultado
+            </div>
+          }
+        </article>
+      }
+    </div>
+  }
+
+</div>

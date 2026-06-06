@@ -1,0 +1,110 @@
+<div class="tpl-page">
+
+  <header class="page-header">
+    <div class="header-left">
+      <span class="breadcrumb">médico / plantillas</span>
+      <h1 class="page-title">Plantillas</h1>
+      <p class="header-sub">Acelera tus consultas con notas clínicas reutilizables</p>
+    </div>
+    <button class="primary-btn" (click)="openCreate()">
+      <mat-icon>add</mat-icon>
+      Nueva plantilla
+    </button>
+  </header>
+
+  @if (store.loading()) {
+    <mat-progress-bar mode="indeterminate" class="top-progress" />
+  }
+
+  @if (store.error()) {
+    <app-alert-banner [message]="store.error()" />
+  }
+
+  @if (!store.loading() && store.isEmpty()) {
+    <div class="board-empty">
+      <mat-icon>auto_awesome</mat-icon>
+      <h3>Aún no tienes plantillas</h3>
+      <p>Crea plantillas con tu nota clínica habitual y aplícalas en un clic durante la consulta.</p>
+      <button class="primary-btn" (click)="openCreate()"><mat-icon>add</mat-icon>Crear mi primera plantilla</button>
+    </div>
+  } @else if (!store.loading()) {
+    <div class="tpl-grid">
+      @for (t of store.templates(); track t.id) {
+        <article class="tpl-card">
+          <div class="tpl-head">
+            <div class="tpl-icon"><mat-icon>description</mat-icon></div>
+            <div class="tpl-id">
+              <span class="tpl-name">{{ t.name }}</span>
+              @if (t.specialtyName) { <span class="tpl-spec">{{ t.specialtyName }}</span> }
+            </div>
+          </div>
+
+          <p class="tpl-preview">{{ preview(t) }}</p>
+
+          <div class="tpl-footer">
+            <span class="usage"><mat-icon>trending_up</mat-icon>{{ t.usageCount }} usos</span>
+            <div class="tpl-actions">
+              <button class="action-btn" (click)="openEdit(t)" matTooltip="Editar" aria-label="Editar plantilla"><mat-icon>edit</mat-icon></button>
+              <button class="action-btn action-btn--danger" (click)="remove(t)" matTooltip="Eliminar" aria-label="Eliminar plantilla"><mat-icon>delete_outline</mat-icon></button>
+            </div>
+          </div>
+        </article>
+      }
+    </div>
+  }
+
+  @if (editorOpen()) {
+    <div class="editor-overlay" (click)="closeEditor()">
+      <div class="editor-panel" (click)="$event.stopPropagation()">
+        <div class="editor-head">
+          <h2>{{ editingId() === null ? 'Nueva plantilla' : 'Editar plantilla' }}</h2>
+          <button class="close-btn" (click)="closeEditor()" aria-label="Cerrar"><mat-icon>close</mat-icon></button>
+        </div>
+
+        <form [formGroup]="form" class="editor-form" (ngSubmit)="save()">
+          <label class="field">
+            <span class="field-label">Nombre de la plantilla *</span>
+            <input type="text" formControlName="name" placeholder="Ej. Control de hipertensión" />
+          </label>
+          <label class="field">
+            <span class="field-label">Motivo de consulta</span>
+            <textarea formControlName="chiefComplaint" rows="2"></textarea>
+          </label>
+          <label class="field">
+            <span class="field-label">Enfermedad actual</span>
+            <textarea formControlName="presentIllness" rows="2"></textarea>
+          </label>
+          <label class="field">
+            <span class="field-label">Examen físico</span>
+            <textarea formControlName="physicalExamination" rows="2"></textarea>
+          </label>
+          <label class="field">
+            <span class="field-label">Evaluación</span>
+            <textarea formControlName="assessment" rows="2"></textarea>
+          </label>
+          <label class="field">
+            <span class="field-label">Plan</span>
+            <textarea formControlName="plan" rows="2"></textarea>
+          </label>
+          <label class="field">
+            <span class="field-label">Tratamiento</span>
+            <textarea formControlName="treatment" rows="2"></textarea>
+          </label>
+          <label class="field">
+            <span class="field-label">Notas internas</span>
+            <textarea formControlName="notes" rows="2"></textarea>
+          </label>
+
+          <div class="editor-actions">
+            <button type="button" class="ghost-btn" (click)="closeEditor()">Cancelar</button>
+            <button type="submit" class="primary-btn" [disabled]="store.saving()">
+              <mat-icon>{{ store.saving() ? 'sync' : 'save' }}</mat-icon>
+              {{ store.saving() ? 'Guardando...' : 'Guardar' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+</div>

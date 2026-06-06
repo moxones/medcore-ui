@@ -1,21 +1,16 @@
-<div class="page">
+<div class="mx-auto max-w-[1200px]">
 
-  <header class="hero">
-    <div class="hero-text">
-      <p class="hero-greeting">{{ greeting }}, <strong>{{ authStore.fullName() || 'Admin' }}</strong></p>
-      <h1 class="hero-title">{{ tenantStore.tenant().name }}</h1>
-    </div>
-    <div class="hero-date">
-      <mat-icon>today</mat-icon>
-      <span>{{ todayLabel }}</span>
-    </div>
-  </header>
+  <app-dashboard-hero
+    [greeting]="greeting"
+    [name]="authStore.fullName() || 'Admin'"
+    [title]="tenantStore.tenant().name"
+    [dateLabel]="todayLabel" />
 
   @if (dashboardStore.loading()) {
     <mat-progress-bar mode="indeterminate" class="top-progress" />
   }
 
-  <section class="kpi-grid">
+  <div class="grid gap-4 mb-6 [grid-template-columns:repeat(auto-fit,minmax(190px,1fr))]">
     <app-kpi-card
       icon="calendar_today"
       label="Citas hoy"
@@ -33,22 +28,18 @@
       label="Pendientes"
       [value]="dashboardStore.loading() ? '—' : waitingCount().toString()"
       [loading]="dashboardStore.loading()"
-      variant="blue" />
+      variant="orange" />
     <app-kpi-card
       icon="payments"
       label="Ingresos del mes"
       [value]="formattedRevenue()"
       [loading]="dashboardStore.loading()"
-      variant="blue" />
-  </section>
+      variant="purple" />
+  </div>
 
-  <div class="content-grid">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-7">
 
-    <section class="panel">
-      <header class="panel-header">
-        <span class="panel-title">Distribución de hoy</span>
-      </header>
-
+    <app-dashboard-panel icon="donut_large" iconVariant="blue" title="Distribución de hoy">
       @if (dashboardStore.loading()) {
         <div class="panel-loading">
           <div class="skeleton-circle"></div>
@@ -91,15 +82,13 @@
           </div>
         </div>
       }
-    </section>
+    </app-dashboard-panel>
 
-    <section class="panel">
-      <header class="panel-header">
-        <span class="panel-title">Productividad por médico</span>
-      </header>
-
+    <app-dashboard-panel icon="leaderboard" iconVariant="purple" title="Productividad por médico">
       @if (dashboardStore.loadingProductivity()) {
-        <mat-progress-bar mode="indeterminate" />
+        <div class="prod-loading">
+          <mat-progress-bar mode="indeterminate" />
+        </div>
       } @else if (dashboardStore.productivity().length === 0) {
         <div class="panel-empty">
           <mat-icon>analytics</mat-icon>
@@ -124,22 +113,10 @@
           }
         </div>
       }
-    </section>
+    </app-dashboard-panel>
 
   </div>
 
-  <section class="quick-section">
-    <span class="quick-section-title">Accesos rápidos</span>
-    <nav class="quick-grid">
-      @for (link of quickLinks; track link.route) {
-        <a class="quick-card" [routerLink]="link.route">
-          <div class="quick-icon">
-            <mat-icon>{{ link.icon }}</mat-icon>
-          </div>
-          <span class="quick-label">{{ link.label }}</span>
-        </a>
-      }
-    </nav>
-  </section>
+  <app-quick-actions title="Accesos rápidos" [links]="quickLinks" />
 
 </div>

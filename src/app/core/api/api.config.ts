@@ -17,6 +17,22 @@ export const API_ROUTES = {
     search: `${API_BASE}/patients/search`,
     myAppointments: `${API_BASE}/patients/me/appointments`,
     byId: (id: number) => `${API_BASE}/patients/${id}`,
+    clinicalHistory: (patientId: number) => `${API_BASE}/patients/${patientId}/clinical-history`,
+    allergies: (patientId: number) => `${API_BASE}/patients/${patientId}/allergies`,
+    allergyById: (patientId: number, itemId: number) =>
+      `${API_BASE}/patients/${patientId}/allergies/${itemId}`,
+    conditions: (patientId: number) => `${API_BASE}/patients/${patientId}/conditions`,
+    conditionById: (patientId: number, itemId: number) =>
+      `${API_BASE}/patients/${patientId}/conditions/${itemId}`,
+    familyHistory: (patientId: number) => `${API_BASE}/patients/${patientId}/family-history`,
+    familyHistoryById: (patientId: number, itemId: number) =>
+      `${API_BASE}/patients/${patientId}/family-history/${itemId}`,
+    surgicalHistory: (patientId: number) => `${API_BASE}/patients/${patientId}/surgical-history`,
+    surgicalHistoryById: (patientId: number, itemId: number) =>
+      `${API_BASE}/patients/${patientId}/surgical-history/${itemId}`,
+    habits: (patientId: number) => `${API_BASE}/patients/${patientId}/habits`,
+    habitById: (patientId: number, itemId: number) =>
+      `${API_BASE}/patients/${patientId}/habits/${itemId}`,
   },
   users: {
     base: `${API_BASE}/users`,
@@ -57,6 +73,7 @@ export const API_ROUTES = {
   dashboard: {
     summary: `${API_BASE}/dashboard/summary`,
     productivity: `${API_BASE}/dashboard/productivity`,
+    doctorSummary: `${API_BASE}/dashboard/doctor-summary`,
   },
   superAdminDashboard: {
     summary: `${API_BASE}/super-admin/dashboard/summary`,
@@ -83,7 +100,18 @@ export const API_ROUTES = {
   },
   triage: {
     base: `${API_BASE}/triage`,
+    today: `${API_BASE}/triage/today`,
+    byId: (id: number) => `${API_BASE}/triage/${id}`,
     byAppointment: (appointmentId: number) => `${API_BASE}/triage/appointment/${appointmentId}`,
+    latestByAppointment: (appointmentId: number) =>
+      `${API_BASE}/triage/appointment/${appointmentId}/latest`,
+    byPatient: (patientId: number) => `${API_BASE}/triage/patient/${patientId}`,
+  },
+  cie10: {
+    base: `${API_BASE}/cie10`,
+  },
+  auditLog: {
+    base: `${API_BASE}/audit-log`,
   },
   branches: {
     base: `${API_BASE}/branches`,
@@ -93,6 +121,12 @@ export const API_ROUTES = {
   doctors: {
     base: `${API_BASE}/doctors`,
     me: `${API_BASE}/doctors/me`,
+    meProfile: `${API_BASE}/doctors/me/profile`,
+    mePatients: `${API_BASE}/doctors/me/patients`,
+    mePrescriptions: `${API_BASE}/doctors/me/prescriptions`,
+    meOrders: `${API_BASE}/doctors/me/orders`,
+    meTemplates: `${API_BASE}/doctors/me/templates`,
+    meTemplateById: (id: number) => `${API_BASE}/doctors/me/templates/${id}`,
     byId: (id: number) => `${API_BASE}/doctors/${id}`,
     specialties: (doctorId: number) => `${API_BASE}/doctors/${doctorId}/specialties`,
     specialtiesAvailable: (doctorId: number) =>
@@ -134,6 +168,8 @@ export const API_ROUTES = {
     byPatient: (patientId: number) => `${API_BASE}/medical-records/patient/${patientId}`,
     clinical: (patientId: number) => `${API_BASE}/medical-records/patient/${patientId}/clinical`,
     entryById: (entryId: number) => `${API_BASE}/medical-records/entries/${entryId}`,
+    signEntry: (entryId: number) => `${API_BASE}/medical-records/entries/${entryId}/sign`,
+    orderResults: (orderId: number) => `${API_BASE}/medical-records/orders/${orderId}/results`,
     byAppointment: (appointmentId: number) =>
       `${API_BASE}/medical-records/appointment/${appointmentId}/entries`,
   },

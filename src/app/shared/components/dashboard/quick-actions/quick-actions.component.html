@@ -1,0 +1,19 @@
+<section class="quick-section">
+  <div class="quick-section-header">
+    <mat-icon>{{ icon() }}</mat-icon>
+    <span>{{ title() }}</span>
+  </div>
+  <div class="quick-grid">
+    @for (link of links(); track link.route) {
+      <a class="quick-card quick-card--{{ link.accent }}" [routerLink]="link.route">
+        <div class="quick-icon">
+          <mat-icon>{{ link.icon }}</mat-icon>
+        </div>
+        <span class="quick-label">{{ link.label }}</span>
+        @if (link.description) {
+          <span class="quick-desc">{{ link.description }}</span>
+        }
+      </a>
+    }
+  </div>
+</section>
