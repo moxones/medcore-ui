@@ -113,6 +113,12 @@ export class AdminShellComponent implements OnInit {
             { icon: 'inventory_2', label: 'Catálogo Maestro', route: '/admin/catalog-master' },
           ],
         },
+        {
+          label: 'Análisis',
+          items: [
+            { icon: 'monitoring', label: 'Reportes', route: '/admin/reports' },
+          ],
+        },
       ];
     }
 
@@ -139,6 +145,12 @@ export class AdminShellComponent implements OnInit {
           { icon: 'category', label: 'Catálogos', route: '/admin/catalogs' },
           { icon: 'manage_accounts', label: 'Usuarios', route: '/admin/users' },
           { icon: 'pin_drop', label: 'Sucursales del Personal', route: '/admin/staff-branches' },
+        ],
+      },
+      {
+        label: 'Análisis',
+        items: [
+          { icon: 'monitoring', label: 'Reportes', route: '/admin/reports' },
         ],
       },
     ];

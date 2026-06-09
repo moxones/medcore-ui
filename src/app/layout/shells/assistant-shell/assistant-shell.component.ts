@@ -94,6 +94,12 @@ export class AssistantShellComponent implements OnInit {
         { icon: 'people', label: 'Pacientes', route: '/assistant/patients' },
       ],
     },
+    {
+      label: 'Análisis',
+      items: [
+        { icon: 'monitoring', label: 'Reportes', route: '/assistant/reports' },
+      ],
+    },
   ];
 
   ngOnInit(): void {

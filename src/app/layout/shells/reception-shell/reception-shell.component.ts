@@ -105,6 +105,12 @@ export class ReceptionShellComponent implements OnInit {
         { icon: 'people', label: 'Pacientes', route: '/reception/patients' },
       ],
     },
+    {
+      label: 'Análisis',
+      items: [
+        { icon: 'monitoring', label: 'Reportes', route: '/reception/reports' },
+      ],
+    },
   ];
 
   ngOnInit(): void {

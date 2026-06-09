@@ -1,0 +1,44 @@
+<section class="hub" [attr.data-accent]="accent()">
+
+  <header class="hub-header">
+    <div class="hub-heading">
+      @if (breadcrumb()) {
+        <span class="hub-breadcrumb">{{ breadcrumb() }}</span>
+      }
+      <div class="hub-title-row">
+        <span class="hub-icon">
+          <mat-icon>monitoring</mat-icon>
+        </span>
+        <h1 class="hub-title">{{ title() }}</h1>
+      </div>
+      @if (subtitle()) {
+        <p class="hub-subtitle">{{ subtitle() }}</p>
+      }
+    </div>
+
+    <span class="hub-count">
+      <mat-icon>analytics</mat-icon>
+      {{ reports().length }} reportes
+    </span>
+  </header>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    @for (report of reports(); track report.route) {
+      <a class="report-card" [routerLink]="report.route">
+        <div class="report-top">
+          <span class="report-icon">
+            <mat-icon>{{ report.icon }}</mat-icon>
+          </span>
+          <span class="report-soon">Próximamente</span>
+        </div>
+        <h3 class="report-title">{{ report.title }}</h3>
+        <p class="report-desc">{{ report.description }}</p>
+        <span class="report-cta">
+          Ver reporte
+          <mat-icon>arrow_forward</mat-icon>
+        </span>
+      </a>
+    }
+  </div>
+
+</section>

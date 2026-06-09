@@ -131,6 +131,25 @@ export const routes: Routes = [
             (m) => m.SubscriptionsPageComponent,
           ),
       },
+      {
+        path: 'reports',
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/reports/reports-hub.component').then(
+                (m) => m.ReportsHubPageComponent,
+              ),
+          },
+          {
+            path: ':slug',
+            loadComponent: () =>
+              import('./features/reports/report-view.component').then(
+                (m) => m.ReportViewPageComponent,
+              ),
+          },
+        ],
+      },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },
@@ -178,6 +197,25 @@ export const routes: Routes = [
             (m) => m.ReceptionPatientsPageComponent,
           ),
       },
+      {
+        path: 'reports',
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/reports/reports-hub.component').then(
+                (m) => m.ReportsHubPageComponent,
+              ),
+          },
+          {
+            path: ':slug',
+            loadComponent: () =>
+              import('./features/reports/report-view.component').then(
+                (m) => m.ReportViewPageComponent,
+              ),
+          },
+        ],
+      },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },
@@ -217,6 +255,25 @@ export const routes: Routes = [
           import('./features/assistant/patients/assistant-patients.component').then(
             (m) => m.AssistantPatientsComponent,
           ),
+      },
+      {
+        path: 'reports',
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/reports/reports-hub.component').then(
+                (m) => m.ReportsHubPageComponent,
+              ),
+          },
+          {
+            path: ':slug',
+            loadComponent: () =>
+              import('./features/reports/report-view.component').then(
+                (m) => m.ReportViewPageComponent,
+              ),
+          },
+        ],
       },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
@@ -307,6 +364,25 @@ export const routes: Routes = [
             (m) => m.DoctorProfileComponent,
           ),
       },
+      {
+        path: 'reports',
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/reports/reports-hub.component').then(
+                (m) => m.ReportsHubPageComponent,
+              ),
+          },
+          {
+            path: ':slug',
+            loadComponent: () =>
+              import('./features/reports/report-view.component').then(
+                (m) => m.ReportViewPageComponent,
+              ),
+          },
+        ],
+      },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },
@@ -351,6 +427,25 @@ export const routes: Routes = [
           import('./features/patient/profile/patient-profile.component').then(
             (m) => m.PatientProfileComponent,
           ),
+      },
+      {
+        path: 'reports',
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./features/reports/reports-hub.component').then(
+                (m) => m.ReportsHubPageComponent,
+              ),
+          },
+          {
+            path: ':slug',
+            loadComponent: () =>
+              import('./features/reports/report-view.component').then(
+                (m) => m.ReportViewPageComponent,
+              ),
+          },
+        ],
       },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],

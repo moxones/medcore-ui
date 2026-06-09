@@ -82,6 +82,7 @@ export class PatientShellComponent implements OnInit {
       items: [
         { icon: 'dashboard', label: 'Dashboard', route: '/patient/dashboard' },
         { icon: 'calendar_month', label: 'Mis Citas', route: '/patient/appointments' },
+        { icon: 'monitoring', label: 'Reportes', route: '/patient/reports' },
         { icon: 'person', label: 'Mi Perfil', route: '/patient/profile' },
       ],
     },

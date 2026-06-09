@@ -161,6 +161,10 @@ export const API_ROUTES = {
     base: `${API_BASE}/subscriptions`,
     byId: (id: number) => `${API_BASE}/subscriptions/${id}`,
   },
+  reports: {
+    data: (key: string) => `${API_BASE}/reports/${key}`,
+    export: (key: string) => `${API_BASE}/reports/${key}/export`,
+  },
   medicalRecords: {
     base: `${API_BASE}/medical-records`,
     me: `${API_BASE}/medical-records/me`,

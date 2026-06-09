@@ -1,0 +1,189 @@
+<section class="report" [attr.data-accent]="accent()">
+
+  @if (!definition()) {
+    <div class="report-missing">
+      <mat-icon>search_off</mat-icon>
+      <h2>Reporte no encontrado</h2>
+      <p>El reporte que buscas no existe o no está disponible para tu rol.</p>
+      <a class="ghost-btn" [routerLink]="hubRoute()">
+        <mat-icon>arrow_back</mat-icon>
+        Volver a reportes
+      </a>
+    </div>
+  } @else {
+
+    <header class="report-header">
+      <div class="report-heading">
+        <a class="report-back" [routerLink]="hubRoute()">
+          <mat-icon>arrow_back</mat-icon>
+          Reportes
+        </a>
+        <div class="report-title-row">
+          <span class="report-icon">
+            <mat-icon>{{ definition()!.icon }}</mat-icon>
+          </span>
+          <h1 class="report-title">{{ definition()!.title }}</h1>
+        </div>
+        <p class="report-subtitle">{{ definition()!.description }}</p>
+      </div>
+
+      <div class="report-actions">
+        <button
+          class="export-btn"
+          [disabled]="loading() || exporting() !== null || !result()"
+          (click)="exportAs('PDF')">
+          @if (exporting() === 'PDF') {
+            <mat-icon class="spin">progress_activity</mat-icon>
+          } @else {
+            <mat-icon>picture_as_pdf</mat-icon>
+          }
+          PDF
+        </button>
+        <button
+          class="export-btn"
+          [disabled]="loading() || exporting() !== null || !result()"
+          (click)="exportAs('XLSX')">
+          @if (exporting() === 'XLSX') {
+            <mat-icon class="spin">progress_activity</mat-icon>
+          } @else {
+            <mat-icon>grid_on</mat-icon>
+          }
+          Excel
+        </button>
+      </div>
+    </header>
+
+    <div class="report-toolbar">
+      <div class="preset-row">
+        @for (option of presets; track option.key) {
+          <button
+            class="preset-chip"
+            [class.active]="preset() === option.key"
+            (click)="applyPreset(option.key)">
+            {{ option.label }}
+          </button>
+        }
+      </div>
+
+      <div class="filter-row">
+        <label class="date-field">
+          <span>Desde</span>
+          <input type="date" [value]="from()" (change)="onFromChange($any($event.target).value)" />
+        </label>
+        <label class="date-field">
+          <span>Hasta</span>
+          <input type="date" [value]="to()" (change)="onToChange($any($event.target).value)" />
+        </label>
+
+        @if (usesBranch() && branchContext.branches().length) {
+          <label class="date-field">
+            <span>Sucursal</span>
+            <select [value]="branchId() ?? ''" (change)="selectBranch($any($event.target).value)">
+              <option value="">Todas las sucursales</option>
+              @for (branch of branchContext.branches(); track branch.id) {
+                <option [value]="branch.id">{{ branch.name }}</option>
+              }
+            </select>
+          </label>
+        }
+
+        <button class="generate-btn" [disabled]="loading()" (click)="generate()">
+          <mat-icon>refresh</mat-icon>
+          Generar
+        </button>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+
+    <app-alert-banner [message]="errorMessage()" />
+
+    @if (result(); as data) {
+
+      <p class="report-meta">
+        @if (data.range) {
+          {{ data.range.from }} — {{ data.range.to }} ·
+        }
+        Generado {{ data.generatedAt }}
+      </p>
+
+      @if (data.kpis.length) {
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 kpi-grid">
+          @for (kpi of data.kpis; track kpi.label) {
+            <app-kpi-card
+              [icon]="kpi.icon"
+              [label]="kpi.label"
+              [value]="kpi.value"
+              [variant]="kpi.variant ?? 'blue'" />
+          }
+        </div>
+      }
+
+      @for (section of data.sections; track section.title) {
+        <article class="section-card">
+          <h3 class="section-title">{{ section.title }}</h3>
+
+          @switch (section.type) {
+            @case ('table') {
+              <div class="data-scroll">
+                <div
+                  class="data-grid"
+                  [style.grid-template-columns]="'repeat(' + section.columns.length + ', minmax(120px, 1fr))'">
+                  @for (column of section.columns; track column.key) {
+                    <span class="data-head" [class.right]="column.align === 'right'">{{ column.label }}</span>
+                  }
+                  @for (row of section.rows; track $index) {
+                    @for (column of section.columns; track column.key) {
+                      <span class="data-cell" [class.right]="column.align === 'right'">
+                        {{ formatCell(row[column.key], column) }}
+                      </span>
+                    }
+                  }
+                </div>
+              </div>
+            }
+            @case ('bars') {
+              <div class="bars">
+                @for (bar of section.bars; track bar.label) {
+                  <div class="bar-row">
+                    <span class="bar-label">{{ bar.label }}</span>
+                    <span class="bar-track">
+                      <span class="bar-fill" [style.width.%]="barWidth(bar.value, section.bars)"></span>
+                    </span>
+                    <span class="bar-value">{{ bar.display }}</span>
+                  </div>
+                }
+              </div>
+            }
+            @case ('list') {
+              <div class="kv-list">
+                @for (item of section.items; track item.label) {
+                  <div class="kv-row">
+                    <div class="kv-text">
+                      <span class="kv-label">{{ item.label }}</span>
+                      @if (item.hint) {
+                        <span class="kv-hint">{{ item.hint }}</span>
+                      }
+                    </div>
+                    <span class="kv-value">{{ item.value }}</span>
+                  </div>
+                }
+              </div>
+            }
+          }
+        </article>
+      }
+
+    } @else if (!loading()) {
+      <div class="report-empty">
+        <mat-icon>insights</mat-icon>
+        <h3>Sin datos para mostrar</h3>
+        <p>Ajusta el rango de fechas y vuelve a generar el reporte.</p>
+      </div>
+    }
+
+  }
+
+</section>

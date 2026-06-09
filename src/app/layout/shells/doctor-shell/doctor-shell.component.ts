@@ -107,6 +107,12 @@ export class DoctorShellComponent implements OnInit {
       ],
     },
     {
+      label: 'Análisis',
+      items: [
+        { icon: 'monitoring', label: 'Reportes', route: '/doctor/reports' },
+      ],
+    },
+    {
       label: 'Cuenta',
       items: [
         { icon: 'badge', label: 'Mi Perfil', route: '/doctor/profile' },
