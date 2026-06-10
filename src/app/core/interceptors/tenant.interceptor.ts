@@ -1,4 +1,4 @@
-﻿import { HttpInterceptorFn } from '@angular/common/http';
+import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { TenantService } from '../tenant/tenant.service';
 import { environment } from '../../../environments/environment';
@@ -6,7 +6,7 @@ import { environment } from '../../../environments/environment';
 export const tenantInterceptor: HttpInterceptorFn = (req, next) => {
   const subdomain = inject(TenantService).getSubdomain();
 
-  if (!subdomain || subdomain === 'localhost') {
+  if (!subdomain || !req.url.startsWith(environment.apiUrl)) {
     return next(req);
   }
 
