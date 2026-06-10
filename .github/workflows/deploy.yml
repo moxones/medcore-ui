@@ -4,19 +4,26 @@ on:
   push:
     branches: [master]
 
+concurrency:
+  group: deploy-frontend
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
 
       - run: npm ci
 
       - run: npx ng build --configuration production
+
+      - run: cp dist/medcore-ui/browser/index.csr.html dist/medcore-ui/browser/index.html
 
       - uses: appleboy/scp-action@v0.1.7
         with:
@@ -24,5 +31,15 @@ jobs:
           username: root
           key: ${{ secrets.DROPLET_SSH_KEY }}
           source: dist/medcore-ui/browser/*
-          target: /var/www/medcore-frontend/browser/
+          target: /var/www/medcore-frontend/staging/
           strip_components: 3
+          rm: true
+
+      - uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: root
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          script: |
+            rsync -a --delete /var/www/medcore-frontend/staging/ /var/www/medcore-frontend/browser/
+            rm -rf /var/www/medcore-frontend/staging
