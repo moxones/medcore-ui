@@ -127,7 +127,11 @@ export class NewAppointmentPageComponent implements OnInit {
     let patient: PatientResponse | null = null;
     try {
       const profile = await firstValueFrom(this.patientService.getProfile());
-      patient = this.profileToPatient(profile);
+      if (!profile.patientId) {
+        this.selfError.set(true);
+      } else {
+        patient = this.profileToPatient(profile);
+      }
     } catch {
       this.selfError.set(true);
     } finally {
@@ -138,8 +142,7 @@ export class NewAppointmentPageComponent implements OnInit {
 
   private profileToPatient(profile: PatientProfileResponse): PatientResponse {
     return {
-      id: profile.id,
-      patientId: profile.patientId,
+      id: profile.patientId!,
       firstName: profile.firstName,
       lastName: profile.lastName,
       contactEmail: profile.contactEmail,

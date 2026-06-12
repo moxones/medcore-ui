@@ -31,7 +31,7 @@ export const PatientDossierStore = signalStore(
   ) => ({
     async open(patient: PatientResponse): Promise<void> {
       patchState(store, { patient, record: null, triages: [], loading: true, error: null });
-      const patientId = patient.patientId;
+      const patientId = patient.id;
       const [recordRes, triagesRes] = await Promise.allSettled([
         firstValueFrom(recordSvc.getByPatient(patientId)),
         firstValueFrom(triageSvc.getByPatient(patientId)),

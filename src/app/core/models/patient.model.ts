@@ -41,7 +41,6 @@ export interface UpdateProfileRequest {
 
 export interface PatientResponse {
   id: number;
-  patientId: number;
   firstName: string;
   lastName: string;
   contactEmail: string | null;

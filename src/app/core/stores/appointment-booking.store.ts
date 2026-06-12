@@ -433,7 +433,7 @@ export const AppointmentBookingStore = signalStore(
           try {
             const res = await firstValueFrom(
               appointmentService.create({
-                patientId: patient.patientId,
+                patientId: patient.id,
                 doctorId: selected.slot.doctorId,
                 branchId,
                 scheduledAt: `${selected.date}T${selected.slot.startTime}:00`,
