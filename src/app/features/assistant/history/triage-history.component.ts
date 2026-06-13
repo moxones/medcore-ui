@@ -15,6 +15,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { TriageStore } from '@core/stores/triage.store';
 import { BranchContextStore } from '@core/stores/branch-context.store';
+import { ProcessConfigStore } from '@core/stores/process-config.store';
+import { ProcessDisabledStateComponent } from '@shared/components/process-disabled-state/process-disabled-state.component';
 import { TriageSummaryResponse, UrgencyLevel } from '@core/models/triage.model';
 import { computeImc, urgencyKey, urgencyLabel } from '@core/utils/triage-vitals.util';
 
@@ -26,13 +28,14 @@ interface UrgencyFilter {
 @Component({
   selector: 'app-triage-history',
   standalone: true,
-  imports: [MatIconModule, MatTooltipModule, MatProgressBarModule],
+  imports: [MatIconModule, MatTooltipModule, MatProgressBarModule, ProcessDisabledStateComponent],
   templateUrl: './triage-history.component.html',
   styleUrl: './triage-history.component.scss',
 })
 export class TriageHistoryComponent implements OnInit {
   readonly store = inject(TriageStore);
   readonly branchContext = inject(BranchContextStore);
+  readonly processConfig = inject(ProcessConfigStore);
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
 
@@ -82,8 +85,10 @@ export class TriageHistoryComponent implements OnInit {
     };
   });
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) return;
+    await this.processConfig.load();
+    if (!this.processConfig.triageEnabled()) return;
     void this.store.loadInit();
     void this.store.loadTodayTriages();
     interval(30_000)

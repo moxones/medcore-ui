@@ -7,6 +7,7 @@ import { PatientService } from '@core/services/patient.service';
 import { MedicalRecordService } from '@core/services/medical-record.service';
 import { Cie10Service } from '@core/services/cie10.service';
 import { DoctorWorkspaceService } from '@core/services/doctor-workspace.service';
+import { ProcessConfigStore } from '@core/stores/process-config.store';
 import { AppointmentResponse } from '@core/models/appointment.model';
 import { PatientResponse } from '@core/models/patient.model';
 import { TriageResponse } from '@core/models/triage.model';
@@ -113,6 +114,7 @@ export const DoctorConsultationStore = signalStore(
     recordSvc = inject(MedicalRecordService),
     cie10Svc = inject(Cie10Service),
     workspaceSvc = inject(DoctorWorkspaceService),
+    processConfig = inject(ProcessConfigStore),
   ) => ({
     async load(appointmentId: number): Promise<void> {
       patchState(store, { ...initialState, appointmentId, loading: true });
@@ -233,8 +235,9 @@ export const DoctorConsultationStore = signalStore(
       };
       try {
         await firstValueFrom(recordSvc.createEntry(body));
+        const nextFlow = processConfig.paymentEnabled() ? 'PENDING_PAYMENT' : 'COMPLETED';
         await firstValueFrom(
-          apptSvc.updateFlowStatus(appointmentId, { flowStatus: 'PENDING_PAYMENT' }),
+          apptSvc.updateFlowStatus(appointmentId, { flowStatus: nextFlow }),
         );
         patchState(store, { saving: false });
         return true;

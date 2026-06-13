@@ -1,5 +1,12 @@
 <div class="triage-page">
 
+  @if (!processConfig.triageEnabled()) {
+    <app-process-disabled-state
+      icon="monitor_heart"
+      title="Triaje deshabilitado"
+      message="El proceso de triaje no está activo para tu clínica, por lo que no hay signos vitales que registrar." />
+  } @else {
+
   <div class="triage-toolbar">
     <div class="toolbar-left">
       <span class="breadcrumb">asistente / cola de triaje</span>
@@ -442,6 +449,8 @@
         }
       </div>
     </aside>
+  }
+
   }
 
 </div>

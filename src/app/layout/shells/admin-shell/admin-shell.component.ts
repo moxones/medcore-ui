@@ -145,6 +145,7 @@ export class AdminShellComponent implements OnInit {
           { icon: 'category', label: 'Catálogos', route: '/admin/catalogs' },
           { icon: 'manage_accounts', label: 'Usuarios', route: '/admin/users' },
           { icon: 'pin_drop', label: 'Sucursales del Personal', route: '/admin/staff-branches' },
+          { icon: 'linear_scale', label: 'Configuración de Colas', route: '/admin/queue-config' },
         ],
       },
       {

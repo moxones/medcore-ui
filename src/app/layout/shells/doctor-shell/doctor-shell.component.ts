@@ -12,6 +12,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { TenantStore } from '@core/tenant/tenant.store';
 import { AuthStore } from '@core/auth/auth.store';
+import { ProcessConfigStore } from '@core/stores/process-config.store';
 import { ChangePasswordDialogComponent } from '@shared/dialogs/change-password/change-password-dialog.component';
 import { LogoutOverlayComponent } from '@shared/components/logout-overlay/logout-overlay.component';
 
@@ -53,6 +54,7 @@ export class DoctorShellComponent implements OnInit {
 
   readonly tenantStore = inject(TenantStore);
   readonly authStore = inject(AuthStore);
+  readonly processConfig = inject(ProcessConfigStore);
 
   readonly isHandset = toSignal(
     this.breakpointObserver
@@ -122,6 +124,7 @@ export class DoctorShellComponent implements OnInit {
 
   ngOnInit(): void {
     this.tenantStore.load();
+    void this.processConfig.load();
   }
 
   onMenuClick(): void {

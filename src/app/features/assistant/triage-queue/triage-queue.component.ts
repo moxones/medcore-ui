@@ -16,8 +16,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { AlertBannerComponent } from '@shared/components/alert-banner/alert-banner.component';
+import { ProcessDisabledStateComponent } from '@shared/components/process-disabled-state/process-disabled-state.component';
 import { TriageStore, TriagePatient, TriageStage, TriageTab } from '@core/stores/triage.store';
 import { BranchContextStore } from '@core/stores/branch-context.store';
+import { ProcessConfigStore } from '@core/stores/process-config.store';
 import { CreateTriageRequest, UrgencyLevel } from '@core/models/triage.model';
 import {
   computeImc,
@@ -49,6 +51,7 @@ interface UrgencyOption {
     MatTooltipModule,
     MatProgressBarModule,
     AlertBannerComponent,
+    ProcessDisabledStateComponent,
   ],
   templateUrl: './triage-queue.component.html',
   styleUrl: './triage-queue.component.scss',
@@ -56,6 +59,7 @@ interface UrgencyOption {
 export class TriageQueueComponent implements OnInit {
   readonly store = inject(TriageStore);
   readonly branchContext = inject(BranchContextStore);
+  readonly processConfig = inject(ProcessConfigStore);
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
@@ -150,8 +154,10 @@ export class TriageQueueComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) return;
+    await this.processConfig.load();
+    if (!this.processConfig.triageEnabled()) return;
     void this.store.loadInit();
     interval(15_000)
       .pipe(takeUntilDestroyed(this.destroyRef))

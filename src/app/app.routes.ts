@@ -114,6 +114,15 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'queue-config',
+        canActivate: [roleGuard],
+        data: { roles: ['CLINIC_ADMIN', 'SUPER_ADMIN'] },
+        loadComponent: () =>
+          import('./features/admin/queue-config/queue-config-page.component').then(
+            (m) => m.QueueConfigPageComponent,
+          ),
+      },
+      {
         path: 'organizations',
         canActivate: [roleGuard],
         data: { roles: ['SUPER_ADMIN'] },

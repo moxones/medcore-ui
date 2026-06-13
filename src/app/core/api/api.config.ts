@@ -98,6 +98,9 @@ export const API_ROUTES = {
       appointmentStatusById: (id: number) => `${API_BASE}/super-admin/catalogs/appointment-statuses/${id}`,
     },
   },
+  processConfig: {
+    base: `${API_BASE}/process-config`,
+  },
   triage: {
     base: `${API_BASE}/triage`,
     today: `${API_BASE}/triage/today`,

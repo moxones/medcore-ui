@@ -5,6 +5,7 @@ import { AppointmentService } from '@core/services/appointment.service';
 import { DoctorService } from '@core/services/doctor.service';
 import { CatalogService } from '@core/services/catalog.service';
 import { BranchContextStore } from '@core/stores/branch-context.store';
+import { ProcessConfigStore } from '@core/stores/process-config.store';
 import { AppointmentResponse, AppointmentFlowStatus } from '@core/models/appointment.model';
 import { DoctorCardResponse } from '@core/models/doctor.model';
 import { CatalogItemResponse, MasterCatalogItem } from '@core/models/catalog.model';
@@ -147,7 +148,7 @@ export const QueueStore = signalStore(
     selectedId: null,
     lastRefreshAt: Date.now(),
   }),
-  withComputed((store) => {
+  withComputed((store, processConfig = inject(ProcessConfigStore)) => {
     const typeNameById = computed(() => new Map(store.appointmentTypes().map((t) => [t.id, t.name])));
     const statusNameById = computed(() => new Map(store.appointmentStatuses().map((s) => [s.id, s.name])));
     const statusCodeById = computed(() => new Map(store.appointmentStatuses().map((s) => [s.id, s.code])));
@@ -209,7 +210,9 @@ export const QueueStore = signalStore(
 
     const columns = computed((): QueueColumn[] => {
       const buckets = byColumn();
-      return [
+      const showCalled = processConfig.calledEnabled() || buckets.called.length > 0;
+      const showToBill = processConfig.paymentEnabled() || buckets.toBill.length > 0;
+      const all: QueueColumn[] = [
         { id: 'toArrive', label: 'Por llegar', icon: 'event_upcoming', patients: buckets.toArrive },
         { id: 'waiting', label: 'En espera', icon: 'airline_seat_recline_normal', patients: buckets.waiting },
         { id: 'called', label: 'Llamados', icon: 'campaign', patients: buckets.called },
@@ -217,6 +220,11 @@ export const QueueStore = signalStore(
         { id: 'toBill', label: 'Por cobrar', icon: 'payments', patients: buckets.toBill },
         { id: 'finished', label: 'Finalizadas', icon: 'task_alt', patients: buckets.finished },
       ];
+      return all.filter((col) => {
+        if (col.id === 'called') return showCalled;
+        if (col.id === 'toBill') return showToBill;
+        return true;
+      });
     });
 
     const doctorStatuses = computed((): DoctorStatus[] => {

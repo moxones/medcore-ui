@@ -16,6 +16,7 @@ import {
 import { AlertBannerComponent } from '@shared/components/alert-banner/alert-banner.component';
 import { QueueStore, QueuePatient, QueueColumnId } from '@core/stores/queue.store';
 import { BranchContextStore } from '@core/stores/branch-context.store';
+import { ProcessConfigStore } from '@core/stores/process-config.store';
 import { AppointmentFlowStatus } from '@core/models/appointment.model';
 
 type DetailMode = 'view' | 'cancel' | 'reschedule';
@@ -39,6 +40,7 @@ type DetailMode = 'view' | 'cancel' | 'reschedule';
 export class QueuePageComponent implements OnInit {
   readonly store = inject(QueueStore);
   readonly branchContext = inject(BranchContextStore);
+  readonly processConfig = inject(ProcessConfigStore);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
@@ -96,40 +98,43 @@ export class QueuePageComponent implements OnInit {
     void this.store.moveTo(patient.id, target);
   }
 
-  private readonly nextFlow: Partial<Record<QueueColumnId, AppointmentFlowStatus>> = {
-    toArrive: 'WAITING',
-    waiting: 'CALLED',
-    called: 'IN_PROCESS',
-    inConsult: 'PENDING_PAYMENT',
-    toBill: 'COMPLETED',
-  };
+  private nextFlowFor(column: QueueColumnId): AppointmentFlowStatus | null {
+    switch (column) {
+      case 'toArrive': return 'WAITING';
+      case 'waiting': return this.processConfig.calledEnabled() ? 'CALLED' : 'IN_PROCESS';
+      case 'called': return 'IN_PROCESS';
+      case 'inConsult': return this.processConfig.paymentEnabled() ? 'PENDING_PAYMENT' : 'COMPLETED';
+      case 'toBill': return 'COMPLETED';
+      default: return null;
+    }
+  }
 
   advance(patient: QueuePatient, event?: Event): void {
     event?.stopPropagation();
-    const next = this.nextFlow[patient.column];
+    const next = this.nextFlowFor(patient.column);
     if (next) void this.store.setFlow(patient.id, next);
   }
 
   advanceLabel(column: QueueColumnId): string | null {
-    const labels: Partial<Record<QueueColumnId, string>> = {
-      toArrive: 'Registró llegada',
-      waiting: 'Llamar',
-      called: 'Pasó a consulta',
-      inConsult: 'Finalizar consulta',
-      toBill: 'Registrar pago',
-    };
-    return labels[column] ?? null;
+    switch (column) {
+      case 'toArrive': return 'Registró llegada';
+      case 'waiting': return this.processConfig.calledEnabled() ? 'Llamar' : 'Pasó a consulta';
+      case 'called': return 'Pasó a consulta';
+      case 'inConsult': return 'Finalizar consulta';
+      case 'toBill': return 'Registrar pago';
+      default: return null;
+    }
   }
 
   advanceIcon(column: QueueColumnId): string {
-    const icons: Partial<Record<QueueColumnId, string>> = {
-      toArrive: 'login',
-      waiting: 'campaign',
-      called: 'meeting_room',
-      inConsult: 'check_circle',
-      toBill: 'paid',
-    };
-    return icons[column] ?? 'task_alt';
+    switch (column) {
+      case 'toArrive': return 'login';
+      case 'waiting': return this.processConfig.calledEnabled() ? 'campaign' : 'meeting_room';
+      case 'called': return 'meeting_room';
+      case 'inConsult': return 'check_circle';
+      case 'toBill': return 'paid';
+      default: return 'task_alt';
+    }
   }
 
   openDetail(patient: QueuePatient): void {

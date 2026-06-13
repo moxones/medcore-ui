@@ -22,6 +22,7 @@ import {
   DraftDiagnosis,
   NoteFields,
 } from '@core/stores/doctor-consultation.store';
+import { ProcessConfigStore } from '@core/stores/process-config.store';
 import { Cie10Code } from '@core/models/cie10.model';
 import {
   CertificateType,
@@ -52,6 +53,7 @@ interface OrderTypeOption {
 })
 export class DoctorConsultationComponent implements OnInit {
   readonly store = inject(DoctorConsultationStore);
+  readonly processConfig = inject(ProcessConfigStore);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
@@ -132,6 +134,14 @@ export class DoctorConsultationComponent implements OnInit {
       return;
     }
     void this.store.load(id);
+    void this.initAside();
+  }
+
+  private async initAside(): Promise<void> {
+    await this.processConfig.load();
+    if (!this.processConfig.triageEnabled() && this.activeAside() === 'triage') {
+      this.activeAside.set('history');
+    }
   }
 
   goBack(): void {
@@ -235,7 +245,10 @@ export class DoctorConsultationComponent implements OnInit {
     };
     const ok = await this.store.finalize(note);
     if (ok) {
-      this.snackBar.open('Consulta finalizada y enviada a cobranza', 'OK', { duration: 3000 });
+      const message = this.processConfig.paymentEnabled()
+        ? 'Consulta finalizada y enviada a cobranza'
+        : 'Consulta finalizada';
+      this.snackBar.open(message, 'OK', { duration: 3000 });
       void this.router.navigate(['/doctor/today']);
     }
   }

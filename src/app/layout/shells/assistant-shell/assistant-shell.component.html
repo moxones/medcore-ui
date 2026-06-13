@@ -27,7 +27,7 @@
       </div>
 
       <nav class="nav-list">
-        @for (group of navGroups; track group.label) {
+        @for (group of navGroups(); track group.label) {
           @if (!sidenavCollapsed()) {
             <span class="nav-group-label">{{ group.label }}</span>
           } @else {

@@ -1,5 +1,12 @@
 <div class="history-page">
 
+  @if (!processConfig.triageEnabled()) {
+    <app-process-disabled-state
+      icon="monitor_heart"
+      title="Triaje deshabilitado"
+      message="El proceso de triaje no está activo para tu clínica, por lo que no hay registros que mostrar." />
+  } @else {
+
   <div class="history-toolbar">
     <div class="toolbar-left">
       <span class="breadcrumb">asistente / triajes de hoy</span>
@@ -153,6 +160,8 @@
         </article>
       }
     </div>
+  }
+
   }
 
 </div>

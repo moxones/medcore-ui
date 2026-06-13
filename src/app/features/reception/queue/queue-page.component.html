@@ -65,24 +65,28 @@
         <strong>{{ store.stats().waiting }}</strong>
         <span class="stat-label">en espera</span>
       </span>
-      <span class="stat-sep"></span>
-      <span class="stat-item">
-        <span class="stat-dot stat-dot--sky"></span>
-        <strong>{{ store.stats().called }}</strong>
-        <span class="stat-label">llamados</span>
-      </span>
+      @if (processConfig.calledEnabled()) {
+        <span class="stat-sep"></span>
+        <span class="stat-item">
+          <span class="stat-dot stat-dot--sky"></span>
+          <strong>{{ store.stats().called }}</strong>
+          <span class="stat-label">llamados</span>
+        </span>
+      }
       <span class="stat-sep"></span>
       <span class="stat-item">
         <span class="stat-dot stat-dot--green"></span>
         <strong>{{ store.stats().inConsult }}</strong>
         <span class="stat-label">en consulta</span>
       </span>
-      <span class="stat-sep"></span>
-      <span class="stat-item">
-        <span class="stat-dot stat-dot--violet"></span>
-        <strong>{{ store.stats().toBill }}</strong>
-        <span class="stat-label">por cobrar</span>
-      </span>
+      @if (processConfig.paymentEnabled()) {
+        <span class="stat-sep"></span>
+        <span class="stat-item">
+          <span class="stat-dot stat-dot--violet"></span>
+          <strong>{{ store.stats().toBill }}</strong>
+          <span class="stat-label">por cobrar</span>
+        </span>
+      }
       <span class="stat-sep"></span>
       <span class="stat-item" matTooltip="Tiempo de espera promedio / máximo">
         <mat-icon class="stat-clock">schedule</mat-icon>

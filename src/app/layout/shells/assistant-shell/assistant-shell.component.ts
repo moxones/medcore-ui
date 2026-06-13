@@ -14,6 +14,7 @@ import { map } from 'rxjs';
 import { TenantStore } from '@core/tenant/tenant.store';
 import { AuthStore } from '@core/auth/auth.store';
 import { BranchContextStore } from '@core/stores/branch-context.store';
+import { ProcessConfigStore } from '@core/stores/process-config.store';
 import { ChangePasswordDialogComponent } from '@shared/dialogs/change-password/change-password-dialog.component';
 import { LogoutOverlayComponent } from '@shared/components/logout-overlay/logout-overlay.component';
 
@@ -57,6 +58,7 @@ export class AssistantShellComponent implements OnInit {
   readonly tenantStore = inject(TenantStore);
   readonly authStore = inject(AuthStore);
   readonly branchContext = inject(BranchContextStore);
+  readonly processConfig = inject(ProcessConfigStore);
 
   readonly isHandset = toSignal(
     this.breakpointObserver
@@ -79,32 +81,33 @@ export class AssistantShellComponent implements OnInit {
     return `${first}${last}`.toUpperCase() || '?';
   });
 
-  readonly navGroups: NavGroup[] = [
-    {
-      label: 'Triaje',
-      items: [
-        { icon: 'monitor_heart', label: 'Inicio', route: '/assistant/dashboard' },
+  readonly navGroups = computed((): NavGroup[] => {
+    const triageItems: NavItem[] = [
+      { icon: 'monitor_heart', label: 'Inicio', route: '/assistant/dashboard' },
+    ];
+    if (this.processConfig.triageEnabled()) {
+      triageItems.push(
         { icon: 'pending_actions', label: 'Cola de Triaje', route: '/assistant/triage' },
         { icon: 'fact_check', label: 'Triajes de Hoy', route: '/assistant/history' },
-      ],
-    },
-    {
-      label: 'Pacientes',
-      items: [
-        { icon: 'people', label: 'Pacientes', route: '/assistant/patients' },
-      ],
-    },
-    {
-      label: 'Análisis',
-      items: [
-        { icon: 'monitoring', label: 'Reportes', route: '/assistant/reports' },
-      ],
-    },
-  ];
+      );
+    }
+    return [
+      { label: 'Triaje', items: triageItems },
+      {
+        label: 'Pacientes',
+        items: [{ icon: 'people', label: 'Pacientes', route: '/assistant/patients' }],
+      },
+      {
+        label: 'Análisis',
+        items: [{ icon: 'monitoring', label: 'Reportes', route: '/assistant/reports' }],
+      },
+    ];
+  });
 
   ngOnInit(): void {
     this.tenantStore.load();
     void this.branchContext.init();
+    void this.processConfig.load();
   }
 
   selectBranch(branchId: number): void {

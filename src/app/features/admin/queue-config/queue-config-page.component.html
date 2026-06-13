@@ -1,0 +1,101 @@
+<div class="page">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Configuración de Colas</h1>
+      <p class="page-subtitle">Define qué etapas usa tu clínica en el flujo de atención. Las que desactives se ocultan para el personal y los pacientes avanzan directo al siguiente paso.</p>
+    </div>
+  </div>
+
+  @if (store.loading()) {
+    <mat-progress-bar mode="indeterminate" class="progress" />
+  }
+
+  @if (store.error()) {
+    <div class="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ store.error() }}</span>
+    </div>
+  }
+
+  <section class="flow-card">
+    <div class="flow-card__head">
+      <mat-icon>linear_scale</mat-icon>
+      <div>
+        <h2 class="flow-card__title">Recorrido de la cola</h2>
+        <p class="flow-card__hint">Vista previa según tu configuración actual.</p>
+      </div>
+    </div>
+
+    <div class="flow">
+      @for (step of flowSteps(); track step.label; let last = $last) {
+        <div class="flow-step" [class.flow-step--off]="!step.active">
+          <div class="flow-step__node">
+            <mat-icon>{{ step.active ? step.icon : 'remove' }}</mat-icon>
+          </div>
+          <span class="flow-step__label">{{ step.label }}</span>
+          @if (step.optional) {
+            <span class="flow-step__tag" [class.flow-step__tag--off]="!step.active">
+              {{ step.active ? 'Activo' : 'Omitido' }}
+            </span>
+          } @else {
+            <span class="flow-step__tag flow-step__tag--fixed">Fijo</span>
+          }
+        </div>
+        @if (!last) {
+          <mat-icon class="flow-arrow">chevron_right</mat-icon>
+        }
+      }
+    </div>
+  </section>
+
+  <div class="cards">
+    @for (card of cards; track card.key) {
+      <article class="proc-card" [class.proc-card--off]="!isOn(card.key)" [attr.data-accent]="card.accent">
+        <div class="proc-card__icon">
+          <mat-icon>{{ card.icon }}</mat-icon>
+        </div>
+
+        <div class="proc-card__body">
+          <div class="proc-card__top">
+            <h3 class="proc-card__title">{{ card.title }}</h3>
+            <button
+              type="button"
+              class="ios-toggle"
+              [class.ios-toggle--on]="isOn(card.key)"
+              (click)="toggle(card.key)"
+              [attr.aria-label]="isOn(card.key) ? 'Desactivar ' + card.title : 'Activar ' + card.title">
+              <span class="ios-toggle__thumb"></span>
+            </button>
+          </div>
+
+          <p class="proc-card__summary">{{ card.summary }}</p>
+
+          <div class="proc-card__note">
+            <mat-icon>{{ isOn(card.key) ? 'check_circle' : 'info' }}</mat-icon>
+            <span>{{ isOn(card.key) ? 'Etapa activa en el flujo.' : card.whenOff }}</span>
+          </div>
+        </div>
+      </article>
+    }
+  </div>
+
+  <div class="save-bar" [class.save-bar--visible]="dirty()">
+    <span class="save-bar__text">Tienes cambios sin guardar</span>
+    <div class="save-bar__actions">
+      <button type="button" class="btn btn--ghost" (click)="reset()" [disabled]="store.saving()">
+        Descartar
+      </button>
+      <button type="button" class="btn btn--primary" (click)="save()" [disabled]="store.saving()">
+        @if (store.saving()) {
+          <mat-icon class="spin">progress_activity</mat-icon>
+          <span>Guardando…</span>
+        } @else {
+          <mat-icon>save</mat-icon>
+          <span>Guardar cambios</span>
+        }
+      </button>
+    </div>
+  </div>
+
+</div>

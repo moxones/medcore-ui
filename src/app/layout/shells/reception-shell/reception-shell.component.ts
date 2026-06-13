@@ -13,6 +13,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
 import { TenantStore } from '@core/tenant/tenant.store';
 import { AuthStore } from '@core/auth/auth.store';
+import { ProcessConfigStore } from '@core/stores/process-config.store';
 import { BranchContextStore } from '@core/stores/branch-context.store';
 import { ChangePasswordDialogComponent } from '@shared/dialogs/change-password/change-password-dialog.component';
 import { LogoutOverlayComponent } from '@shared/components/logout-overlay/logout-overlay.component';
@@ -57,6 +58,7 @@ export class ReceptionShellComponent implements OnInit {
   readonly tenantStore = inject(TenantStore);
   readonly authStore = inject(AuthStore);
   readonly branchContext = inject(BranchContextStore);
+  readonly processConfig = inject(ProcessConfigStore);
 
   readonly isHandset = toSignal(
     this.breakpointObserver
@@ -116,6 +118,7 @@ export class ReceptionShellComponent implements OnInit {
   ngOnInit(): void {
     this.tenantStore.load();
     void this.branchContext.init();
+    void this.processConfig.load();
   }
 
   selectBranch(branchId: number): void {
