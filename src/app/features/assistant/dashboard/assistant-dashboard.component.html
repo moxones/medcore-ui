@@ -24,7 +24,7 @@
         <mat-progress-bar mode="indeterminate" class="top-progress" />
       }
 
-      <div class="grid gap-4 mb-6 [grid-template-columns:repeat(auto-fit,minmax(190px,1fr))]">
+      <div class="flex flex-wrap gap-4 mb-6 [&>app-kpi-card]:grow [&>app-kpi-card]:basis-[150px] [&>app-kpi-card]:max-w-[280px]">
         <app-kpi-card icon="pending_actions" label="Pendientes de triaje" [value]="store.stats().pending.toString()" [loading]="store.loading()" variant="orange" />
         <app-kpi-card icon="event_upcoming" label="Por llegar" [value]="store.stats().scheduled.toString()" [loading]="store.loading()" variant="blue" />
         <app-kpi-card icon="task_alt" label="Triajes completados" [value]="store.triageStats().completed.toString()" [loading]="store.loadingHistory()" variant="green" />

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -44,6 +44,17 @@ export class PatientDashboardComponent implements OnInit {
   }).format(new Date());
 
   readonly greeting = this.buildGreeting();
+
+  readonly nextAppointmentShort = computed(() => {
+    const next = this.dashboardStore.nextAppointment();
+    if (!next) return 'Sin programar';
+    return new Intl.DateTimeFormat('es-PE', {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(next.scheduledAt));
+  });
 
   readonly quickLinks: QuickAction[] = [
     {

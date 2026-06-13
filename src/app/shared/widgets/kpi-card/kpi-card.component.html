@@ -1,7 +1,16 @@
-<div [class]="'kpi-icon kpi-icon--' + variant()">
-  <mat-icon>{{ icon() }}</mat-icon>
+<div class="kpi-top">
+  <div class="kpi-icon">
+    <mat-icon>{{ icon() }}</mat-icon>
+  </div>
+  @if (hint() && !loading()) {
+    <span class="kpi-hint">{{ hint() }}</span>
+  }
 </div>
-<div class="kpi-body">
-  <span class="kpi-value">{{ loading() ? '—' : value() }}</span>
-  <span class="kpi-label">{{ label() }}</span>
-</div>
+
+@if (loading()) {
+  <span class="kpi-skeleton"></span>
+} @else {
+  <span class="kpi-value">{{ value() }}</span>
+}
+
+<span class="kpi-label">{{ label() }}</span>

@@ -10,7 +10,7 @@
     <mat-progress-bar mode="indeterminate" class="top-progress" />
   }
 
-  <div class="grid gap-4 mb-6 [grid-template-columns:repeat(auto-fit,minmax(190px,1fr))]">
+  <div class="flex flex-wrap gap-4 mb-6 [&>app-kpi-card]:grow [&>app-kpi-card]:basis-[150px] [&>app-kpi-card]:max-w-[280px]">
     <app-kpi-card
       icon="calendar_today"
       label="Citas hoy"
@@ -21,12 +21,14 @@
       icon="check_circle"
       label="Completadas"
       [value]="dashboardStore.summary()?.completedAppointmentsToday?.toString() ?? '—'"
+      [hint]="completedPct() + '% del día'"
       [loading]="dashboardStore.loading()"
       variant="green" />
     <app-kpi-card
       icon="pending_actions"
       label="Pendientes"
       [value]="dashboardStore.loading() ? '—' : waitingCount().toString()"
+      [hint]="waitingPct() + '% del día'"
       [loading]="dashboardStore.loading()"
       variant="orange" />
     <app-kpi-card
@@ -35,6 +37,12 @@
       [value]="formattedRevenue()"
       [loading]="dashboardStore.loading()"
       variant="purple" />
+    <app-kpi-card
+      icon="event_busy"
+      label="Tasa de inasistencia"
+      [value]="noShowRate()"
+      [loading]="dashboardStore.loading()"
+      variant="red" />
   </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-7">
